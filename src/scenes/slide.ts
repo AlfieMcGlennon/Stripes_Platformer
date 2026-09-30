@@ -6,8 +6,6 @@ import { drawBackdrop, drawSnow, prewarmTheme } from "../render/backdrop";
 import { COLORS } from "../render/palette";
 import { VIEW_H, VIEW_W, type Renderer } from "../render/renderer";
 import { buildTerrain, emit, groundAt, stepSled, terrainWidth } from "../world";
-import type { Costume } from "../render/sprites";
-import { costumeForSmoothed, SMOOTH_YEARS } from "./costume";
 import { revealCamera, WalkScene } from "./scene";
 import { allClimateThemes, climateTheme, drawMagnifier, landColor, drawRateRace, drawThermometer, snowFor, tempColor } from "./slideArt";
 import { reduceMotion } from "../core/motion";
@@ -161,14 +159,6 @@ export class SlideScene extends WalkScene {
     return -groundAt(this.terrain, x) / PX_PER_DEGREE;
   }
 
-  /** Costume from the 30-year mean of the path, not from the year underfoot. */
-  private costume(): Costume {
-    const year = yearAt(this.player.x);
-    let sum = 0;
-    for (let k = 0; k < SMOOTH_YEARS; k++) sum += pathValue(year - k);
-    return costumeForSmoothed(sum / SMOOTH_YEARS);
-  }
-
   protected onUpdate(dt: number): void {
     if (this.raceT >= 0 && this.raceT < 1) this.raceT = Math.min(1, this.raceT + dt / RACE_SECONDS);
     if (this.revealed) this.revealTime += dt;
@@ -219,9 +209,7 @@ export class SlideScene extends WalkScene {
     );
     this.drawLandmarks(r);
     r.particles(this.particles, this.cam);
-    r.player(this.player, this.cam, this.time, {
-      sled: true, highlight: this.ended && !this.revealed, costume: this.costume(),
-    });
+    r.player(this.player, this.cam, this.time, { sled: true, highlight: this.ended && !this.revealed });
     if (this.revealed) this.drawRevealLabels(r);
     else {
       drawThermometer(r, v);

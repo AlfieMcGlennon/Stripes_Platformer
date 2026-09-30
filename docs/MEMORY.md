@@ -28,8 +28,13 @@
   - Bugs: the rate-race panel was never cleared and covered the closing image for the whole epilogue; the stripes summit caption rendered for zero frames (a `say` with `wait:false` before a `zoom` beat); one tap on the share card's save button also exited the scene; positional triggers overwrote captions mid-read (12 of 17 were being cut off); overlapping touch hit boxes; touch buttons at 1.01:1 over light stripes.
   - Legibility (player-reported): text drop shadow → 8-direction outline, glyph positions rounded, `scale` always integer, Silkscreen snapped to multiples of 8, plus a 1x/1.5x/2x text-size control.
   - Accessibility: HTML `<details>` panel with a generated text version of the whole game and text-size / reduce-motion / mute controls; captions mirrored to an `aria-live` region; canvas fallback + `<noscript>` + a boot-failure handler (a silent black page before); "tap to play anyway" on the portrait lock.
-  - Feature: the hero's costume follows the 30-year mean at their position — raincoat → jacket → summer clothes — deliberately keyed to the trend, never to a single year.
+  - Feature (since reverted, see below): the hero's costume followed the 30-year mean at their position.
   - 28 vitest + 5 pytest still green; `tsc --noEmit` and `npm run build` clean.
+
+- v0.3.2 (2026-09-30):
+  - `data/source/`: the official Met Office HadCRUT5 annual and monthly CSVs are committed with provenance sidecars, and `build_data.py` checks there before `scripts/raw/` and before the network. This unblocks §B1 (the uncertainty band) on machines where metoffice.gov.uk is blocked, including cloud sessions and CI. Verified additive: official vs the mirror-derived series differs by at most 0.0001 °C over 176 years and no caption figure moves. `.gitattributes` keeps those CSVs byte-identical so the recorded checksums stay valid.
+  - Avatar: the trend-keyed costume is **reverted**. Clothes never change on their own; the title screen has a look picker (skin tone, garment colour, plain/stripes outfit) persisted in `localStorage`. See DECISIONS.md.
+  - 32 vitest + 5 pytest.
 
 ## Next up
 1. Enable Pages (Settings → Pages → GitHub Actions), then run the manual `deploy` workflow. Add an og:image screenshot.

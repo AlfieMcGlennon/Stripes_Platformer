@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { InputFrame } from "../src/core";
 import { buttonAt } from "../src/core/layout";
+import { CLOTHES, cycleLook, getLook, lookPalette, lookShirt, setLook, shirtStripes, SKINS } from "../src/render/look";
 import { DERIVED, PALEO } from "../src/data";
 import type { Renderer } from "../src/render/renderer";
 import { WalkScene } from "../src/scenes/scene";
@@ -83,6 +84,41 @@ describe("beat sequencer", () => {
     s.play([{ say: ["next"] }]);
     expect(() => s.update(idle, 1 / 60)).not.toThrow();
     expect(s.zoomAvailable).toBe(false);
+  });
+});
+
+describe("look", () => {
+  it("cycles each field and wraps, and never reacts to climate data", () => {
+    setLook({ skin: 0, clothes: 0, outfit: "plain" });
+    expect(cycleLook("skin", 1).skin).toBe(1);
+    expect(cycleLook("skin", -1).skin).toBe(0);
+    expect(cycleLook("skin", -1).skin).toBe(SKINS.length - 1); // wraps backwards
+    expect(cycleLook("clothes", 1).clothes).toBe(1);
+    expect(cycleLook("outfit", 1).outfit).toBe("stripes");
+    expect(cycleLook("outfit", 1).outfit).toBe("plain"); // wraps
+  });
+
+  it("recolours the sprite palette and only patterns the garment when asked", () => {
+    setLook({ skin: 2, clothes: 3, outfit: "plain" });
+    const palette = lookPalette();
+    expect(palette.s).toBe(SKINS[2]);
+    expect(palette.y).toBe(CLOTHES[3].y);
+    expect(palette.o).toBe("#1a1a2e"); // outline untouched
+    expect(lookShirt()).toBeUndefined();
+    setLook({ skin: 0, clothes: 0, outfit: "stripes" });
+    expect(lookShirt()).toBeTypeOf("function");
+  });
+
+  it("runs the stripes outfit cold-to-warm across the sprite", () => {
+    expect(shirtStripes(0)).toBe("#053061"); // darkest blue at the left edge
+    expect(shirtStripes(9)).toBe("#67001f"); // darkest red at the right edge
+  });
+
+  it("falls back to a valid look when storage is unavailable or junk", () => {
+    const look = getLook();
+    expect(look.skin).toBeGreaterThanOrEqual(0);
+    expect(look.skin).toBeLessThan(SKINS.length);
+    expect(look.clothes).toBeLessThan(CLOTHES.length);
   });
 });
 

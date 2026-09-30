@@ -4,8 +4,6 @@ import { drawBackdrop, THEMES } from "../render/backdrop";
 import { COLORS, stripeColor } from "../render/palette";
 import { shade, VIEW_H, VIEW_W, type Renderer } from "../render/renderer";
 import { buildTerrain, cellCentreX, cellIndexAt, terrainWidth } from "../world";
-import type { Costume } from "../render/sprites";
-import { costumeForSmoothed, trailingMean } from "./costume";
 import { revealCamera, WalkScene } from "./scene";
 
 /**
@@ -41,15 +39,6 @@ export class StripesScene extends WalkScene {
 
   protected cellValue(i: number): number | null {
     return GLOBAL.annual.values[i];
-  }
-
-  /**
-   * The hero sheds the raincoat as the *trend* rises, not as individual years
-   * wobble: the input is the 30-year mean ending at the step underfoot, so a
-   * single warm year never changes the costume.
-   */
-  private costume(): Costume {
-    return costumeForSmoothed(trailingMean(GLOBAL.annual.values, cellIndexAt(this.terrain, this.player.x)));
   }
 
   protected onUpdate(): void {
@@ -102,7 +91,7 @@ export class StripesScene extends WalkScene {
     if (this.zoomProgress > 0.6) r.stepOutline(t, this.cam, "#ffffff");
     this.drawYouStep(r);
     r.particles(this.particles, this.cam);
-    r.player(this.player, this.cam, this.time, { highlight: this.ended, costume: this.costume() });
+    r.player(this.player, this.cam, this.time, { highlight: this.ended });
     if (this.zoomProgress > 0.95) this.drawRevealLabels(r);
     else if (!this.ended) this.drawHud(r);
     this.drawCaption(r);

@@ -1,7 +1,6 @@
 import type { CameraState } from "../core/camera";
 import type { Particle, PlayerState, Terrain } from "../world";
 import { drawParticles, drawPlayer } from "./actors";
-import type { Costume } from "./sprites";
 import { shade } from "./color";
 import { COLORS } from "./palette";
 import { drawLine, drawSlope, drawStepOutline, drawSteps } from "./terrainDraw";
@@ -220,10 +219,7 @@ export class Renderer {
     drawStepOutline(this.px, t, cam, color);
   }
 
-  player(
-    p: PlayerState, cam: CameraState, time: number,
-    opts: { highlight?: boolean; sled?: boolean; costume?: Costume } = {},
-  ): void {
+  player(p: PlayerState, cam: CameraState, time: number, opts: { highlight?: boolean; sled?: boolean } = {}): void {
     drawPlayer(this.px, p, cam, time, opts);
   }
 

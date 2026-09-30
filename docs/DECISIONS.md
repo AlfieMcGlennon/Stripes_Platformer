@@ -85,6 +85,7 @@
 **Reasoning:** A costume that flipped on one warm year would teach "warm year = sunny day", which is precisely the confusion the game exists to undo. Keyed to the trend it reinforces the lesson instead.
 **Alternatives:** Per-year costume (livelier, wrong); a dedicated summer sprite with a sun hat and shorts — still worth doing, but the palette swap needed no new geometry.
 **Affects:** `sprites.ts`, `actors.ts`, `renderer.player`, `scenes/costume.ts`, `stripes.ts`, `slide.ts`.
+**Superseded same day** by "Avatar is the player's, not a readout" below.
 
 ### 2026-09-30 — Lifetime warming as a decade difference, with a 30-year floor
 **Decision:** "Your Stripes" reports the last decade's mean minus the first decade's, with a 95% error bar, and refuses to quote anything under 30 years.
@@ -96,3 +97,18 @@
 **Decision:** A `<details>` panel holds the text version of the game plus text-size, reduce-motion and mute controls; captions are mirrored into an `aria-live` region; the canvas carries fallback content.
 **Reasoning:** A canvas is opaque to assistive tech, and canvas text cannot respond to browser zoom at all — the view is fitted to the viewport, so page zoom leaves `cssW x dpr` invariant and the rendered size unchanged. Real HTML controls get keyboard, screen-reader and touch support for free, and the same markup doubles as the fallback that used to be a silent black page when boot failed.
 **Affects:** `index.html`, `main.ts`, `story.ts`, `core/motion.ts`, `renderer.caption`.
+
+### 2026-09-30 — Avatar is the player's, not a readout (supersedes the trend-keyed costume)
+**Decision:** The hero's clothes never change on their own. Instead the title screen has a look
+picker: skin tone, garment colour, and a plain/stripes outfit, persisted in `localStorage`.
+**Reasoning:** Author's call on playing it. Even keyed to a 30-year mean rather than a single
+year, the changing costume made the avatar into another temperature display, and the game already
+carries temperature in step height, a signed number, the stripe colour and an audio pitch. The
+avatar is the one thing on screen that should belong to the player. Cheaper cognitively too:
+one fewer moving signal during the climb.
+**Kept from the reverted version:** the palette-swap mechanism, which is what makes the picker
+almost free — `drawSprite` takes a palette, plus an optional per-column shader for the stripes
+outfit.
+**Guard:** the stripes outfit is a fixed blue-to-red ramp across the sprite, not a data series, so
+it cannot be misread as a measurement of anything.
+**Affects:** `render/look.ts` (new), `sprites.ts`, `actors.ts`, `title.ts`; `scenes/costume.ts` deleted.
