@@ -167,6 +167,8 @@ Left for a human or a later pass: whether the 20x magnifier factor should read 2
 magnifier is anisotropic, so a single number is arguably the wrong thing to state at all); the
 Tierney netCDF latitude-axis assumption in `build_data.py:111`, since `scripts/raw/` is
 gitignored and absent; the "Holocene varied by a few tenths of a degree" credit line, which has
-no source and is in tension with Osman 2021's warming Holocene; and everything needing a real
-phone or a playtest — reduced-motion feel, whether the new caption dwells drag, and whether the
-summer costume reads as intended, since the sprite change was made without eyes on the game.
+no source and is in tension with Osman 2021's warming Holocene; and the parts that still need a device this
+session did not have. v0.3.1 has since been playtested on desktop and plays through correctly
+end to end, so the new caption dwells and the summer costume are confirmed to work in
+practice; a real phone, the reduce-motion path and a screen-reader pass over the new text
+panel remain untested.
