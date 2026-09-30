@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>The Stripes Series</title>
+    <meta name="description" content="Small browser games that each make one climate idea physical. Built on real data, with the simplifications on screen." />
+    <meta name="theme-color" content="#0b1020" />
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; background: #0b1020; color: #f2efe6;
+        font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .wrap { max-width: 46rem; margin: 0 auto; padding: 56px 20px 72px; }
+      h1 { font-size: clamp(30px, 7vw, 46px); line-height: 1.05; margin: 0 0 12px; letter-spacing: -0.01em; }
+      .lede { font-size: 18px; color: #cfd3df; margin: 0 0 40px; max-width: 34em; }
+      .card {
+        display: block; padding: 22px 24px; margin-bottom: 16px; text-decoration: none; color: inherit;
+        background: #141a33; border: 1px solid #2a3358; border-radius: 8px;
+        transition: border-color 120ms ease, transform 120ms ease;
+      }
+      .card:hover { border-color: #ffd166; transform: translateY(-2px); }
+      .card:focus-visible { outline: 2px solid #ffd166; outline-offset: 3px; }
+      .no { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #ffd166; }
+      .card h2 { margin: 6px 0 6px; font-size: 22px; }
+      .card p { margin: 0; color: #b9bfd0; }
+      .idea { margin-top: 12px; padding-top: 12px; border-top: 1px solid #2a3358; font-size: 14px; color: #8a90a6; }
+      footer { margin-top: 44px; font-size: 14px; color: #8a90a6; }
+      footer a { color: #cfd3df; }
+      .soon { opacity: 0.55; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>The Stripes Series</h1>
+      <p class="lede">
+        Small browser games that each make one climate idea physical. Every number comes from a
+        published dataset through a reproducible pipeline, and every simplification is stated on
+        screen.
+      </p>
+
+      <a class="card" href="./height-check/">
+        <span class="no">Episode 1</span>
+        <h2>Height Check</h2>
+        <p>Measure your height for a week and learn nothing. Then walk 176 years of global temperature, one step per year, and see the staircase become the warming stripes.</p>
+        <p class="idea">A trend is a property of the long view, not of any one day or year.</p>
+      </a>
+
+      <a class="card" href="./carbon-road/">
+        <span class="no">Episode 2</span>
+        <h2>Carbon Road</h2>
+        <p>Drive from 1850 to 2024 through four energy eras. Then go electric, and watch the bar stop climbing without ever coming down.</p>
+        <p class="idea">Warming tracks the total ever emitted. Stopping is not undoing.</p>
+      </a>
+
+      <div class="card soon">
+        <span class="no">Episode 3</span>
+        <h2>Loaded Dice</h2>
+        <p>In progress. A small shift in the average makes extremes much more common.</p>
+      </div>
+
+      <footer>
+        Built with a shared pixel engine. Data: HadCRUT5 (Met Office Hadley Centre / CRU),
+        Global Carbon Budget via Our World in Data, Tierney et al. 2020. Warming stripes concept by
+        Ed Hawkins, <a href="https://showyourstripes.info">showyourstripes.info</a> (CC BY 4.0).
+        <a href="https://github.com/AlfieMcGlennon/Stripes_Platformer">Source on GitHub</a>.
+      </footer>
+    </div>
+  </body>
+</html>

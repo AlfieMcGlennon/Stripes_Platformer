@@ -112,3 +112,33 @@ outfit.
 **Guard:** the stripes outfit is a fixed blue-to-red ramp across the sprite, not a data series, so
 it cannot be misread as a measurement of anything.
 **Affects:** `render/look.ts` (new), `sprites.ts`, `actors.ts`, `title.ts`; `scenes/costume.ts` deleted.
+
+### 2026-09-30 — Monorepo with a shared engine
+**Decision:** npm workspaces: `packages/engine` (`@stripes/engine`) plus `episodes/height-check` and
+`episodes/carbon-road`, with one TypeScript project graph via project references.
+**Reasoning:** Episode 2 had copied `color.ts`, `palette.ts`, `random.ts`, the hero sprite, the look
+system and the whole dithered-sky/ridge builder out of episode 1 — two of them byte-identical. Any
+fix to the renderer's text handling would have had to be made twice. The series brief called for this
+before episode 2 got real, and it is now the boundary the codebase enforces.
+**The boundary:** the engine takes anything two episodes would copy and nothing about any episode's
+subject. Renderer, colour scale, sky, sprites, look, camera, small pure helpers in; terrain, scenes,
+levels, vehicles, captions and data pipelines out. Episode 1's `Renderer` is a subclass that adds
+only its own draw calls; episode 2 uses the engine's directly.
+**Consequences:** `tsc --build` across the graph, one `npm run check`, and the deploy workflow now
+assembles a landing page with both episodes under it. Also `emitDeclarationOnly`, because emitting
+JS made vitest run every test twice — once from source, once from the compiled copy.
+**Affects:** everything; no behaviour change. 32 vitest + 5 pytest unchanged, both episodes build.
+
+### 2026-09-30 — Episodes differ, but not by much
+**Decision:** Carbon Road stays visually a sibling of Height Check: the same dithered Bayer sky, the
+same parallax ridge builder, the same starfield, the same terrain grain on its road, era skies mixed
+from episode 1's own dusk/sunset palette, the same hero sprite reading the same saved look, and the
+same caption box and outlined text via the engine.
+**Reasoning:** Author's call on seeing it. The prototype had drifted into looking like a different
+game — smooth gradient skies, its own colour tokens, a generic figure. A series earns recognition
+from consistency; differentiation belongs in the *mechanic*, which is already completely different
+(a driving walkthrough versus a platformer).
+**Remaining deliberate difference:** episode 2 renders at 480x270 rather than 320x180, which is what
+buys the vehicles enough room to be drawn with real curves instead of a character grid. That is the
+one divergence left, and it is reversible in one constant if parity matters more than definition.
+**Affects:** `episodes/carbon-road/src/backdrop.ts`, `render.ts`, `art.ts`.

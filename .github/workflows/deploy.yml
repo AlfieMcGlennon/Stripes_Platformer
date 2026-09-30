@@ -26,15 +26,22 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx tsc --noEmit
+      # One project graph across the engine and both episodes.
+      - run: npm run typecheck
       - run: npm test
-      # Data sanity checks read only the committed JSON (no numpy/network needed).
+      # Data sanity checks read only the committed JSON (no numpy or network needed).
       - run: pip install pytest && python -m pytest -q scripts/test_data.py
-      # src/data/*.json is committed, so CI never needs Python or network access to data hosts.
       - run: npm run build
+      # Assemble one site: a landing page, then each episode in its own folder.
+      - name: Assemble site
+        run: |
+          mkdir -p site
+          cp web/index.html site/index.html
+          cp -r episodes/height-check/dist site/height-check
+          cp -r episodes/carbon-road/dist site/carbon-road
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: site
   deploy:
     needs: build
     runs-on: ubuntu-latest

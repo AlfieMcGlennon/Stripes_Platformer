@@ -1,0 +1,19 @@
+{
+  "name": "@stripes/height-check",
+  "private": true,
+  "version": "0.3.2",
+  "type": "module",
+  "description": "Episode 1: a trend is a property of the long view, not of any one day or year.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --build"
+  },
+  "dependencies": {
+    "@fontsource/pixelify-sans": "^5.3.0",
+    "@fontsource/silkscreen": "^5.3.0",
+    "@stripes/engine": "*"
+  }
+}

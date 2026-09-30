@@ -3,7 +3,7 @@ import json
 import math
 from pathlib import Path
 
-DATA = Path(__file__).resolve().parent.parent / "src" / "data"
+DATA = Path(__file__).resolve().parent.parent / "episodes" / "height-check" / "src" / "data"
 
 
 def load(name):
