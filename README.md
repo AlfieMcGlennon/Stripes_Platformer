@@ -57,20 +57,23 @@ compares equal spans and quotes a range.
 
 ## The result
 
-- **Two playable episodes** from one engine, deployed as one site.
+- **Two playable episodes** from one engine: episode 1 finished and reviewed, episode 2 a
+  working prototype. Both build to one site; Pages deployment is manual and has not been run yet.
 - **32 unit tests and 5 data tests**, including a canary that fails the build if a data revision
   ever makes a step in the terrain too tall to jump.
-- **Reproducible offline.** The official Met Office CSVs are committed under `data/source/` with
-  provenance sidecars, so CI, a cloud sandbox or an aeroplane can rebuild every number. The
-  pipeline records the URL, retrieval date, SHA-256 and CSV header of what it actually read.
+- **Reproducible offline, for the instrumental record.** The official Met Office CSVs are committed
+  under `data/source/` with provenance sidecars recording URL, retrieval date, SHA-256, CSV header
+  and licence, and the pipeline reads those before it reaches the network. The paleo dataset
+  (Tierney et al. 2020) is still fetched, so `paleo.json` alone is not yet offline-reproducible.
 - **Verified against the source of record.** The committed series was checked value-by-value against
   the official Met Office files: largest difference across 176 years is 0.0001 °C.
 - **Reviewed adversarially.** Five parallel reviews — visual design, pedagogy, climate science, game
   design, accessibility — are consolidated in [`docs/REVIEW-v0.3.md`](docs/REVIEW-v0.3.md), with the
   findings that survived verification separated from the one that did not.
-- **Accessible.** A generated text version of the whole game for screen readers, `prefers-reduced-motion`
-  honoured, an in-game text-size control (canvas text cannot respond to browser zoom), and the
-  colour scale checked under simulated protanopia, deuteranopia and tritanopia.
+- **Accessible** (episode 1). A generated text version of the whole game for screen readers,
+  `prefers-reduced-motion` honoured, an in-game text-size control (canvas text cannot respond to
+  browser zoom), and the colour scale checked under simulated protanopia, deuteranopia and
+  tritanopia. Not yet tested with a real screen reader, which `docs/MEMORY.md` lists as outstanding.
 
 ## Layout
 
@@ -119,6 +122,15 @@ python -m pytest scripts/        # sanity checks on the output
 The pipeline prefers the committed CSVs in `data/source/`, falls back to `scripts/raw/`, and only
 then reaches the network — so the numbers are reproducible without access to
 metoffice.gov.uk, which some networks block. It warns loudly if it ever falls back to a mirror.
+
+## How this was built
+
+Built over a short period with heavy AI pair-programming; the commit trailers record it rather than
+hiding it. What is mine is the direction and the calls: the retraction of the 23–34× figure, the
+decision to revert a costume feature I had already shipped because it turned the avatar into a
+second temperature readout, and pulling episode 2 back toward episode 1's visual language when it
+drifted. `docs/DECISIONS.md` marks those entries "Author's call". Judging the output is the work
+that does not delegate.
 
 ## Credits
 

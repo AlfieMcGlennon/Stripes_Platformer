@@ -47,3 +47,13 @@ HadCRUT5 is © Crown Copyright, Met Office, released under the
 [Open Government Licence v3](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/),
 which permits redistribution with attribution. Cite Morice et al. (2021), JGR Atmospheres,
 doi:10.1029/2019JD032361.
+
+## The generated manifest
+
+`scripts/build_data.py` also writes a combined `data/sources.json` covering every input it read,
+including the paleo dataset. That file is deliberately absent from the repo right now: the copy
+previously committed predated the provenance fix, recorded `url: "cache"` with no retrieval date,
+and carried the mirror's checksums rather than the official files' — so it contradicted the sidecars
+beside it. Rather than ship a generated artefact that disagrees with the hand-verified one, it is
+removed until a full pipeline run can regenerate it, which needs the Tierney et al. 2020 netCDF to
+be reachable. The per-file sidecars here are the authoritative provenance in the meantime.

@@ -8,6 +8,15 @@
  * Note on the cumulative column: it accumulates from 1850, the first year of the
  * series, not from 1750. Captions must say "since 1850".
  */
+/** Dataset metadata, quoted verbatim on the credits screen. */
+export const GLOBAL_META = {
+  meta: {
+    dataset: "HadCRUT.5.1.0.0",
+    baseline: "1850-1900",
+    licence: "Open Government Licence v3",
+  },
+};
+
 export const START_YEAR = 1850;
 
 /** Gt CO2 emitted in each year. */

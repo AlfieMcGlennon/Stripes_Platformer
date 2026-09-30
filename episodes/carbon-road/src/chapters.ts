@@ -1,4 +1,4 @@
-import { cumulativeAt, emittedBetween, emissionsAt, signed, TOTAL_EMITTED, warmingAt, yearReaching } from "./data";
+import { cumulativeAt, emittedBetween, emissionsAt, GLOBAL_META as GLOBAL, signed, TOTAL_EMITTED, warmingAt, yearReaching } from "./data";
 import type { VehicleArt } from "./art";
 
 /**
@@ -79,7 +79,8 @@ export const CLEAN_TALK: string[][] = [
   ],
   [
     "That is what net zero does: it stops the warming getting worse.",
-    "The IPCC puts the further warming after net zero at close to zero — and no less than zero.",
+    "IPCC AR6 WG1: the warming still to come after emissions reach net zero is likely small (the",
+    "zero-emissions commitment). Small is not negative. It does not come back down.",
   ],
   [
     "Nothing in this drive could have taken CO₂ back out.",
@@ -104,4 +105,28 @@ export const REVEAL_TALK: string[][] = [
     "All 175 years, near enough a straight line.",
     "Warming tracks the total ever emitted. That is why stopping is not undoing.",
   ],
+];
+
+/**
+ * Credits. Episode 1's rule applies here too: name every source, and name every
+ * simplification, because a piece that teaches people to distrust cherry-picked
+ * evidence has to be auditable itself.
+ */
+export const CREDITS: string[] = [
+  "CARBON ROAD",
+  "",
+  "DATA",
+  "Emissions and cumulative emissions: Global Carbon Budget",
+  "via Our World in Data (owid/co2-data), CC BY 4.0.",
+  `Temperature: ${GLOBAL.meta.dataset}, Met Office Hadley Centre / CRU`,
+  `(Morice et al. 2021, ${GLOBAL.meta.licence}), vs ${GLOBAL.meta.baseline}.`,
+  "Net-zero framing: IPCC AR6 WG1, zero-emissions commitment.",
+  "",
+  "SIMPLIFICATIONS",
+  "Cumulative emissions accumulate from 1850, the first year of the",
+  "series, not from 1750. The road, vehicles, hazards and eras are",
+  "illustration, not measurement. The slope on the last panel is",
+  "measured from these two series and is NOT the IPCC's TCRE, which",
+  "isolates CO2-only forcing. This episode is a prototype: its numbers",
+  "are not yet built by the series data pipeline.",
 ];

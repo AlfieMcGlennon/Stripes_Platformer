@@ -4,8 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Carbon Road</title>
-    <meta name="description" content="Episode 2 walkthrough: CO2 accumulates, so warming tracks the total ever emitted." />
+    <meta name="description" content="Episode 2 of the stripes series: CO2 accumulates, so warming tracks the total ever emitted. Stopping is not undoing." />
     <meta name="theme-color" content="#0b1020" />
+    <meta property="og:title" content="Carbon Road" />
+    <meta property="og:description" content="A road trip from 1850 to 2024. Go electric at the end and watch the bar stop climbing without ever coming down." />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <style>
       html, body {
         margin: 0; height: 100%; background: #000; overflow: hidden;
@@ -13,10 +17,44 @@
         -webkit-user-select: none; user-select: none;
       }
       canvas { display: block; }
+      .sr {
+        position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+        overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+      }
+      .fallback {
+        position: fixed; inset: 0; display: grid; place-items: center; z-index: 3;
+        margin: 0; padding: 24px; background: #0b1020; color: #f2efe6; text-align: center;
+        font: 15px/1.6 ui-sans-serif, system-ui, sans-serif;
+      }
+      .fallback a { color: #ffd166; }
     </style>
   </head>
   <body>
-    <canvas id="game"></canvas>
+    <!--
+      Fallback content inside the canvas is what a text browser, a very old browser, or a policy
+      that disables canvas shows instead of a black rectangle. Episode 1 ships a full generated text
+      version of its script; this episode is a prototype and does not yet, which its landing card says.
+    -->
+    <canvas id="game" aria-label="Carbon Road: a road trip from 1850 to 2024 showing that carbon dioxide accumulates, so warming tracks the total ever emitted.">
+      Carbon Road is a short interactive about carbon dioxide accumulating in the atmosphere. You
+      drive from 1850 to 2024 through four energy eras — horse and cart, steam, the motor car, the
+      jet — while a bar along the top shows the total ever emitted. When you switch to electric at
+      the end, the exhaust stops but the bar only stops climbing; it never comes back down. That is
+      what net zero does: it stops the warming getting worse, and does not undo it.
+    </canvas>
+
+    <div id="live" class="sr" role="status" aria-live="polite"></div>
+
+    <noscript>
+      <p class="fallback">
+        Carbon Road needs JavaScript to run. It is a short interactive about carbon dioxide
+        accumulating: emissions are a flow, but warming tracks the total ever emitted, so stopping
+        emissions stops the warming getting worse without undoing it. Emissions data from the Global
+        Carbon Budget via <a href="https://ourworldindata.org/co2-dataset-sources">Our World in Data</a>;
+        temperature from HadCRUT5 (Met Office Hadley Centre / CRU).
+      </p>
+    </noscript>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
