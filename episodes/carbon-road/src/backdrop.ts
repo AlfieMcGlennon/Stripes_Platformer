@@ -26,11 +26,11 @@ export const FLIGHT_Y = 96;
  * as the same world rather than two different art styles.
  */
 export const THEMES: Record<string, Theme> = {
-  dawn: { key: "cr-dawn", skyTop: "#141a3a", skyBottom: "#6b4e71", far: "#2c2a4a", near: "#1f1d36", stars: 34 },
-  smoke: { key: "cr-smoke", skyTop: "#1d1f38", skyBottom: "#8a6360", far: "#37324f", near: "#241f38", stars: 18 },
-  haze: { key: "cr-haze", skyTop: "#251c33", skyBottom: "#a86a4f", far: "#41304a", near: "#2a1d33", stars: 8 },
-  hot: { key: "cr-hot", skyTop: "#2b1b3d", skyBottom: "#c8553d", far: "#4a2545", near: "#2e1a33", stars: 4 },
-  clean: { key: "cr-clean", skyTop: "#0f1a33", skyBottom: "#6e8f8a", far: "#27394d", near: "#1a2634", stars: 26 },
+  dawn: { key: "cr-dawn", skyTop: "#141a3a", skyBottom: "#6b4e71", far: "#2c2a4a", near: "#1f1d36", stars: 34, snowline: 0 },
+  smoke: { key: "cr-smoke", skyTop: "#1d1f38", skyBottom: "#8a6360", far: "#37324f", near: "#241f38", stars: 18, snowline: 0 },
+  haze: { key: "cr-haze", skyTop: "#251c33", skyBottom: "#a86a4f", far: "#41304a", near: "#2a1d33", stars: 8, snowline: 0 },
+  hot: { key: "cr-hot", skyTop: "#2b1b3d", skyBottom: "#c8553d", far: "#4a2545", near: "#2e1a33", stars: 4, snowline: 0 },
+  clean: { key: "cr-clean", skyTop: "#0f1a33", skyBottom: "#6e8f8a", far: "#27394d", near: "#1a2634", stars: 26, snowline: 0 },
 };
 
 export function prewarm(): void {

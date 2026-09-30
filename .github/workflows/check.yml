@@ -1,0 +1,28 @@
+# Runs on every push and pull request, so the test counts in the README mean
+# something. Deployment stays manual, in deploy.yml.
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+      # Typechecks the whole project graph, runs every workspace's tests, builds
+      # both episodes, and assembles the site exactly as the deploy job does.
+      - run: npm run check
+      - run: pip install pytest
+      # Reads only the committed JSON, so no numpy and no network.
+      - run: python -m pytest -q scripts/test_data.py
+      - run: npm run build:site

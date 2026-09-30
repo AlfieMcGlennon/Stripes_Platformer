@@ -18,7 +18,7 @@ export interface Theme {
   near: string;
   stars: number;
   /** 0..1, how much of the ridge peaks is snow-capped. */
-  snowline?: number;
+  snowline: number;
 }
 
 /** 4x4 ordered-dither matrix, shared by the sky and the terrain texture. */
@@ -84,7 +84,7 @@ export function ridgeStrip(theme: Theme, layer: "far" | "near", w: number, h: nu
     amp: (1 / (i + 1)) * (0.6 + rand() * 0.4),
   }));
   const fill = layer === "far" ? theme.far : theme.near;
-  const snowline = theme.snowline ?? 0;
+  const snowline = theme.snowline;
   for (let x = 0; x < w; x++) {
     let v = 0;
     for (const wv of waves) v += Math.sin((x / w) * Math.PI * 2 * wv.k + wv.phase) * wv.amp;

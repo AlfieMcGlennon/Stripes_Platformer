@@ -28,23 +28,32 @@ const OUTLINE_OFFSETS: [number, number][] = [
 export interface RendererOptions {
   viewW: number;
   viewH: number;
-  /** Default fill for `clear()`. */
-  background?: string;
-  /** Outline colour drawn behind text. */
-  textOutline?: string;
-  /** Caption panel colours: outer shadow, border, fill. */
-  caption?: { shadow: string; border: string; fill: string; text: string; prompt: string };
-  /** localStorage key for the text-size preference; omit to skip persistence. */
-  textScaleKey?: string;
+  /**
+   * Text and caption metrics are authored against a 180px-tall view, the height
+   * episode 1 established. An episode at a different resolution passes the ratio
+   * so its narrative text ends up the same physical size on screen; the default
+   * derives it, so a new episode gets it right without thinking about it.
+   */
+  textUnit?: number;
 }
 
-const DEFAULT_CAPTION = {
+/**
+ * Series chrome. These were options once and every caller passed exactly these
+ * values, so they are constants now: an option nobody varies is not
+ * configurability, it is an unexercised code path.
+ */
+const CHROME = {
+  background: "#0b1020",
+  outline: "#05060d",
   shadow: "#05060d",
   border: "#1b2140",
   fill: "#0d1126",
   text: "#f2efe6",
   prompt: "#ffd166",
 };
+
+/** One key per preference, shared across episodes so a choice carries over. */
+const KEYS = { textScale: "stripes.textScale", legacyTextScale: "heightcheck.textScale" };
 
 /**
  * Two layers: a low-resolution pixel canvas scaled up with no smoothing, and text
@@ -82,19 +91,13 @@ export class PixelRenderer {
   private layer: HTMLCanvasElement;
   private texts: QueuedText[] = [];
   private announced = "";
-  private readonly opts: Required<Omit<RendererOptions, "textScaleKey">> & { textScaleKey?: string };
+  /** View pixels per authored text pixel; 1 at episode 1's 320x180. */
+  private readonly unit: number;
 
   constructor(private canvas: HTMLCanvasElement, options: RendererOptions) {
     this.viewW = options.viewW;
     this.viewH = options.viewH;
-    this.opts = {
-      viewW: options.viewW,
-      viewH: options.viewH,
-      background: options.background ?? "#0b1020",
-      textOutline: options.textOutline ?? "#05060d",
-      caption: options.caption ?? DEFAULT_CAPTION,
-      textScaleKey: options.textScaleKey,
-    };
+    this.unit = options.textUnit ?? this.viewH / 180;
     this.layer = document.createElement("canvas");
     this.layer.width = this.viewW;
     this.layer.height = this.viewH;
@@ -137,7 +140,7 @@ export class PixelRenderer {
     };
   }
 
-  clear(color = this.opts.background): void {
+  clear(color = CHROME.background): void {
     this.px.fillStyle = color;
     this.px.fillRect(0, 0, this.viewW, this.viewH);
   }
@@ -149,6 +152,11 @@ export class PixelRenderer {
 
   private fontPx(size: number): number {
     return Math.max(1, Math.round(size * this.textScale * this.scale));
+  }
+
+  /** Authored text size to this view's size. */
+  private scaled(size: number): number {
+    return Math.max(1, Math.round(size * this.unit));
   }
 
   /**
@@ -163,22 +171,18 @@ export class PixelRenderer {
   /** Step the text size through 1x / 1.5x / 2x and remember the choice. */
   cycleTextScale(): number {
     this.textScale = this.textScale >= 2 ? 1 : this.textScale === 1 ? 1.5 : 2;
-    const key = this.opts.textScaleKey;
-    if (key) {
-      try {
-        localStorage.setItem(key, String(this.textScale));
-      } catch {
-        // Private mode or blocked storage: the setting just won't persist.
-      }
+    try {
+      localStorage.setItem(KEYS.textScale, String(this.textScale));
+    } catch {
+      // Private mode or blocked storage: the setting just won't persist.
     }
     return this.textScale;
   }
 
   private loadTextScale(): void {
-    const key = this.opts.textScaleKey;
-    if (!key) return;
     try {
-      const v = Number(localStorage.getItem(key));
+      const raw = localStorage.getItem(KEYS.textScale) ?? localStorage.getItem(KEYS.legacyTextScale);
+      const v = Number(raw);
       if (v === 1 || v === 1.5 || v === 2) this.textScale = v;
     } catch {
       // Ignore: default 1x.
@@ -191,7 +195,7 @@ export class PixelRenderer {
       x,
       y,
       size: opts.size ?? 8,
-      color: opts.color ?? this.opts.caption.text,
+      color: opts.color ?? CHROME.text,
       align: opts.align ?? "left",
       font: opts.title ? TITLE_FONT : BODY_FONT,
     });
@@ -237,24 +241,28 @@ export class PixelRenderer {
   caption(lines: string[], prompt: boolean | string = false, time = 0): number {
     this.announce(lines);
     if (lines.length === 0) return 0;
-    const c = this.opts.caption;
-    const wrapped = this.wrap(lines, this.viewW - 44);
-    const lineH = 10;
-    const h = wrapped.length * lineH + (typeof prompt === "string" ? 16 : 8);
-    const y = this.viewH - h - 6 - this.bottomReserve;
-    this.rect(10, y - 1, this.viewW - 20, h + 2, c.shadow);
-    this.rect(9, y, this.viewW - 18, h, c.shadow);
-    this.rect(11, y + 1, this.viewW - 22, h - 2, c.border);
-    this.rect(12, y + 2, this.viewW - 24, h - 4, c.fill);
-    wrapped.forEach((line, i) => this.text(line, this.viewW / 2, y + 4 + i * lineH, { align: "center" }));
+    const body = this.scaled(8);
+    const pad = this.scaled(4);
+    const wrapped = this.wrap(lines, this.viewW - this.scaled(44), body);
+    const lineH = this.scaled(10);
+    const h = wrapped.length * lineH + (typeof prompt === "string" ? this.scaled(16) : this.scaled(8));
+    const y = this.viewH - h - this.scaled(6) - this.bottomReserve;
+    const inset = this.scaled(9);
+    this.rect(inset + 1, y - 1, this.viewW - inset * 2 - 2, h + 2, CHROME.shadow);
+    this.rect(inset, y, this.viewW - inset * 2, h, CHROME.shadow);
+    this.rect(inset + 2, y + 1, this.viewW - inset * 2 - 4, h - 2, CHROME.border);
+    this.rect(inset + 3, y + 2, this.viewW - inset * 2 - 6, h - 4, CHROME.fill);
+    wrapped.forEach((line, i) =>
+      this.text(line, this.viewW / 2, y + pad + i * lineH, { align: "center", size: body }));
     const blink = Math.floor(time * 2.5) % 2 === 0;
     if (typeof prompt === "string" && blink) {
-      this.text(prompt, this.viewW - 16, y + h - 11, { size: 7, color: c.prompt, align: "right" });
+      this.text(prompt, this.viewW - this.scaled(16), y + h - this.scaled(11),
+        { size: this.scaled(7), color: CHROME.prompt, align: "right" });
     } else if (prompt === true && blink) {
       const ctx = this.px;
-      ctx.fillStyle = c.prompt;
-      const ax = this.viewW - 22;
-      const ay = y + h - 9;
+      ctx.fillStyle = CHROME.prompt;
+      const ax = this.viewW - this.scaled(22);
+      const ay = y + h - this.scaled(9);
       for (let i = 0; i < 3; i++) ctx.fillRect(ax + i, ay + i, 1, 6 - i * 2);
     }
     return h;
@@ -278,7 +286,7 @@ export class PixelRenderer {
       const x = this.offsetX + Math.round(t.x * this.scale);
       const y = this.offsetY + Math.round(t.y * this.scale);
       const off = Math.max(1, Math.round(this.fontPx(t.size) / 16));
-      d.fillStyle = this.opts.textOutline;
+      d.fillStyle = CHROME.outline;
       for (const [dx, dy] of OUTLINE_OFFSETS) d.fillText(t.text, x + dx * off, y + dy * off);
       d.fillStyle = t.color;
       d.fillText(t.text, x, y);

@@ -39,8 +39,9 @@ export function drawPlayer(
   const frame = heroFrame(p.grounded || !!opts.sled, moving && !opts.sled, p.stride);
   const x = Math.round(s.sx - SPRITE_W / 2);
   const lift = opts.sled ? 3 : 0;
-  drawSprite(ctx, frame, x, Math.round(s.sy) - SPRITE_H - lift, p.facing === -1, lookPalette(), lookShirt());
-  if (opts.sled) drawSprite(ctx, SLED, x - 1, Math.round(s.sy) - 4, p.facing === -1);
+  drawSprite(ctx, frame, x, Math.round(s.sy) - SPRITE_H - lift,
+    { flip: p.facing === -1, palette: lookPalette(), shirt: lookShirt() });
+  if (opts.sled) drawSprite(ctx, SLED, x - 1, Math.round(s.sy) - 4, { flip: p.facing === -1 });
 }
 
 export function drawParticles(ctx: CanvasRenderingContext2D, list: Particle[], cam: CameraState): void {

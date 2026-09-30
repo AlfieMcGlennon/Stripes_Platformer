@@ -1,4 +1,4 @@
-import { HERO, SPRITE_PALETTE, lookPalette, lookShirt, type Frame } from "@stripes/engine";
+import { BUST_ROWS, drawSprite, HERO, lookPalette, lookShirt, type Frame } from "@stripes/engine";
 
 /**
  * Vehicles, roadside furniture and the rider, drawn with canvas primitives.
@@ -15,26 +15,19 @@ import { HERO, SPRITE_PALETTE, lookPalette, lookShirt, type Frame } from "@strip
  */
 const OUTLINE = "#14182b";
 const SPRITE_SCALE = 2;
-/** Rows of the hero frame that are head and torso; the rest is legs. */
-const BUST_ROWS = 11;
 
 /* ---------------- the hero ---------------- */
 
+/**
+ * The hero at an integer scale, optionally cropped to `rows`. This is the engine's
+ * blitter with this episode's look applied -- an earlier version reimplemented the
+ * loop here, which meant the engine's garment set had to be re-encoded too, and a
+ * new garment character would have silently stopped being coloured.
+ */
 export function drawHero(
-  ctx: CanvasRenderingContext2D, frame: Frame, x: number, y: number, scale = SPRITE_SCALE, rows = frame.length,
+  ctx: CanvasRenderingContext2D, frame: Frame, x: number, y: number, scale = SPRITE_SCALE, rows?: number,
 ): void {
-  const palette = { ...SPRITE_PALETTE, ...lookPalette() };
-  const shirt = lookShirt();
-  const limit = Math.min(rows, frame.length);
-  for (let row = 0; row < limit; row++) {
-    const line = frame[row];
-    for (let col = 0; col < line.length; col++) {
-      const ch = line[col];
-      if (ch === ".") continue;
-      ctx.fillStyle = shirt && (ch === "y" || ch === "Y") ? shirt(col) : palette[ch] ?? "#f0f";
-      ctx.fillRect(Math.round(x) + col * scale, Math.round(y) + row * scale, scale, scale);
-    }
-  }
+  drawSprite(ctx, frame, x, y, { palette: lookPalette(), shirt: lookShirt(), scale, rows });
 }
 
 export function drawHeroWalking(ctx: CanvasRenderingContext2D, x: number, groundY: number, phase: number): void {

@@ -37,14 +37,16 @@ export interface Look {
   outfit: Outfit;
 }
 
-const KEY = "heightcheck.look";
+const KEY = "stripes.look";
+/** Read once so a look saved before the series was named is not lost. */
+const LEGACY_KEY = "heightcheck.look";
 const DEFAULT: Look = { skin: 0, clothes: 0, outfit: "plain" };
 
 let current: Look = load();
 
 function load(): Look {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(KEY) ?? localStorage.getItem(LEGACY_KEY);
     if (!raw) return { ...DEFAULT };
     const v = JSON.parse(raw) as Partial<Look>;
     return {

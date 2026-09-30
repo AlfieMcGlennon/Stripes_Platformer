@@ -14,7 +14,8 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # false, per GitHub's Pages guidance: a cancelled deploy can leave the site half-updated.
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -30,15 +31,14 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       # Data sanity checks read only the committed JSON (no numpy or network needed).
-      - run: pip install pytest && python -m pytest -q scripts/test_data.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest
+      - run: python -m pytest -q scripts/test_data.py
       - run: npm run build
-      # Assemble one site: a landing page, then each episode in its own folder.
-      - name: Assemble site
-        run: |
-          mkdir -p site
-          cp web/index.html site/index.html
-          cp -r episodes/height-check/dist site/height-check
-          cp -r episodes/carbon-road/dist site/carbon-road
+      # The same script CI runs, so the assembly is never untested.
+      - run: npm run build:site
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

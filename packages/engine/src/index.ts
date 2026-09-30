@@ -13,7 +13,8 @@ export { RDBU, stripeColor, stripePosition } from "./palette";
 export { mulberry32 } from "./random";
 export { reduceMotion, setReduceMotion } from "./motion";
 export {
-  drawSprite, heroFrame, HERO, SLED, SPRITE_H, SPRITE_PALETTE, SPRITE_W, type Frame,
+  BUST_ROWS, drawSprite, heroFrame, HERO, SLED, SPRITE_H, SPRITE_PALETTE, SPRITE_W,
+  type Frame, type SpriteOptions,
 } from "./sprites";
 export {
   CLOTHES, cycleLook, getLook, lookPalette, lookShirt, OUTFITS, setLook, shirtStripes, SKINS,

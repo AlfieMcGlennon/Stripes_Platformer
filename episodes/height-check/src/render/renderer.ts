@@ -1,7 +1,6 @@
 import { PixelRenderer, shade, type CameraState } from "@stripes/engine";
 import type { Particle, PlayerState, Terrain } from "../world";
 import { drawParticles, drawPlayer } from "./actors";
-import { COLORS } from "./palette";
 import { drawLine, drawSlope, drawStepOutline, drawSteps } from "./terrainDraw";
 import { drawTouchButtons } from "./touch";
 
@@ -19,12 +18,7 @@ export { BODY_FONT, TITLE_FONT, type TextOptions } from "@stripes/engine";
  */
 export class Renderer extends PixelRenderer {
   constructor(canvas: HTMLCanvasElement) {
-    super(canvas, {
-      viewW: VIEW_W,
-      viewH: VIEW_H,
-      background: COLORS.sky,
-      textScaleKey: "heightcheck.textScale",
-    });
+    super(canvas, { viewW: VIEW_W, viewH: VIEW_H });
   }
 
   steps(

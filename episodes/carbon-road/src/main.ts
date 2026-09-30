@@ -8,7 +8,7 @@ import { drawBackdrop, drawRoad, FLIGHT_Y, LANES, prewarm, ROAD_Y, THEMES, type 
 import { CHAPTERS, CLEAN_TALK, CREDITS, REVEAL_TALK } from "./chapters";
 import { cumulativeAt, emissionsAt, LAST_YEAR, TOTAL_EMITTED } from "./data";
 import { visibleProps } from "./props";
-import { COLORS, Renderer, VIEW_H, VIEW_W } from "./render";
+import { COLORS, createRenderer, VIEW_H, VIEW_W } from "./render";
 import { drawReveal } from "./reveal";
 
 const STEP = 1 / 60;
@@ -29,7 +29,7 @@ type Phase = "title" | "drive" | "arriving" | "talk" | "swap" | "clean" | "revea
 interface Puff { x: number; y: number; life: number; size: number }
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
-const renderer = new Renderer(canvas);
+const renderer = createRenderer(canvas);
 
 const s = {
   phase: "title" as Phase,

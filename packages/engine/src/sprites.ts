@@ -65,18 +65,33 @@ export function heroFrame(grounded: boolean, moving: boolean, stride: number): F
 /** Garment pixels, which a patterned outfit may colour per column. */
 const GARMENT = new Set(["y", "Y"]);
 
+export interface SpriteOptions {
+  flip?: boolean;
+  palette?: Record<string, string>;
+  /** Per-column colour for garment pixels, e.g. the stripes outfit. */
+  shirt?: (col: number) => string;
+  /** Integer pixel size; 1 draws into a 320x180-style layer. */
+  scale?: number;
+  /** Draw only the first `rows` rows, e.g. head and torso for a seated figure. */
+  rows?: number;
+}
+
 export function drawSprite(
-  ctx: CanvasRenderingContext2D, frame: Frame, x: number, y: number, flip = false, palette = SPRITE_PALETTE,
-  shirt?: (col: number) => string,
+  ctx: CanvasRenderingContext2D, frame: Frame, x: number, y: number, options: SpriteOptions = {},
 ): void {
-  for (let row = 0; row < frame.length; row++) {
+  const { flip = false, palette = SPRITE_PALETTE, shirt, scale = 1 } = options;
+  const limit = Math.min(options.rows ?? frame.length, frame.length);
+  for (let row = 0; row < limit; row++) {
     const line = frame[row];
     for (let col = 0; col < line.length; col++) {
       const ch = line[col];
       if (ch === ".") continue;
       const drawCol = flip ? line.length - 1 - col : col;
       ctx.fillStyle = shirt && GARMENT.has(ch) ? shirt(drawCol) : palette[ch] ?? "#f0f";
-      ctx.fillRect(x + drawCol, y + row, 1, 1);
+      ctx.fillRect(Math.round(x) + drawCol * scale, Math.round(y) + row * scale, scale, scale);
     }
   }
 }
+
+/** Rows of a hero frame that are head and torso; the rest is legs. */
+export const BUST_ROWS = 11;

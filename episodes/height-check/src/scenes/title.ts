@@ -76,7 +76,7 @@ export class TitleScene implements Scene {
     });
     const bob = reduceMotion() ? 0 : Math.round(Math.sin(this.time * 3) * 1.5);
     const frame = this.looking ? HERO.stand : Math.floor(this.time * 3) % 2 ? HERO.runA : HERO.runB;
-    drawSprite(r.px, frame, VIEW_W / 2 - 5, 96 + bob, false, lookPalette(), lookShirt());
+    drawSprite(r.px, frame, VIEW_W / 2 - 5, 96 + bob, { palette: lookPalette(), shirt: lookShirt() });
     r.text("HEIGHT CHECK", VIEW_W / 2, 34, { size: 20, color: COLORS.accent, align: "center", title: true });
     r.text("a tiny game about noise, trends and the warming stripes", VIEW_W / 2, 60, { size: 8, color: COLORS.text, align: "center" });
     if (this.looking) this.drawPicker(r);
