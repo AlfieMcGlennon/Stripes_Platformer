@@ -1,0 +1,4 @@
+# Committed source data must be byte-identical on every platform: the SHA-256 in
+# each .source.json is computed over these exact bytes, so any line-ending
+# conversion on checkout would silently invalidate it. `-text` disables it.
+data/source/*.csv -text
