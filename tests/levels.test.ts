@@ -16,7 +16,7 @@ function maxRise(values: number[], scale: number): number {
 }
 
 describe("real data stays playable", () => {
-  // Leave a few px of margin so a slightly mistimed jump still clears.
+  // The apex is exactly jumpHeight (see feel.test); keep 6 px of margin for mistimed jumps.
   const reachable = DEFAULT_TUNING.jumpHeight - 6;
 
   it("every month-to-month rise in level 1 is jumpable", () => {

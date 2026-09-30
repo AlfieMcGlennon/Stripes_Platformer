@@ -34,9 +34,15 @@ STRIPE_SIGMA_PERIOD = (1901, 2000)
 STRIPE_SIGMAS = 2.6              # colour scale saturates at +/- this many std devs
 RECENT_TREND_YEARS = 50
 # Tierney 2020 gives a snapshot difference (LGM 23-19 ka minus Late Holocene 4-0 ka),
-# not a time series. Most of that warming happened in the deglaciation, roughly
-# 19-11 ka; we use 10,000 years as the transition length for the "average rate".
+# not a time series. The main deglacial warming took somewhere around 7,000-10,000
+# years (roughly 18-11 ka at the short end); we report the rate comparison as a
+# range over that assumption instead of a single falsely precise number.
 DEGLACIATION_YEARS = 10_000
+DEGLACIATION_YEARS_SHORT = 7_000
+# Cherry-pick level: search every window of this length since this year for the
+# one with the most negative trend, and say in-game that this is what we did.
+CHERRY_WINDOW = 8
+CHERRY_FROM = 1970
 
 sources: list[dict] = []
 
@@ -132,7 +138,18 @@ def build() -> dict:
     recent = years[-RECENT_TREND_YEARS:]
     recent_rate = ols_slope(recent, [annual[y] for y in recent]) * 100
     deglacial_rate = -lgm_delta / DEGLACIATION_YEARS * 100
+    deglacial_rate_fast = -lgm_delta / DEGLACIATION_YEARS_SHORT * 100
     latest_decade = statistics.fmean(annual[y] for y in years[-10:])
+
+    windows = []
+    for start in range(CHERRY_FROM, last_year - CHERRY_WINDOW + 2):
+        span = list(range(start, start + CHERRY_WINDOW))
+        windows.append((ols_slope(span, [annual[y] for y in span]) * 10, start))
+    cherry_slope, cherry_start = min(windows)
+    cooling_share = sum(1 for s, _ in windows if s < 0) / len(windows)
+    since = [y for y in years if y >= CHERRY_FROM]
+    long_slope = ols_slope(since, [annual[y] for y in since]) * 10
+    warmest = sorted(sorted(years, key=lambda y: annual[y])[-10:])
 
     meta_hc = {
         "dataset": HADCRUT_VERSION, "units": "degC", "baseline": f"{BASELINE[0]}-{BASELINE[1]}",
@@ -159,7 +176,17 @@ def build() -> dict:
         "latestDecadeMean": round(latest_decade, 2),
         "recentTrendPerCentury": round(recent_rate, 2), "recentTrendYears": RECENT_TREND_YEARS,
         "deglacialRatePerCentury": round(deglacial_rate, 3),
-        "rateRatio": round(recent_rate / deglacial_rate),
+        "deglacialRateFastPerCentury": round(deglacial_rate_fast, 3),
+        "deglaciationYearsRange": [DEGLACIATION_YEARS_SHORT, DEGLACIATION_YEARS],
+        # Rounded to 5s: the inputs don't justify more precision than that.
+        "rateRatioLow": int(5 * round(recent_rate / deglacial_rate_fast / 5)),
+        "rateRatioHigh": int(5 * round(recent_rate / deglacial_rate / 5)),
+        "cherry": {
+            "start": cherry_start, "length": CHERRY_WINDOW, "searchedFrom": CHERRY_FROM,
+            "trendPerDecade": round(cherry_slope, 3), "coolingWindowShare": round(cooling_share, 3),
+            "windowsSearched": len(windows), "longTrendPerDecade": round(long_slope, 3),
+        },
+        "warmestTen": warmest,
     }
     return {"global": global_json, "paleo": paleo_json, "derived": derived_json}
 

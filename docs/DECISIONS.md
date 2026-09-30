@@ -38,3 +38,23 @@
 **Decision:** Colours centred on the 1971–2000 mean, saturating at ±2.6σ of 1901–2000; numbers shown vs 1850–1900.
 **Reasoning:** Matches the familiar showyourstripes look (verify exact method) while keeping text on the IPCC pre-industrial baseline.
 **Affects:** palette.ts, build_data.py.
+
+### 2026-09-30 — v0.2: zoom as the player's verb
+**Decision:** Every reveal is driven by holding Z (touch: Z button); progress decays on release; auto-completes after 20 s.
+**Alternatives:** Scripted camera tweens (v0.1).
+**Reasoning:** Design review: the insight moment was a cutscene. Now the player performs the zoom-out themselves.
+**Affects:** WalkScene zoom beat, all level endings.
+
+### 2026-09-30 — Rate comparison as a range, plus a cause beat
+**Decision:** Show 25–35x (deglaciation assumed 7,000–10,000 yrs) instead of 34x; add the IPCC AR6 "fastest 50-year warming in at least 2,000 years" line and one "why" caption.
+**Reasoning:** Science review: a single integer overstated precision; without a cause, "ice ages ended naturally" invites the wrong conclusion.
+**Affects:** build_data.py derived fields, SlideScene finale, credits.
+
+### 2026-09-30 — Cherry-pick window chosen by search
+**Decision:** build_data.py searches all 8-year windows since 1970 for the most negative trend (1979–1986) and the game says so.
+**Alternatives:** The classic 1998–2012 "pause" — rejected: in HadCRUT5 it trends +0.12 °C/decade, so claiming it looks flat would be false.
+**Affects:** CherryScene, derived.cherry.
+
+### 2026-09-30 — Slide colours
+**Decision:** While sledding, ground uses scenery colours (ice → tundra → grass → ochre); temperature colours (same scale as the stripes) are used for the thermometer and the reveal's 21 kyr stripes.
+**Reasoning:** Stripe colours made the Holocene read as sea; the reveal needed the stripes look to make the modern sliver striking, plus a 20x magnifier.

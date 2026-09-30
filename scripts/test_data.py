@@ -33,3 +33,12 @@ def test_paleo_in_expected_range():
 def test_derived_rates_positive():
     d = load("derived")
     assert d["recentTrendPerCentury"] > d["deglacialRatePerCentury"] > 0
+
+
+def test_rate_range_and_cherry_pick():
+    d = load("derived")
+    assert 0 < d["rateRatioLow"] <= d["rateRatioHigh"]
+    c = d["cherry"]
+    assert c["trendPerDecade"] < 0 < c["longTrendPerDecade"]
+    assert 0 < c["coolingWindowShare"] < 0.5
+    assert len(d["warmestTen"]) == 10

@@ -1,22 +1,29 @@
 # Memory / handoff
 
-**Phase:** v0.1 playable prototype complete (M0–M4 of DESIGN.md milestones, rough M5).
+**Phase:** v0.2 — feel + visuals pass, cherry-pick level, honest finale, mobile + deploy setup.
 
-## Done (2026-09-30)
-- Full game loop: height ruler → months (morph + zoom) → stripes climb (reveal) → slide to the ice age (reveal) → credits → loop.
-- Real data pipeline (`scripts/build_data.py`), 4 pytest checks; 15 vitest tests incl. "real data is jumpable".
-- Bot playthrough in headless Chromium: all levels complete, no console errors. Bot time ≈ 2 min; a human reading captions ≈ 4–6 min.
+## Done
+- v0.1 (2026-09-30): playable prototype, real data pipeline.
+- v0.2 (2026-09-30), from three reviews (game design, climate science, code):
+  - Hold-Z zoom verb in levels 0, 1, 2, 3; stripes reveal holds 3 s in silence, fewer captions, legend.
+  - New cherry-pick level (window found by search in build_data.py, disclosed in-game).
+  - Slide rebuilt: sled physics, landscape colours, climate-driven sky/snow, landmarks, thermometer; reveal with 21 kyr "paleo stripes", 20x magnifier on the modern cliff, and a same-175-years rate race.
+  - Finale: rate as a 25–35x range (7–10 kyr deglaciation assumption), IPCC AR6 SPM A.2.2 line, why-beat (orbit + CO2 then; fossil CO2 now). Caption fixes (El Niño, sulphur haze, "relatively stable", "last few thousand years", HadCRUT5 named).
+  - Visuals: pixel fonts (Pixelify Sans, Silkscreen via @fontsource), raincoat hero sprite with run frames, dithered skies, parallax ridges, textured terrain, particles, fades, title screen.
+  - Feel: coyote time, jump buffer, exact jump apex; synth sfx; steps play a pitch from their temperature.
+  - Mobile: pointer events, one touch layout table, any tap = continue, zoom button, visualViewport sizing, rotate hint, captions lifted above buttons. Verified with Playwright touch emulation.
+  - Deploy: .github/workflows/deploy.yml, favicon, meta/OG tags.
+- 21 vitest + 5 pytest; full bot playthrough, no console errors (~2.5 min bot, ~6–8 min human).
 
-## Known gaps / next up
-1. **Feel pass** (most valuable): the level 2 reveal is the payoff; consider slowing the pull-back, a sound sting, holding on the stripes longer, and letting the player see their own step highlighted.
-2. **Level 1 daily data**: switch to ERA5 daily anomalies when a network can reach Copernicus (see DATA_PLAN). Check it still feels noisy.
-3. **Slide shape**: replace the straight-line deglaciation with Osman 2021 LGMR if fetchable.
-4. Pixel font (captions use Courier New at display resolution), chiptune sfx, better character sprite + run/jump animation.
-5. Touch controls are implemented but untested on a real phone.
-6. Deploy: `npm run build` → `dist/` is static; GitHub Pages works (vite `base: "./"`).
-7. Title is a placeholder ("Height Check").
+## Next up
+1. Push to a real GitHub repo, enable Pages (Settings → Pages → GitHub Actions). Add an og:image screenshot.
+2. Test on a real phone (touch feel, font sizes, audio unlock on iOS).
+3. Data upgrades when a network can reach them: ERA5 daily (level 1), Osman 2021 LGMR curve (slide), HadCRUT5 uncertainty band.
+4. Verify literature claims quoted in captions (AR6 SPM A.2.2 wording) and the showyourstripes colour method.
+5. Optional: save progress, level select, music.
 
 ## Gotchas
-- `datasets/global-temp` labels HadCRUT5 as "GCAG" and claims a 20th-century baseline; it is actually HadCRUT5's 1961–1990 baseline. The script rebases to 1850–1900 regardless.
-- Minified builds rename classes: playtest scripts should use `window.__sceneIndex`, not constructor names.
-- Keep captions ≤ ~60 characters per line (320 px view, 7 px monospace).
+- `datasets/global-temp` mirror labels HadCRUT5 as "GCAG"; values are vs 1961–1990 and get rebased.
+- Variable jump height was tried and removed: a tap must clear real-data steps.
+- Camera must not follow while controls are off, or reveals drift (fixed in WalkScene).
+- Playtest bots: use `window.__sceneId`, hold KeyZ while `__scene.zoomAvailable`.

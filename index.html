@@ -2,11 +2,22 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Height Check</title>
+    <meta name="description" content="A tiny retro platformer about weather noise, climate trends and the warming stripes. Every climate number is real data." />
+    <meta name="theme-color" content="#0b1020" />
+    <meta property="og:title" content="Height Check" />
+    <meta property="og:description" content="Day to day it's noise. Zoom out and it's a trend. A tiny game built on real climate data." />
+    <meta property="og:type" content="website" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <style>
-      html, body { margin: 0; height: 100%; background: #000; overflow: hidden; touch-action: none; }
-      canvas { display: block; width: 100vw; height: 100vh; }
+      html, body {
+        margin: 0; height: 100%; background: #000; overflow: hidden;
+        touch-action: none; overscroll-behavior: none;
+        -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+      }
+      canvas { display: block; }
     </style>
   </head>
   <body>

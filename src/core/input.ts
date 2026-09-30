@@ -1,66 +1,94 @@
+import { buttonAt, type ButtonId } from "./layout";
+
 /**
- * Keyboard + touch. Game code only sees `move`, `jumpPressed` and
- * `actionPressed` (edge-triggered), never raw events.
+ * Keyboard + pointer (touch and mouse). Game code only sees an InputFrame,
+ * never raw events.
  */
 export interface InputFrame {
   move: -1 | 0 | 1;
   jumpPressed: boolean;
-  /** "Continue" on caption screens: jump, Enter or a tap. */
+  jumpHeld: boolean;
+  /** Hold to zoom out / average: the game's central verb. */
+  zoomHeld: boolean;
+  /** "Continue": Enter, jump, or any new tap/click anywhere. */
   actionPressed: boolean;
+  /** Any key or tap at all this frame (used to unlock audio and start). */
+  anyPressed: boolean;
 }
 
 const LEFT = new Set(["ArrowLeft", "KeyA"]);
 const RIGHT = new Set(["ArrowRight", "KeyD"]);
-const JUMP = new Set(["Space", "ArrowUp", "KeyW", "KeyZ"]);
+const JUMP = new Set(["Space", "ArrowUp", "KeyW"]);
+const ZOOM = new Set(["KeyZ", "KeyX", "ShiftLeft", "ShiftRight"]);
 const ACTION = new Set(["Enter"]);
-
-export type TouchZone = "left" | "right" | "jump";
+const GAME_KEYS = new Set([...LEFT, ...RIGHT, ...JUMP, ...ZOOM, ...ACTION]);
 
 export class Input {
   private held = new Set<string>();
-  private pressedThisFrame = new Set<string>();
-  private touches = new Map<number, TouchZone>();
-  private touchJumpQueued = false;
+  private pressed = new Set<string>();
+  private pointers = new Map<number, ButtonId | null>();
+  private tapQueued = false;
+  private jumpTapQueued = false;
+  private anyQueued = false;
   touchSeen = false;
 
-  constructor(target: HTMLElement, private zoneAt: (clientX: number, clientY: number) => TouchZone) {
+  constructor(target: HTMLElement, toView: (clientX: number, clientY: number) => { x: number; y: number }) {
     window.addEventListener("keydown", (e) => {
-      if ([...LEFT, ...RIGHT, ...JUMP, ...ACTION].includes(e.code)) e.preventDefault();
-      if (!e.repeat) this.pressedThisFrame.add(e.code);
+      // Leave browser shortcuts (Ctrl/Cmd + arrows etc.) alone.
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (GAME_KEYS.has(e.code)) e.preventDefault();
+      if (!e.repeat) this.pressed.add(e.code);
       this.held.add(e.code);
+      this.anyQueued = true;
     });
     window.addEventListener("keyup", (e) => this.held.delete(e.code));
-    window.addEventListener("blur", () => this.held.clear());
+    window.addEventListener("blur", () => {
+      this.held.clear();
+      this.pointers.clear();
+    });
 
-    const onTouch = (e: TouchEvent) => {
-      e.preventDefault();
-      this.touchSeen = true;
-      const current = new Map<number, TouchZone>();
-      for (const t of Array.from(e.touches)) current.set(t.identifier, this.zoneAt(t.clientX, t.clientY));
-      for (const [id, zone] of current) if (!this.touches.has(id) && zone === "jump") this.touchJumpQueued = true;
-      this.touches = current;
+    const zoneFor = (e: PointerEvent) => {
+      const v = toView(e.clientX, e.clientY);
+      return e.pointerType === "mouse" ? null : buttonAt(v.x, v.y);
     };
-    target.addEventListener("touchstart", onTouch, { passive: false });
-    target.addEventListener("touchmove", onTouch, { passive: false });
-    target.addEventListener("touchend", onTouch, { passive: false });
-    target.addEventListener("touchcancel", onTouch, { passive: false });
+    target.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      if (e.pointerType !== "mouse") this.touchSeen = true;
+      const zone = zoneFor(e);
+      this.pointers.set(e.pointerId, zone);
+      this.anyQueued = true;
+      if (zone === "jump") this.jumpTapQueued = true;
+      // Any tap that isn't steering counts as "continue".
+      if (zone !== "left" && zone !== "right") this.tapQueued = true;
+    });
+    target.addEventListener("pointermove", (e) => {
+      if (this.pointers.has(e.pointerId)) this.pointers.set(e.pointerId, zoneFor(e));
+    });
+    const release = (e: PointerEvent) => this.pointers.delete(e.pointerId);
+    target.addEventListener("pointerup", release);
+    target.addEventListener("pointercancel", release);
   }
 
   /** Read and clear this frame's edge-triggered presses. */
   poll(): InputFrame {
-    const anyHeld = (keys: Set<string>) => [...keys].some((k) => this.held.has(k));
-    const anyPressed = (keys: Set<string>) => [...keys].some((k) => this.pressedThisFrame.has(k));
-    const zones = new Set(this.touches.values());
-    const left = anyHeld(LEFT) || zones.has("left");
-    const right = anyHeld(RIGHT) || zones.has("right");
-    const jump = anyPressed(JUMP) || this.touchJumpQueued;
+    const heldAny = (keys: Set<string>) => [...keys].some((k) => this.held.has(k));
+    const pressedAny = (keys: Set<string>) => [...keys].some((k) => this.pressed.has(k));
+    const zones = new Set(this.pointers.values());
+    const left = heldAny(LEFT) || zones.has("left");
+    const right = heldAny(RIGHT) || zones.has("right");
+    const jumpPressed = pressedAny(JUMP) || this.jumpTapQueued;
     const frame: InputFrame = {
       move: left === right ? 0 : left ? -1 : 1,
-      jumpPressed: jump,
-      actionPressed: jump || anyPressed(ACTION),
+      jumpPressed,
+      jumpHeld: heldAny(JUMP) || zones.has("jump"),
+      zoomHeld: heldAny(ZOOM) || zones.has("zoom"),
+      actionPressed: jumpPressed || pressedAny(ACTION) || this.tapQueued,
+      anyPressed: this.anyQueued,
     };
-    this.pressedThisFrame.clear();
-    this.touchJumpQueued = false;
+    this.pressed.clear();
+    this.tapQueued = false;
+    this.jumpTapQueued = false;
+    this.anyQueued = false;
     return frame;
   }
 }

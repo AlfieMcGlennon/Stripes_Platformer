@@ -31,7 +31,35 @@ export interface DerivedData {
   recentTrendPerCentury: number;
   recentTrendYears: number;
   deglacialRatePerCentury: number;
-  rateRatio: number;
+  deglacialRateFastPerCentury: number;
+  deglaciationYearsRange: number[];
+  rateRatioLow: number;
+  rateRatioHigh: number;
+  cherry: {
+    start: number;
+    length: number;
+    searchedFrom: number;
+    trendPerDecade: number;
+    coolingWindowShare: number;
+    windowsSearched: number;
+    longTrendPerDecade: number;
+  };
+  warmestTen: number[];
+}
+
+/** Ordinary least-squares slope of values against their index. */
+export function olsSlope(values: number[]): number {
+  const n = values.length;
+  if (n < 2) return 0;
+  const meanX = (n - 1) / 2;
+  const meanY = values.reduce((a, b) => a + b, 0) / n;
+  let num = 0;
+  let den = 0;
+  values.forEach((v, i) => {
+    num += (i - meanX) * (v - meanY);
+    den += (i - meanX) ** 2;
+  });
+  return num / den;
 }
 
 export const GLOBAL: GlobalData = globalJson;
@@ -51,5 +79,6 @@ export function monthlyWindow(fromYear: number, toYear: number, data: GlobalData
 
 /** "+1.23 °C" style label; always signed so a drop reads as a drop. */
 export function signed(value: number, digits = 2): string {
+  if (Math.abs(value) < 0.5 * Math.pow(10, -digits)) return `±${(0).toFixed(digits)} °C`;
   return `${value >= 0 ? "+" : "−"}${Math.abs(value).toFixed(digits)} °C`;
 }

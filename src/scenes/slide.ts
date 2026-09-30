@@ -1,26 +1,31 @@
+import type { InputFrame } from "../core";
 import { worldToScreen } from "../core";
+import { setSlideVolume, sfx } from "../core/audio";
 import { annualFor, DERIVED, GLOBAL, PALEO, signed } from "../data";
-import { COLORS, stripeColor } from "../render/palette";
+import { drawBackdrop, drawSnow } from "../render/backdrop";
+import { COLORS } from "../render/palette";
 import { VIEW_H, VIEW_W, type Renderer } from "../render/renderer";
-import { buildTerrain, groundAt, terrainWidth, DEFAULT_TUNING } from "../world";
+import { buildTerrain, emit, groundAt, stepSled, terrainWidth } from "../world";
 import { revealCamera, WalkScene } from "./scene";
+import { climateTheme, drawMagnifier, landColor, drawRateRace, drawThermometer, snowFor, tempColor } from "./slideArt";
 
 /**
- * Level 3: the slide back through time. x is a true time axis, so the recent
- * warming is a cliff and the deglaciation is a long ramp: the rate is visible
- * as steepness.
+ * Level 4: sled back through time. x is a true time axis, so steepness is the
+ * rate of change: the last 175 years are a cliff you drop off in a blink, the
+ * end of the ice age a long ride.
  *
- * Simplifications (stated in the credits and docs): the deglaciation is drawn
- * as a straight line at its average rate, and the Holocene as flat at the
- * pre-industrial level. Only 1850 onwards is instrumental data.
+ * Simplifications, stated on screen and in the credits: the deglaciation is a
+ * straight line at its average pace and the Holocene is drawn flat. Only 1850
+ * onwards is instrumental data.
  */
 export const YEARS_PER_CELL = 20;
-export const CELL = 2;
-export const PX_PER_DEGREE = 30;
+export const CELL = 3;
+export const PX_PER_DEGREE = 40;
 const LGM_CE = 1950 - PALEO.lgmAgeYearsBP;
 const DEGLACIATION_START_CE = 1950 - 20_000;
 const DEGLACIATION_END_CE = DEGLACIATION_START_CE + PALEO.deglaciationYearsAssumed;
 const FIRST_INSTRUMENTAL = GLOBAL.annual.start;
+const RACE_SECONDS = 6;
 
 /** Temperature (vs pre-industrial) at a CE year along the simplified path. */
 export function pathValue(yearCE: number): number {
@@ -43,90 +48,167 @@ export function buildPathValues(): number[] {
       values.push(years.reduce((a, v) => a + pathValue(v), 0) / years.length);
     } else values.push(pathValue(y));
   }
-  // Make sure the path ends exactly on the latest year so the cliff top matches level 2.
   values.push(pathValue(DERIVED.lastYear));
   return values;
 }
 
-function xForYear(yearCE: number): number {
+export function xForYear(yearCE: number): number {
   return ((yearCE - LGM_CE) / YEARS_PER_CELL) * CELL;
 }
 
+function yearAt(x: number): number {
+  return LGM_CE + (x / CELL) * YEARS_PER_CELL;
+}
+
 function formatYear(yearCE: number): string {
-  if (yearCE >= 0) return `${Math.round(yearCE)} CE`;
+  if (yearCE >= 1000) return `${Math.round(yearCE)} CE`;
   const ago = Math.round((DERIVED.lastYear - yearCE) / 100) * 100;
   return `${ago.toLocaleString("en-GB")} years ago`;
 }
 
+/** Well-known moments along the way (approximate dates), so the ramp has places. */
+const LANDMARKS: [number, string][] = [
+  [1769, "steam engine"],
+  [-2560, "pyramids of Giza"],
+  [-3000, "Stonehenge"],
+  [-9500, "first farming"],
+  [-15000, "Lascaux cave paintings"],
+  [-18000, "mammoths · Britain joined to Europe"],
+];
+
 export class SlideScene extends WalkScene {
   private ended = false;
   private revealed = false;
+  private raceT = -1;
+  private pastCliff = false;
+  private revealTime = 0;
 
   constructor() {
     const terrain = buildTerrain({ values: buildPathValues(), cellWidth: CELL, valueScale: PX_PER_DEGREE, zeroY: 0, mode: "linear" });
-    super(terrain, terrainWidth(terrain) - 6, { ...DEFAULT_TUNING, runSpeed: 150, snapDown: 10 });
+    super(terrain, terrainWidth(terrain) - 6);
     this.player.facing = -1;
+    this.lookAhead = -30;
     const lgm = Math.abs(PALEO.lgmDelta).toFixed(0);
-    this.say(["Let's go further back. Walk left ←"]);
+    const [short, long] = DERIVED.deglaciationYearsRange.map((y) => (y / 1000).toFixed(0));
+    this.play([{ say: ["Let's go back in time. Push ← to slide."], wait: false }]);
     this.triggers = [
-      { x: xForYear(1850), dir: -1, lines: [`That drop was ${DERIVED.lastYear - 1850} years of warming.`] },
-      { x: xForYear(-1000), dir: -1, lines: ["Before 1850: about 10,000 fairly steady years.", "Farming, towns and cities all began here."] },
+      { x: xForYear(1850), dir: -1, lines: [`Whoa. That drop was just ${DERIVED.lastYear - 1850} years.`] },
+      { x: xForYear(-1000), dir: -1, lines: ["Before 1850: about 10,000 relatively stable years.", "Farming, towns and cities all began in this stretch."] },
       { x: xForYear(DEGLACIATION_END_CE), dir: -1, lines: ["Further back, the last ice age was ending."] },
-      { x: xForYear((DEGLACIATION_START_CE + DEGLACIATION_END_CE) / 2), dir: -1, lines: [`About ${lgm} °C of warming...`, "spread over roughly 10,000 years."] },
+      { x: xForYear((DEGLACIATION_START_CE + DEGLACIATION_END_CE) / 2), dir: -1, lines: [`About ${lgm} °C of warming over roughly ${short}–${long} thousand years.`, "(Drawn as a straight line at its average pace.)"] },
     ];
   }
 
-  protected onUpdate(): void {
-    if (this.ended || this.player.x > 12 || !this.player.grounded) return;
+  protected updatePlayer(input: InputFrame, dt: number): void {
+    const before = this.player;
+    this.player = stepSled(this.player, this.controlsEnabled ? input.move : 0, this.terrain, dt);
+    const speed = Math.abs(this.player.vx);
+    setSlideVolume(this.ended ? 0 : speed / 300);
+    if (speed > 120 && Math.random() < speed / 400) {
+      const cold = this.valueAt(this.player.x) < -1;
+      emit(this.particles, {
+        x: this.player.x + 6 * Math.sign(this.player.vx) * -1, y: this.player.y - 1,
+        vx: -this.player.vx * 0.2 + (Math.random() - 0.5) * 30, vy: -20 - Math.random() * 30,
+        life: 0.4, color: cold ? "#eef4ff" : "#c9a27a", size: 1, gravity: 120,
+      });
+    }
+    if (!this.pastCliff && before.x > xForYear(1850) && this.player.x <= xForYear(1850)) {
+      this.pastCliff = true;
+      sfx.whoosh();
+    }
+  }
+
+  private valueAt(x: number): number {
+    return -groundAt(this.terrain, x) / PX_PER_DEGREE;
+  }
+
+  protected onUpdate(dt: number): void {
+    if (this.raceT >= 0 && this.raceT < 1) this.raceT = Math.min(1, this.raceT + dt / RACE_SECONDS);
+    if (this.revealed) this.revealTime += dt;
+    if (this.ended || this.player.x > 12 || Math.abs(this.player.vx) > 5) return;
     this.ended = true;
     this.controlsEnabled = false;
-    this.say([`The last ice age: about ${Math.abs(PALEO.lgmDelta).toFixed(0)} °C colder than pre-industrial.`], () => {
-      this.captionLines = [];
-      this.moveCamera(revealCamera(this.terrain, 40, 20), 4, () => {
-        this.revealed = true;
-        this.say([
-          `Ice age to pre-industrial: ~${DERIVED.deglacialRatePerCentury.toFixed(2)} °C per century.`,
-          `Last ${DERIVED.recentTrendYears} years: ~${DERIVED.recentTrendPerCentury.toFixed(1)} °C per century.`,
-        ], () => this.say([`Roughly ${DERIVED.rateRatio}× faster.`, "Same planet. A very different speed."], () => (this.done = true)));
-      });
-    });
+    setSlideVolume(0);
+    this.play([
+      { say: [`The last ice age: about ${Math.abs(PALEO.lgmDelta).toFixed(0)} °C colder than the last few thousand years.`] },
+      { run: () => (this.captionLines = []) },
+      { camera: () => revealCamera(this.terrain, 30, 20), seconds: 4 },
+      { run: () => { this.revealed = true; sfx.reveal(); } },
+      { pause: 2.5 },
+      { say: ["21,000 years in one picture.", "Everything since 1850 is that red sliver. Zoom in on it, and it's a wall."] },
+      { run: () => { this.raceT = 0; this.captionLines = []; } },
+      { until: () => this.raceT >= 1 },
+      { say: ["Same 175 years, same scale.", "Left: the pace the ice age ended at. Right: what we measured."] },
+      { say: [`Recent warming is roughly ${DERIVED.rateRatioLow}–${DERIVED.rateRatioHigh}× faster than that average pace.`, "IPCC: fastest 50-year warming in at least 2,000 years."] },
+      { say: ["The ice age ended through slow shifts in Earth's orbit, amplified by CO₂ and melting ice.", "Today's warming is driven by our CO₂, mostly from burning fossil fuels."] },
+      { say: ["Day to day, it's noise. Zoom out, and it's this."] },
+      { run: () => (this.done = true) },
+    ]);
   }
 
   draw(r: Renderer): void {
-    r.clear();
-    // Ground colour follows temperature, so the ice age reads blue and today red.
-    const value = -groundAt(this.terrain, this.player.x) / PX_PER_DEGREE;
-    const tint = stripeColor(this.revealed ? 0 : value, GLOBAL.stripes.centre, 2.5);
-    r.terrain(this.terrain, this.cam, () => (this.revealed ? COLORS.ground : tint), "rgba(255,255,255,0.8)");
-    r.player(this.player, this.cam, this.time, this.ended);
+    const v = this.revealed ? 0 : this.valueAt(this.player.x);
+    drawBackdrop(r.px, climateTheme(v), this.cam.cx, this.time, VIEW_W, VIEW_H, this.revealed ? 0 : 1);
+    if (!this.revealed) drawSnow(r.px, snowFor(v), this.time, VIEW_W, VIEW_H, -this.player.vx * 0.05);
+    if (this.revealed) this.drawPaleoStripes(r);
+    r.slope(
+      this.terrain, this.cam,
+      (x) => (this.revealed ? "#0b0f1e" : landColor(this.valueAt(x))),
+      (x) => (this.valueAt(x) < -1.5 ? "#f4f8ff" : "rgba(255,255,255,0.85)"),
+    );
+    this.drawLandmarks(r);
+    r.particles(this.particles, this.cam);
+    r.player(this.player, this.cam, this.time, { sled: true, highlight: this.ended && !this.revealed });
     if (this.revealed) this.drawRevealLabels(r);
     else {
-      const year = LGM_CE + (this.player.x / CELL) * YEARS_PER_CELL;
-      r.text(formatYear(year), 6, 6, { color: COLORS.accent });
-      r.text(`${signed(value, 1)} vs pre-industrial`, 6, 15, { size: 6, color: COLORS.dim });
+      drawThermometer(r, v);
+      r.text(formatYear(yearAt(this.player.x)), 22, 4, { color: COLORS.accent, size: 10, title: true });
+      r.text(`${signed(v, 1)} vs pre-industrial`, 22, 17, { size: 8, color: COLORS.text });
     }
+    if (this.raceT >= 0) drawRateRace(r, this.raceT);
     this.drawCaption(r);
   }
 
-  private drawRevealLabels(r: Renderer): void {
-    const t = this.terrain;
-    const label = (x: number, text: string, color: string, dy: number, align: "left" | "center" | "right" = "center") => {
-      const s = worldToScreen(this.cam, x, groundAt(t, x), VIEW_W, VIEW_H);
-      r.text(text, s.sx, s.sy + dy, { size: 6, color, align });
-    };
-    // Trace the instrumental era in red: at this zoom it is a few pixels wide, which is the point.
-    const px = r.px;
-    px.fillStyle = "#d6604d";
-    for (let x = xForYear(FIRST_INSTRUMENTAL); x <= terrainWidth(t); x += 0.5) {
-      const s = worldToScreen(this.cam, x, groundAt(t, x), VIEW_W, VIEW_H);
-      px.fillRect(Math.round(s.sx) - 1, Math.round(s.sy), 3, 3);
+  /** 21,000 years of stripes: the modern warming is the red sliver at the edge. */
+  private drawPaleoStripes(r: Renderer): void {
+    const alpha = Math.min(1, this.revealTime / 1.5);
+    const end = terrainWidth(this.terrain);
+    r.px.globalAlpha = alpha;
+    for (let sx = 0; sx < VIEW_W; sx++) {
+      const wx = (sx + 0.5 - VIEW_W / 2) / this.cam.zoomX + this.cam.cx;
+      if (wx < 0 || wx > end) continue;
+      // Sample the right edge of each column so the thin modern sliver is never skipped.
+      const edge = Math.min(end, wx + 0.5 / this.cam.zoomX);
+      r.px.fillStyle = tempColor(this.valueAt(edge));
+      r.px.fillRect(sx, 0, 1, VIEW_H);
     }
-    label(40, "ice age", "#92c5de", -14, "left");
-    label(xForYear(-5500), "10,000 steady years", COLORS.dim, -12);
-    label(terrainWidth(t) - 8, `last ${DERIVED.lastYear - FIRST_INSTRUMENTAL} years ↗`, "#f4a582", 6, "right");
-    const axisY = VIEW_H - 44;
-    r.px.fillStyle = COLORS.dim;
-    r.px.fillRect(16, axisY, VIEW_W - 32, 1);
-    r.text("20,000 years →", VIEW_W / 2, axisY + 2, { size: 5, color: COLORS.dim, align: "center" });
+    r.px.globalAlpha = 1;
+  }
+
+  private drawLandmarks(r: Renderer): void {
+    if (this.cam.zoomX < 0.5) return;
+    for (const [year, label] of LANDMARKS) {
+      const x = xForYear(year);
+      const s = worldToScreen(this.cam, x, groundAt(this.terrain, x), VIEW_W, VIEW_H);
+      if (s.sx < -60 || s.sx > VIEW_W + 60) continue;
+      const px = r.px;
+      px.fillStyle = "#5b3a29";
+      px.fillRect(Math.round(s.sx), Math.round(s.sy) - 14, 2, 14);
+      px.fillStyle = "#c9a27a";
+      px.fillRect(Math.round(s.sx) - 5, Math.round(s.sy) - 16, 12, 5);
+      r.text(label, s.sx + 1, s.sy - 27, { size: 7, align: "center", color: "#fff6d5" });
+    }
+  }
+
+  private drawRevealLabels(r: Renderer): void {
+    if (this.raceT >= 0) return;
+    const label = (x: number, text: string, color: string, dy: number, align: "left" | "center" | "right" = "center") => {
+      const s = worldToScreen(this.cam, x, groundAt(this.terrain, x), VIEW_W, VIEW_H);
+      r.text(text, s.sx, s.sy + dy, { size: 8, color, align });
+    };
+    label(8, "ice age", "#ffffff", -16, "left");
+    label(xForYear(-7200), "10,000 relatively stable years", "#ffffff", -14);
+    r.text("← 21,000 years →", VIEW_W / 2, VIEW_H - 50, { size: 7, color: COLORS.dim, align: "center" });
+    if (this.revealTime > 1.2) drawMagnifier(r, this.cam, this.terrain, (x) => this.valueAt(x), xForYear, Math.min(1, (this.revealTime - 1.2) / 0.8));
   }
 }
