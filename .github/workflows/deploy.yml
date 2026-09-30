@@ -1,10 +1,10 @@
-# Test, build and publish the game to GitHub Pages on every push to main.
+# Test, build and publish the game to GitHub Pages.
+# Manual only for now: Actions tab -> deploy -> "Run workflow" when you're ready to go public.
 # One-time setup: repo Settings -> Pages -> Source: "GitHub Actions".
+# To deploy on every push instead, add:  push: { branches: [main] }
 name: deploy
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
