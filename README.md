@@ -2,7 +2,10 @@
 
 A small retro platformer about why climate trends are invisible day to day and unmissable when you zoom out. You measure your height every day and can't see yourself grow, walk month-to-month global temperatures, climb 176 years of the warming stripes, then slide back to the last ice age to see how fast today's warming is.
 
-All climate numbers are real (HadCRUT5, Tierney et al. 2020) and computed by `scripts/build_data.py`.
+Every climate number in levels 1-5 is real (HadCRUT5, Tierney et al. 2020) and computed by
+`scripts/build_data.py`. Level 0's ruler is invented, and says so on screen. A few deep-time
+round numbers (the drawn onset of the deglaciation, "about 10,000 stable years") are drawn for
+clarity rather than derived; the game's credits list every simplification.
 
 ```bash
 npm install

@@ -66,6 +66,53 @@ export function olsSlope(values: number[]): number {
   return num / den;
 }
 
+/**
+ * Standard error of the OLS slope, inflated for lag-1 autocorrelation via the
+ * usual effective-sample-size correction. Annual temperatures are not
+ * independent draws, so a plain OLS error understates how little a short window
+ * pins down. Negative autocorrelation is clamped away rather than allowed to
+ * shrink the error, which keeps the number conservative.
+ */
+export function olsStdErr(values: number[]): number {
+  const n = values.length;
+  if (n < 4) return 0;
+  const slope = olsSlope(values);
+  const meanX = (n - 1) / 2;
+  const meanY = values.reduce((a, b) => a + b, 0) / n;
+  const intercept = meanY - slope * meanX;
+  const resid = values.map((v, i) => v - (intercept + slope * i));
+  let sse = 0;
+  let sxx = 0;
+  for (let i = 0; i < n; i++) {
+    sse += resid[i] ** 2;
+    sxx += (i - meanX) ** 2;
+  }
+  let lag = 0;
+  for (let i = 1; i < n; i++) lag += resid[i] * resid[i - 1];
+  const r1 = sse > 0 ? Math.max(0, Math.min(0.99, lag / sse)) : 0;
+  const nEff = Math.max(3, (n * (1 - r1)) / (1 + r1));
+  return Math.sqrt(Math.max(0, sse / (nEff - 2) / sxx));
+}
+
+/**
+ * Shortest window length, in years, such that every window of that length from
+ * `fromYear` onwards has a rising trend. This is the asymmetry the cherry-pick
+ * level exists to teach: short windows disagree with each other, long ones do
+ * not. Computed here rather than typed, so it stays true when the data updates.
+ */
+export function allRisingFromYears(fromYear: number, data: GlobalData = GLOBAL): number {
+  const from = fromYear - data.annual.start;
+  const series = data.annual.values.slice(from);
+  for (let len = 5; len <= series.length; len++) {
+    let allUp = true;
+    for (let start = 0; start + len <= series.length && allUp; start++) {
+      if (olsSlope(series.slice(start, start + len)) <= 0) allUp = false;
+    }
+    if (allUp) return len;
+  }
+  return series.length;
+}
+
 export const GLOBAL: GlobalData = globalJson;
 export const PALEO: PaleoData = paleoJson;
 export const DERIVED: DerivedData = derivedJson;

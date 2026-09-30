@@ -1,6 +1,6 @@
 # Memory / handoff
 
-**Phase:** v0.3 — all v0.2 review fixes applied; "Your Stripes" share card added.
+**Phase:** v0.3.1 — five parallel reviews (visual, pedagogy, climate science, game design, accessibility) consolidated in `docs/REVIEW-v0.3.md`; every publication blocker fixed. Not yet deployed.
 
 ## Done
 - v0.1 (2026-09-30): playable prototype, real data pipeline.
@@ -23,14 +23,26 @@
   - New: "Your Stripes" scene (birth year → lifetime stripes + trend warming, PNG share card, ?y=YYYY).
   - CI runs pytest data checks. 28 vitest + 5 pytest.
 
+- v0.3.1 (2026-09-30), from five parallel reviews — see `docs/REVIEW-v0.3.md` for the full ranked list:
+  - Science: dropped the 23–34x ratio (a 50-year trend over a 7–10 kyr average, so mostly a smoothing artefact) for "9–13x" over equal 175-year spans; AR6 SPM A.2.2 moved to its own beat in AR6's wording with "high confidence" and re-filed away from "Ice age"; the inverted like-for-like credit line corrected; `tempColor` now extends the palette with six darker blues instead of compressing 6 °C of ice age into 10.5% of the scale; pre-1850 HUD labelled "vs the last few thousand years", not "vs pre-industrial"; error bars on the cherry window and on Your Stripes; `README.md` / `index.html` claims narrowed to what is true; `build_data.py` records real provenance on a cache hit and warns on mirror fallback.
+  - Bugs: the rate-race panel was never cleared and covered the closing image for the whole epilogue; the stripes summit caption rendered for zero frames (a `say` with `wait:false` before a `zoom` beat); one tap on the share card's save button also exited the scene; positional triggers overwrote captions mid-read (12 of 17 were being cut off); overlapping touch hit boxes; touch buttons at 1.01:1 over light stripes.
+  - Legibility (player-reported): text drop shadow → 8-direction outline, glyph positions rounded, `scale` always integer, Silkscreen snapped to multiples of 8, plus a 1x/1.5x/2x text-size control.
+  - Accessibility: HTML `<details>` panel with a generated text version of the whole game and text-size / reduce-motion / mute controls; captions mirrored to an `aria-live` region; canvas fallback + `<noscript>` + a boot-failure handler (a silent black page before); "tap to play anyway" on the portrait lock.
+  - Feature: the hero's costume follows the 30-year mean at their position — raincoat → jacket → summer clothes — deliberately keyed to the trend, never to a single year.
+  - 28 vitest + 5 pytest still green; `tsc --noEmit` and `npm run build` clean.
+
 ## Next up
-1. Push to a real GitHub repo, enable Pages (Settings → Pages → GitHub Actions). Add an og:image screenshot.
-2. Test on a real phone (touch feel, font sizes, audio unlock on iOS).
-3. Data upgrades when a network can reach them: ERA5 daily (level 1), Osman 2021 LGMR curve (slide), HadCRUT5 uncertainty band.
-4. Verify literature claims quoted in captions (AR6 SPM A.2.2 wording) and the showyourstripes colour method.
+1. Enable Pages (Settings → Pages → GitHub Actions), then run the manual `deploy` workflow. Add an og:image screenshot.
+2. Test on a real phone (touch feel, the new text sizes, audio unlock on iOS) and playtest the new caption dwells — nobody has played v0.3.1 yet.
+3. `docs/REVIEW-v0.3.md` §B is the ranked to-do list. Top three: ship HadCRUT5's uncertainty columns (already in the source CSV, discarded by `parse_hadcrut`); apply a cited late-Holocene → 1850-1900 offset; move the deglaciation onset to ~18 ka so the farming landmark stops sitting on the ramp.
+4. Data upgrades when a network can reach them: ERA5 daily (level 1), Osman 2021 LGMR curve (slide).
 5. Optional: save progress, level select, music.
 
 ## Gotchas
+- A `say` beat with `wait: false` immediately before another caption-setting beat never renders: `startBeat` chains synchronously, so the second caption replaces the first before any `draw()`. Fold the line into the next beat's prompt instead.
+- Canvas text cannot respond to browser zoom: the view is fitted to the viewport, so `cssW * dpr` is invariant under page zoom. That is why there is an in-game text-size control.
+- `core/motion.ts` is imported by scenes, so it must stay safe where `matchMedia` and `localStorage` do not exist — vitest runs in node.
+- Costume thresholds come from `GLOBAL.stripes`, so they follow the data; never key a costume to a single year's value.
 - `datasets/global-temp` mirror labels HadCRUT5 as "GCAG"; values are vs 1961–1990 and get rebased.
 - Variable jump height was tried and removed: a tap must clear real-data steps.
 - Camera must not follow while controls are off, or reveals drift (fixed in WalkScene).

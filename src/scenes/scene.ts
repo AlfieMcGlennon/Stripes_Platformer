@@ -9,6 +9,7 @@ import {
   type Bounds, type Particle, type PhysicsTuning, type PlayerState, type Terrain,
 } from "../world";
 import { blendCamera } from "./zoom";
+import { reduceMotion } from "../core/motion";
 
 export interface Scene {
   update(input: InputFrame, dt: number): void;
@@ -98,6 +99,7 @@ export abstract class WalkScene implements Scene {
     // A new script cancels any camera move or zoom in progress.
     this.tween = null;
     this.zoomBase = null;
+    this.pending = [];
     this.beats = [...beats];
     this.beatTimer = 0;
     this.waiting = false;
@@ -135,10 +137,28 @@ export abstract class WalkScene implements Scene {
     this.startBeat();
   }
 
+  /**
+   * Long enough to read the line at roughly 200 wpm, plus a beat to notice it.
+   * Numbers read slower than words, but a flat per-word rate is close enough and
+   * has no special cases.
+   */
+  private holdFor(lines: string[]): number {
+    const words = lines.join(" ").split(/\s+/).filter(Boolean).length;
+    return Math.min(7, 0.35 + 0.3 * words);
+  }
+
   setCaption(lines: string[]): void {
     if (lines.join() !== this.captionLines.join() && lines.length) sfx.blip();
     this.captionLines = lines;
+    this.captionAge = 0;
+    this.captionHold = this.holdFor(lines);
   }
+
+  /** Seconds the current caption has been on screen, and its minimum dwell. */
+  private captionAge = 0;
+  private captionHold = 0;
+  /** Trigger captions waiting for the current one to finish its dwell. */
+  private pending: string[][] = [];
 
   private clampX(x: number, zoom: number): number {
     const halfView = VIEW_W / 2 / zoom;
@@ -149,21 +169,31 @@ export abstract class WalkScene implements Scene {
 
   update(input: InputFrame, dt: number): void {
     this.time += dt;
+    this.captionAge += dt;
     if (this.waiting) {
       if (input.actionPressed) {
         this.waiting = false;
         this.nextBeat();
       }
-      input = { ...input, jumpPressed: false };
+      // Also stop walking: a caption waiting to be acknowledged could otherwise
+      // be walked straight past, firing the next trigger over the top of it.
+      input = { ...input, jumpPressed: false, move: 0 };
     }
     this.updatePlayer(input, dt);
     this.particles = updateParticles(this.particles, dt);
 
+    // Triggers are positional but reading is not, so a trigger queues behind the
+    // caption already on screen instead of replacing it. Without this, walking at
+    // full speed cut most of the game's captions off mid-sentence.
     for (const t of this.triggers) {
       if (!t.fired && (this.player.x - t.x) * t.dir >= 0) {
         t.fired = true;
-        this.setCaption(t.lines);
+        if (this.waiting || this.captionAge < this.captionHold) this.pending.push(t.lines);
+        else this.setCaption(t.lines);
       }
+    }
+    if (this.pending.length && !this.waiting && this.captionAge >= this.captionHold) {
+      this.setCaption(this.pending.shift()!);
     }
     this.runBeat(input, dt);
     if (!this.tween && !this.zoomBase && this.controlsEnabled) {
@@ -181,11 +211,11 @@ export abstract class WalkScene implements Scene {
     this.player = stepPlayer(this.player, controls, this.terrain, dt, this.tuning, this.bounds);
     if (this.player.justJumped) {
       sfx.jump();
-      dustBurst(this.particles, this.player.x, this.player.y, 4);
+      if (!reduceMotion()) dustBurst(this.particles, this.player.x, this.player.y, 4);
     }
     if (this.player.justLanded) {
       sfx.land();
-      dustBurst(this.particles, this.player.x, this.player.y, 7);
+      if (!reduceMotion()) dustBurst(this.particles, this.player.x, this.player.y, 7);
     }
     const cell = cellIndexAt(this.terrain, this.player.x);
     if (cell !== this.lastCell && this.player.grounded) {

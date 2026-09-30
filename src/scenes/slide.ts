@@ -6,8 +6,11 @@ import { drawBackdrop, drawSnow, prewarmTheme } from "../render/backdrop";
 import { COLORS } from "../render/palette";
 import { VIEW_H, VIEW_W, type Renderer } from "../render/renderer";
 import { buildTerrain, emit, groundAt, stepSled, terrainWidth } from "../world";
+import type { Costume } from "../render/sprites";
+import { costumeForSmoothed, SMOOTH_YEARS } from "./costume";
 import { revealCamera, WalkScene } from "./scene";
 import { allClimateThemes, climateTheme, drawMagnifier, landColor, drawRateRace, drawThermometer, snowFor, tempColor } from "./slideArt";
+import { reduceMotion } from "../core/motion";
 
 /**
  * Level 4: sled back through time. x is a true time axis, so steepness is the
@@ -27,7 +30,13 @@ const DEGLACIATION_END_CE = DEGLACIATION_START_CE + PALEO.deglaciationYearsAssum
 const FIRST_INSTRUMENTAL = GLOBAL.annual.start;
 const RACE_SECONDS = 6;
 
-/** Temperature (vs pre-industrial) at a CE year along the simplified path. */
+/**
+ * Temperature at a CE year along the simplified path. Two references meet here:
+ * 1850 onwards is HadCRUT5 vs 1850-1900; earlier years are Tierney 2020's LGM
+ * anomaly relative to the late Holocene (4-0 ka), which is what the game labels
+ * "the last few thousand years". The offset between those two zeros is small but
+ * not zero, and is not applied -- see docs/REVIEW-v0.3.md.
+ */
 export function pathValue(yearCE: number): number {
   if (yearCE >= FIRST_INSTRUMENTAL) {
     const last = GLOBAL.annual.start + GLOBAL.annual.values.length - 1;
@@ -77,18 +86,26 @@ const LANDMARKS: [number, string][] = [
 ];
 
 /**
- * The race panel compares two 175-year spans, so its caption says ~10x; the
- * 23-34x figure is a different comparison (last 50 years) and is labelled as such.
+ * The race panel compares two spans of the same length, which is the only
+ * like-for-like rate comparison the game can make.
+ *
+ * The ratio is quoted as a range, not a single number: the panel draws a band
+ * because the length of the deglaciation is uncertain, and collapsing that band
+ * to one integer would claim precision the data does not have. The old
+ * "23-34x" figure (50 years vs the whole deglaciation) is deliberately gone --
+ * it divided a 50-year trend by a 7,000-10,000-year average, so most of it was a
+ * smoothing artefact rather than a difference in rate.
  */
 export function raceCaption(): string[] {
   const years = DERIVED.lastYear - GLOBAL.annual.start;
   const slow = (DERIVED.deglacialRatePerCentury * years) / 100;
   const fast = (DERIVED.deglacialRateFastPerCentury * years) / 100;
   const measured = DERIVED.lastYearAnomaly;
-  const times = Math.round(measured / ((slow + fast) / 2));
+  const low = Math.round(measured / fast);
+  const high = Math.round(measured / slow);
   return [
-    `Same ${years} years: ice-age pace +${slow.toFixed(2)}–${fast.toFixed(2)} °C; measured +${measured.toFixed(1)} °C. About ${times}× faster.`,
-    `Over just the last ${DERIVED.recentTrendYears} years: about ${DERIVED.rateRatioLow}–${DERIVED.rateRatioHigh}×. IPCC: the fastest 50-year warming in at least 2,000 years.`,
+    `Same ${years} years: ice-age pace +${slow.toFixed(2)}–${fast.toFixed(2)} °C; measured +${measured.toFixed(1)} °C.`,
+    `About ${low}–${high}× faster.`,
   ];
 }
 
@@ -122,7 +139,7 @@ export class SlideScene extends WalkScene {
     this.player = stepSled(this.player, this.controlsEnabled ? input.move : 0, this.terrain, dt);
     const speed = Math.abs(this.player.vx);
     setSlideVolume(this.ended ? 0 : speed / 300);
-    if (speed > 120 && Math.random() < speed / 400) {
+    if (speed > 120 && !reduceMotion() && Math.random() < speed / 400) {
       const cold = this.valueAt(this.player.x) < -1;
       emit(this.particles, {
         x: this.player.x + 6 * Math.sign(this.player.vx) * -1, y: this.player.y - 1,
@@ -144,6 +161,14 @@ export class SlideScene extends WalkScene {
     return -groundAt(this.terrain, x) / PX_PER_DEGREE;
   }
 
+  /** Costume from the 30-year mean of the path, not from the year underfoot. */
+  private costume(): Costume {
+    const year = yearAt(this.player.x);
+    let sum = 0;
+    for (let k = 0; k < SMOOTH_YEARS; k++) sum += pathValue(year - k);
+    return costumeForSmoothed(sum / SMOOTH_YEARS);
+  }
+
   protected onUpdate(dt: number): void {
     if (this.raceT >= 0 && this.raceT < 1) this.raceT = Math.min(1, this.raceT + dt / RACE_SECONDS);
     if (this.revealed) this.revealTime += dt;
@@ -161,14 +186,23 @@ export class SlideScene extends WalkScene {
       { run: () => { this.raceT = 0; this.captionLines = []; } },
       { until: () => this.raceT >= 1 },
       { say: raceCaption() },
+      // Clear the panel: the closing line points at the 21,000-year picture, so
+      // the picture has to be visible when it lands.
+      { run: () => (this.raceT = -1) },
       {
         say: [
-          "The ice age ended as orbital shifts warmed the planet; the oceans released CO₂ and ice melted, amplifying it.",
-          "Today the trigger is us: greenhouse gases, mostly CO₂ from fossil fuels (IPCC AR6).",
+          "IPCC AR6: the world has warmed faster since 1970 than in any other",
+          "50-year period for at least 2,000 years (high confidence).",
+        ],
+      },
+      {
+        say: [
+          "The ice age ended as orbital shifts warmed the planet; the oceans released CO2 and ice melted, amplifying it.",
+          "Today the trigger is us: greenhouse gases, mostly CO2 from fossil fuels.",
         ],
       },
       { say: ["Day to day, it's noise. Zoom out, and it's this."], wait: false },
-      { pause: 3 },
+      { pause: 4 },
       { run: () => (this.done = true) },
     ]);
   }
@@ -185,12 +219,20 @@ export class SlideScene extends WalkScene {
     );
     this.drawLandmarks(r);
     r.particles(this.particles, this.cam);
-    r.player(this.player, this.cam, this.time, { sled: true, highlight: this.ended && !this.revealed });
+    r.player(this.player, this.cam, this.time, {
+      sled: true, highlight: this.ended && !this.revealed, costume: this.costume(),
+    });
     if (this.revealed) this.drawRevealLabels(r);
     else {
       drawThermometer(r, v);
-      r.text(formatYear(yearAt(this.player.x)), 22, 4, { color: COLORS.accent, size: 10, title: true });
-      r.text(`${signed(v, 1)} vs pre-industrial`, 22, 17, { size: 8, color: COLORS.text });
+      const year = yearAt(this.player.x);
+      r.text(formatYear(year), 22, 4, { color: COLORS.accent, size: 10, title: true });
+      // Two different zeros: HadCRUT5 anomalies are vs 1850-1900, but the paleo
+      // curve is Tierney 2020's LGM-minus-late-Holocene difference. Saying
+      // "vs pre-industrial" for both would assert that the late Holocene sat
+      // exactly at the 1850-1900 mean, which this data cannot support.
+      const reference = year >= FIRST_INSTRUMENTAL ? `vs ${GLOBAL.meta.baseline}` : "vs the last few thousand years";
+      r.text(`${signed(v, 1)} ${reference}`, 22, 17, { size: 8, color: COLORS.text });
     }
     if (this.raceT >= 0) drawRateRace(r, this.raceT);
     this.drawCaption(r);

@@ -70,8 +70,10 @@ export class Input {
       this.anyQueued = true;
       onGesture();
       if (zone === "jump") this.jumpTapQueued = true;
-      // Any tap that isn't steering counts as "continue".
-      if (zone !== "left" && zone !== "right") this.tapQueued = true;
+      // Any tap that isn't steering counts as "continue" -- except zoom, which is
+      // its own verb. Counting it as continue made one tap on the share card's
+      // save button both save the PNG and immediately leave the scene.
+      if (zone !== "left" && zone !== "right" && zone !== "zoom") this.tapQueued = true;
     });
     target.addEventListener("pointermove", (e) => {
       if (this.pointers.has(e.pointerId)) this.pointers.set(e.pointerId, zoneFor(e));

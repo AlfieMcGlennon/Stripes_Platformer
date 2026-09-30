@@ -1,5 +1,6 @@
 import { mulberry32 } from "../core/random";
 import { lerpRgb, parseColor, type RGB } from "./color";
+import { reduceMotion } from "../core/motion";
 
 /**
  * Parallax backgrounds: a dithered sky gradient, two mountain layers and
@@ -119,7 +120,7 @@ export function drawBackdrop(ctx: CanvasRenderingContext2D, theme: Theme, scroll
   for (let i = 0; i < theme.stars; i++) {
     const sx = Math.floor((rand() * w * 3 - scroll * 0.05) % w + w) % w;
     const sy = Math.floor(rand() * h * 0.55);
-    const twinkle = Math.sin(time * (1 + rand() * 3) + i) > 0.6;
+    const twinkle = Math.sin((reduceMotion() ? 0 : time) * (1 + rand() * 3) + i) > 0.6;
     ctx.fillStyle = twinkle ? "#ffffff" : "rgba(255,255,255,0.45)";
     ctx.fillRect(sx, sy, 1, 1);
   }
@@ -136,6 +137,7 @@ export function drawBackdrop(ctx: CanvasRenderingContext2D, theme: Theme, scroll
 
 /** Screen-space snowfall; density 0..1. Deterministic in time, so no state. */
 export function drawSnow(ctx: CanvasRenderingContext2D, density: number, time: number, w: number, h: number, drift = 0): void {
+  if (reduceMotion()) return; // Falling snow across the whole screen is a vestibular trigger.
   const count = Math.floor(density * 140);
   const rand = mulberry32(99);
   ctx.fillStyle = "#eef4ff";

@@ -5,6 +5,7 @@ import { COLORS, stripeColor } from "../render/palette";
 import { VIEW_H, VIEW_W, type Renderer } from "../render/renderer";
 import { drawSprite, HERO } from "../render/sprites";
 import type { Scene } from "./scene";
+import { reduceMotion } from "../core/motion";
 
 /**
  * Start screen. Browsers only allow sound after a gesture, so the first key or
@@ -21,7 +22,9 @@ export class TitleScene implements Scene {
   }
 
   draw(r: Renderer): void {
-    drawBackdrop(r.px, THEMES.dusk, this.time * 6, this.time, VIEW_W, VIEW_H);
+    // Held still under reduced motion: this scroll never stops on its own, which
+    // is also what WCAG 2.2.2 is about.
+    drawBackdrop(r.px, THEMES.dusk, reduceMotion() ? 0 : this.time * 6, this.time, VIEW_W, VIEW_H);
     const values = GLOBAL.annual.values;
     const w = VIEW_W / values.length;
     values.forEach((v, i) => {
@@ -36,6 +39,6 @@ export class TitleScene implements Scene {
     if (Math.floor(this.time * 2) % 2 === 0) {
       r.text("press any key / tap to start", VIEW_W / 2, 78, { size: 8, color: COLORS.dim, align: "center" });
     }
-    r.text("M: mute", VIEW_W - 4, 4, { size: 8, color: COLORS.dim, align: "right" });
+    r.text("M: mute · T: text size", VIEW_W - 4, 4, { size: 8, color: COLORS.dim, align: "right" });
   }
 }

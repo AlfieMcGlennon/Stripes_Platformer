@@ -13,11 +13,17 @@ export interface TouchButton {
   label: string;
 }
 
+/**
+ * Gaps are wider than twice the hit slop, so the generous boxes below never
+ * overlap. With a 4px gap and slop 6 they overlapped by 8px, and `buttonAt`
+ * returns the first match -- so a thumb on the inner edge of the right arrow
+ * moved the player left.
+ */
 export const TOUCH_BUTTONS: TouchButton[] = [
-  { id: "left", x: 4, y: 136, w: 34, h: 40, label: "left" },
-  { id: "right", x: 42, y: 136, w: 34, h: 40, label: "right" },
-  { id: "zoom", x: 244, y: 136, w: 34, h: 40, label: "zoom" },
-  { id: "jump", x: 282, y: 136, w: 34, h: 40, label: "jump" },
+  { id: "left", x: 2, y: 136, w: 32, h: 40, label: "left" },
+  { id: "right", x: 46, y: 136, w: 32, h: 40, label: "right" },
+  { id: "zoom", x: 240, y: 136, w: 32, h: 40, label: "zoom" },
+  { id: "jump", x: 284, y: 136, w: 32, h: 40, label: "jump" },
 ];
 
 /**

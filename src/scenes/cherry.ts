@@ -1,5 +1,5 @@
 import { worldToScreen, type CameraState } from "../core";
-import { DERIVED, GLOBAL, olsSlope, signed } from "../data";
+import { allRisingFromYears, DERIVED, GLOBAL, olsSlope, olsStdErr, signed } from "../data";
 import { drawBackdrop, THEMES } from "../render/backdrop";
 import { COLORS } from "../render/palette";
 import { VIEW_H, VIEW_W, type Renderer } from "../render/renderer";
@@ -22,6 +22,19 @@ const NEXT = LAST + 1;
 
 export function cherryValues(): number[] {
   return GLOBAL.annual.values.slice(FROM_YEAR - GLOBAL.annual.start);
+}
+
+/** Shortest window from FROM_YEAR with no downhill examples at all. */
+const ALL_RISING = allRisingFromYears(FROM_YEAR);
+
+/** 95% error bar on the cherry-picked window's trend, in °C/decade. */
+function windowErrorBar(): number {
+  return olsStdErr(cherryValues().slice(FIRST, LAST + 1)) * 10 * 1.96;
+}
+
+/** Bare signed number, for strings that carry their own units. */
+function per(v: number): string {
+  return `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}`;
 }
 
 /** Straight trend line through cells [first, last] of a series, in world coords. */
@@ -81,8 +94,17 @@ export class CherryScene extends WalkScene {
       { say: [`${FROM_YEAR}–${DERIVED.lastYear}: ${signed(C.longTrendPerDecade)} per decade.`, "The 'cooling' is one little wobble on the way up."] },
       {
         say: [
-          `Of all ${C.windowsSearched} seven-year windows since ${FROM_YEAR}, ${Math.round(C.coolingWindowShare * 100)}% slope down.`,
-          "Pick your window and you can 'show' almost anything. Zoom out.",
+          `Seven years can't settle it: ${per(C.trendPerDecade)} ± ${windowErrorBar().toFixed(2)} °C/decade.`,
+          "That range covers cooling, no change, and the real warming at once.",
+        ],
+      },
+      {
+        // The lesson is the asymmetry, not "statistics can show anything": short
+        // windows disagree with each other, long ones agree. Both numbers are
+        // computed from the same series the player just walked.
+        say: [
+          `Since ${C.start} the world actually warmed at ${per(C.trendToLatest)} °C/decade.`,
+          `${Math.round(C.coolingWindowShare * 100)}% of 7-year windows slope down. Of ${ALL_RISING}-year windows: none.`,
         ],
       },
       { run: () => (this.done = true) },

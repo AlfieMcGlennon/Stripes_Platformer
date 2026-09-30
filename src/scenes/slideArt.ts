@@ -2,7 +2,7 @@ import { worldToScreen, type CameraState } from "../core";
 import { DERIVED, GLOBAL, PALEO } from "../data";
 import { groundAt, type Terrain } from "../world";
 import { lerpHex, type Theme } from "../render/backdrop";
-import { COLORS, stripeColor, stripePosition } from "../render/palette";
+import { COLORS, stripeColor } from "../render/palette";
 import type { Renderer } from "../render/renderer";
 
 /**
@@ -11,16 +11,33 @@ import type { Renderer } from "../render/renderer";
  */
 
 /**
- * Colour for a temperature vs pre-industrial, on the *same* scale as the
- * warming stripes (centred on 1971-2000). Below pre-industrial the blue keeps
- * deepening until the ice age, so the whole journey reads as one set of stripes.
+ * Blues darker than the warming-stripes scale, for temperatures below the range
+ * it was built to cover. Continuing past `#053061` (RdBu's darkest) is what lets
+ * the ice age have a readable ramp of its own.
+ */
+const BELOW_STRIPES = ["#1b5490", "#124272", "#053061", "#042848", "#031d33", "#021220"];
+
+/**
+ * Colour for a temperature on the slide.
+ *
+ * At and above zero this is exactly the warming-stripes scale, so 2025 is the
+ * same red here as in level 3. Below zero the stripes scale has almost nothing
+ * left -- its blue end saturates at -0.13 C -- so we *extend* it downwards with
+ * darker blues instead of squeezing the ice age into the sliver that remains.
+ *
+ * The old version mapped 6 C of glacial cooling onto the ~0.21 of scale below
+ * zero, i.e. 45x the compression of the modern half: the ice age and the
+ * pre-industrial era came out the same blue, in the one picture whose whole job
+ * is to show how large natural change was. The credits say the scale is extended.
  */
 export function tempColor(v: number): string {
   const { centre, halfRange } = GLOBAL.stripes;
   if (v >= 0) return stripeColor(v, centre, halfRange);
-  const atZero = stripePosition(0, centre, halfRange);
-  const pos = atZero + (-1 - atZero) * Math.min(1, v / PALEO.lgmDelta);
-  return stripeColor(pos, 0, 1);
+  // Start from whatever the stripes scale gives zero, so there is no seam there.
+  const stops = [stripeColor(0, centre, halfRange), ...BELOW_STRIPES];
+  const span = Math.min(1, v / PALEO.lgmDelta) * (stops.length - 1);
+  const i = Math.min(stops.length - 2, Math.floor(span));
+  return lerpHex(stops[i], stops[i + 1], span - i);
 }
 
 /**

@@ -1,6 +1,7 @@
 import type { CameraState } from "../core/camera";
 import type { Particle, PlayerState, Terrain } from "../world";
 import { drawParticles, drawPlayer } from "./actors";
+import type { Costume } from "./sprites";
 import { shade } from "./color";
 import { COLORS } from "./palette";
 import { drawLine, drawSlope, drawStepOutline, drawSteps } from "./terrainDraw";
@@ -12,6 +13,11 @@ export const BODY_FONT = '"Pixelify Sans", "Courier New", monospace';
 export const TITLE_FONT = '"Silkscreen", "Courier New", monospace';
 
 type Align = "left" | "center" | "right";
+
+/** Eight directions: four alone leave the diagonal edges of glyphs unprotected. */
+const OUTLINE: [number, number][] = [
+  [-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1],
+];
 
 interface QueuedText {
   text: string;
@@ -43,6 +49,13 @@ export class Renderer {
   scale = 1;
   offsetX = 0;
   offsetY = 0;
+  /**
+   * User text-size multiplier. Canvas text can't respond to browser zoom (the
+   * view is fitted to the viewport, so cssW*dpr is invariant), so low-vision
+   * players need an in-game control instead. Persisted per browser.
+   */
+  textScale = 1;
+  private announced = "";
   /** Extra space kept free at the bottom (touch buttons live there on phones). */
   bottomReserve = 0;
   /** 0 = clear, 1 = black; used for scene transitions. */
@@ -54,6 +67,7 @@ export class Renderer {
     this.pixelCanvas.height = VIEW_H;
     this.px = this.pixelCanvas.getContext("2d")!;
     this.display = canvas.getContext("2d")!;
+    this.loadTextScale();
     this.resize();
     const onResize = () => this.resize();
     window.addEventListener("resize", onResize);
@@ -72,9 +86,10 @@ export class Renderer {
     const h = Math.round(cssH * dpr);
     this.canvas.width = w;
     this.canvas.height = h;
-    // Integer scaling keeps pixels square; fall back to fractional on small screens.
+    // Always integer: a fractional scale doubles arbitrary pixel columns and
+    // lands glyphs on sub-pixel boundaries, which blurs numbers. Letterbox instead.
     const fit = Math.min(w / VIEW_W, h / VIEW_H);
-    this.scale = fit >= 2 ? Math.floor(fit) : fit;
+    this.scale = Math.max(1, Math.floor(fit));
     this.offsetX = Math.floor((w - VIEW_W * this.scale) / 2);
     this.offsetY = Math.floor((h - VIEW_H * this.scale) / 2);
   }
@@ -94,6 +109,40 @@ export class Renderer {
     this.px.fillRect(0, 0, VIEW_W, VIEW_H);
   }
 
+  /**
+   * Rendered font size in device px. Silkscreen is a strict 8-module-per-em
+   * bitmap face, so it only looks right at multiples of 8; Pixelify Sans has no
+   * pixel grid and is left alone.
+   */
+  private fontPx(size: number): number {
+    return Math.max(1, Math.round(size * this.textScale * this.scale));
+  }
+
+  private fontFor(size: number, font: string): string {
+    const px = this.fontPx(size);
+    return font === TITLE_FONT ? `${Math.max(8, Math.round(px / 8) * 8)}px ${font}` : `${px}px ${font}`;
+  }
+
+  /** Step the text size through 1x / 1.5x / 2x and remember the choice. */
+  cycleTextScale(): number {
+    this.textScale = this.textScale >= 2 ? 1 : this.textScale === 1 ? 1.5 : 2;
+    try {
+      localStorage.setItem("heightcheck.textScale", String(this.textScale));
+    } catch {
+      // Private mode or blocked storage: the setting just won't persist.
+    }
+    return this.textScale;
+  }
+
+  private loadTextScale(): void {
+    try {
+      const v = Number(localStorage.getItem("heightcheck.textScale"));
+      if (v === 1 || v === 1.5 || v === 2) this.textScale = v;
+    } catch {
+      // Ignore: default 1x.
+    }
+  }
+
   text(text: string, x: number, y: number, opts: TextOptions = {}): void {
     this.texts.push({
       text, x, y, size: opts.size ?? 8, color: opts.color ?? COLORS.text, align: opts.align ?? "left",
@@ -104,7 +153,7 @@ export class Renderer {
   /** Word-wrap to a width in view px, measured with the real font. */
   wrap(lines: string[], maxWidth: number, size = 8): string[] {
     const d = this.display;
-    d.font = `${Math.round(size * this.scale)}px ${BODY_FONT}`;
+    d.font = this.fontFor(size, BODY_FONT);
     const limit = maxWidth * this.scale;
     const out: string[] = [];
     for (const line of lines) {
@@ -121,8 +170,22 @@ export class Renderer {
     return out;
   }
 
+  /**
+   * Mirror a caption into the page's aria-live region. A canvas says nothing to a
+   * screen reader, and `caption()` is the single funnel every narrative line in
+   * the game passes through, so this is the cheapest honest place to do it.
+   */
+  private announce(lines: string[]): void {
+    const text = lines.join(" ").trim();
+    if (!text || text === this.announced) return;
+    this.announced = text;
+    const live = typeof document === "undefined" ? null : document.getElementById("live");
+    if (live) live.textContent = text;
+  }
+
   /** Caption panel along the bottom; `prompt` adds a blinking continue arrow. */
   caption(lines: string[], prompt = false, time = 0): void {
+    this.announce(lines);
     if (lines.length === 0) return;
     const wrapped = this.wrap(lines, VIEW_W - 44);
     const lineH = 10;
@@ -157,7 +220,10 @@ export class Renderer {
     drawStepOutline(this.px, t, cam, color);
   }
 
-  player(p: PlayerState, cam: CameraState, time: number, opts: { highlight?: boolean; sled?: boolean } = {}): void {
+  player(
+    p: PlayerState, cam: CameraState, time: number,
+    opts: { highlight?: boolean; sled?: boolean; costume?: Costume } = {},
+  ): void {
     drawPlayer(this.px, p, cam, time, opts);
   }
 
@@ -185,14 +251,18 @@ export class Renderer {
     d.drawImage(this.pixelCanvas, this.offsetX, this.offsetY, VIEW_W * this.scale, VIEW_H * this.scale);
     d.globalAlpha = 1 - Math.min(1, this.fade);
     for (const t of this.texts) {
-      d.font = `${Math.round(t.size * this.scale)}px ${t.font}`;
+      d.font = this.fontFor(t.size, t.font);
       d.textAlign = t.align;
       d.textBaseline = "top";
-      const x = this.offsetX + t.x * this.scale;
-      const y = this.offsetY + t.y * this.scale;
-      const off = Math.max(1, Math.round(this.scale * 0.6));
-      d.fillStyle = "rgba(0,0,0,0.75)";
-      d.fillText(t.text, x + off, y + off);
+      // Rounded: fractional baselines blur pixel-font digits.
+      const x = this.offsetX + Math.round(t.x * this.scale);
+      const y = this.offsetY + Math.round(t.y * this.scale);
+      // An outline, not a drop shadow. A diagonal shadow reads as a second,
+      // misaligned copy of a digit and fills the counters of 0/6/8/9; an outline
+      // also guarantees contrast over light stripes, which a shadow does not.
+      const off = Math.max(1, Math.round(this.fontPx(t.size) / 16));
+      d.fillStyle = "#05060d";
+      for (const [dx, dy] of OUTLINE) d.fillText(t.text, x + dx * off, y + dy * off);
       d.fillStyle = t.color;
       d.fillText(t.text, x, y);
     }

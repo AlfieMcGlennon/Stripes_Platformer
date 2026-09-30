@@ -50,21 +50,51 @@ CHERRY_FROM = 1970
 sources: list[dict] = []
 
 
+def _provenance_path(name: str) -> Path:
+    """Where the origin of a cached file is recorded, beside the file itself."""
+    return RAW / f"{name}.source.json"
+
+
+def _header(name: str, data: bytes) -> dict:
+    """First line of a CSV, so a human can check the dataset version shipped."""
+    if not name.endswith(".csv"):
+        return {}
+    first = data.split(b"\n", 1)[0].decode("utf-8", "replace").strip()
+    return {"header": first[:200]}
+
+
 def fetch(urls: list[str], name: str) -> bytes:
     RAW.mkdir(parents=True, exist_ok=True)
     cached = RAW / name
     if cached.exists():
         data = cached.read_bytes()
-        sources.append({"file": name, "url": "cache", "sha256": hashlib.sha256(data).hexdigest()})
+        # A cache hit used to record url="cache" with no date and no origin, which
+        # meant the shipped numbers could not be tied to any particular download.
+        # The origin is written beside the file on the first fetch and read back here.
+        entry = {"file": name, "sha256": hashlib.sha256(data).hexdigest(), "from_cache": True}
+        meta = _provenance_path(name)
+        if meta.exists():
+            entry.update(json.loads(meta.read_text()))
+        else:
+            entry.update({
+                "url": "unknown: cached before provenance was recorded",
+                "retrieved": dt.date.fromtimestamp(cached.stat().st_mtime).isoformat(),
+            })
+        entry.update(_header(name, data))
+        sources.append(entry)
         return data
     last_error: Exception | None = None
-    for url in urls:
+    for index, url in enumerate(urls):
         try:
             with urllib.request.urlopen(url, timeout=60) as resp:
                 data = resp.read()
             cached.write_bytes(data)
-            sources.append({"file": name, "url": url, "retrieved": dt.date.today().isoformat(),
-                            "sha256": hashlib.sha256(data).hexdigest()})
+            if index > 0:
+                print(f"  WARNING: primary source unavailable, used mirror {url}")
+            provenance = {"url": url, "retrieved": dt.date.today().isoformat(), "mirror": index > 0}
+            _provenance_path(name).write_text(json.dumps(provenance, indent=1))
+            sources.append({"file": name, "sha256": hashlib.sha256(data).hexdigest(),
+                            **provenance, **_header(name, data)})
             return data
         except Exception as err:  # try the next mirror
             print(f"  could not fetch {url}: {err}")

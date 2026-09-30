@@ -1,7 +1,7 @@
 import { worldToScreen, type CameraState } from "../core/camera";
 import type { Particle, PlayerState } from "../world";
 import { COLORS } from "./palette";
-import { drawSprite, heroFrame, SLED, SPRITE_H, SPRITE_W } from "./sprites";
+import { COSTUMES, drawSprite, heroFrame, SLED, SPRITE_H, SPRITE_W, type Costume } from "./sprites";
 
 const VIEW_W = 320;
 const VIEW_H = 180;
@@ -12,7 +12,7 @@ const VIEW_H = 180;
  */
 export function drawPlayer(
   ctx: CanvasRenderingContext2D, p: PlayerState, cam: CameraState, time: number,
-  opts: { highlight?: boolean; sled?: boolean } = {},
+  opts: { highlight?: boolean; sled?: boolean; costume?: Costume } = {},
 ): void {
   const s = worldToScreen(cam, p.x, p.y, VIEW_W, VIEW_H);
   const small = cam.zoomX < 0.6;
@@ -38,7 +38,7 @@ export function drawPlayer(
   const frame = heroFrame(p.grounded || !!opts.sled, moving && !opts.sled, p.stride);
   const x = Math.round(s.sx - SPRITE_W / 2);
   const lift = opts.sled ? 3 : 0;
-  drawSprite(ctx, frame, x, Math.round(s.sy) - SPRITE_H - lift, p.facing === -1);
+  drawSprite(ctx, frame, x, Math.round(s.sy) - SPRITE_H - lift, p.facing === -1, COSTUMES[opts.costume ?? "coat"]);
   if (opts.sled) drawSprite(ctx, SLED, x - 1, Math.round(s.sy) - 4, p.facing === -1);
 }
 

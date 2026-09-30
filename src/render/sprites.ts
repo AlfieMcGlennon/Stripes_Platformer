@@ -37,6 +37,30 @@ const LEGS = {
 
 export type Frame = string[];
 
+export type Costume = "coat" | "jacket" | "summer";
+
+/**
+ * What the hero is wearing, as three palettes over one set of frames.
+ *
+ * `r` is the scarf and `Y` the shaded outer edge of the sleeves, so recolouring
+ * both to skin turns the raincoat into a short-sleeved top with a bare neck
+ * without needing a second sprite. `y` carries the hood as well as the coat, so
+ * in `summer` it reads as a pale sun hat.
+ */
+export const COSTUMES: Record<Costume, Record<string, string>> = {
+  coat: SPRITE_PALETTE,
+  jacket: { ...SPRITE_PALETTE, y: "#6f9a63", Y: "#4e7347", r: "#f6c9a4" },
+  summer: { ...SPRITE_PALETTE, y: "#ece8dc", Y: "#f6c9a4", r: "#f6c9a4", w: "#ffffff", b: "#b3846a" },
+};
+
+/**
+ * Pick a costume from an already-smoothed temperature. Callers must pass a
+ * multi-decade mean, never a single year -- see `scenes/costume.ts`.
+ */
+export function costumeFor(smoothed: number, mild: number, warm: number): Costume {
+  return smoothed >= warm ? "summer" : smoothed >= mild ? "jacket" : "coat";
+}
+
 export const HERO = {
   stand: [...HEAD, ...LEGS.stand],
   runA: [...HEAD, ...LEGS.runA],

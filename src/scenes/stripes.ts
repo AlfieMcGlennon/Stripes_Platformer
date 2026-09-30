@@ -4,6 +4,8 @@ import { drawBackdrop, THEMES } from "../render/backdrop";
 import { COLORS, stripeColor } from "../render/palette";
 import { shade, VIEW_H, VIEW_W, type Renderer } from "../render/renderer";
 import { buildTerrain, cellCentreX, cellIndexAt, terrainWidth } from "../world";
+import type { Costume } from "../render/sprites";
+import { costumeForSmoothed, trailingMean } from "./costume";
 import { revealCamera, WalkScene } from "./scene";
 
 /**
@@ -41,21 +43,38 @@ export class StripesScene extends WalkScene {
     return GLOBAL.annual.values[i];
   }
 
+  /**
+   * The hero sheds the raincoat as the *trend* rises, not as individual years
+   * wobble: the input is the 30-year mean ending at the step underfoot, so a
+   * single warm year never changes the costume.
+   */
+  private costume(): Costume {
+    return costumeForSmoothed(trailingMean(GLOBAL.annual.values, cellIndexAt(this.terrain, this.player.x)));
+  }
+
   protected onUpdate(): void {
     const end = this.terrain.x0 + terrainWidth(this.terrain) - 8;
     if (this.ended || this.player.x < end || !this.player.grounded) return;
     this.ended = true;
     this.controlsEnabled = false;
     this.play([
-      { say: [`${DERIVED.lastYear}, the latest year.`, "Now step back. HOLD Z."], wait: false },
-      { zoom: { prompt: ["HOLD Z to zoom out."], target: () => (this.farCam ??= revealCamera(this.terrain)), seconds: 4 } },
+      // Folded into the zoom prompt on purpose: a `say` with wait:false calls
+      // nextBeat() synchronously, so the zoom beat's own prompt replaced this
+      // line in the same frame and it was never drawn once.
+      {
+        zoom: {
+          prompt: [`${DERIVED.lastYear}: the latest year, top of the stairs.`, "HOLD Z to step back."],
+          target: () => (this.farCam ??= revealCamera(this.terrain)),
+          seconds: 4,
+        },
+      },
       { run: () => { this.revealed = true; this.captionLines = []; } },
       { pause: 3 },
       { say: ["We started down there.", "Now we're here."] },
       {
         say: [
           `${DERIVED.lastYear}: about ${DERIVED.lastYearAnomaly.toFixed(1)} °C above the ${GLOBAL.meta.baseline} average (HadCRUT5).`,
-          `It ranks ${ordinal(DERIVED.lastYearRank)} warmest. The ten warmest years: all since ${DERIVED.warmestTen[0]}.`,
+          `The ten warmest years on record: all since ${DERIVED.warmestTen[0]} - this one ${ordinal(DERIVED.lastYearRank)} warmest.`,
         ],
       },
       { say: ["No single step shows it. Together, they're the warming stripes."] },
@@ -83,7 +102,7 @@ export class StripesScene extends WalkScene {
     if (this.zoomProgress > 0.6) r.stepOutline(t, this.cam, "#ffffff");
     this.drawYouStep(r);
     r.particles(this.particles, this.cam);
-    r.player(this.player, this.cam, this.time, { highlight: this.ended });
+    r.player(this.player, this.cam, this.time, { highlight: this.ended, costume: this.costume() });
     if (this.zoomProgress > 0.95) this.drawRevealLabels(r);
     else if (!this.ended) this.drawHud(r);
     this.drawCaption(r);
