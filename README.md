@@ -16,7 +16,7 @@ reaches people a graph does not.
 |---|---|---|---|
 | 1 | **Height Check** | A trend is a property of the long view, not of any one day or year. | "It was cold last winter, so warming isn't happening." |
 | 2 | **Carbon Road** | Warming tracks the *total ever emitted*. Stopping is not undoing. | "If we cut emissions, temperatures go back down." |
-| 3 | **Loaded Dice** | A small shift in the average makes extremes much more common. | "1.5 °C warmer is barely noticeable." |
+| 3 | **Loaded Dice** *(rebuilding)* | A small shift in the average makes extremes much more common. | "1.5 °C warmer is barely noticeable." |
 
 ## Why this form
 
