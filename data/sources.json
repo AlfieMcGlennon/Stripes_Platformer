@@ -1,0 +1,20 @@
+[
+  {
+    "file": "hadcrut_monthly.csv",
+    "url": "https://raw.githubusercontent.com/datasets/global-temp/main/data/monthly.csv",
+    "retrieved": "2026-09-30",
+    "sha256": "fb93df5376aec9d55c294aa3855bda43cf82d9db78aaf5ef59eec6bd6b6a2c7e"
+  },
+  {
+    "file": "hadcrut_annual.csv",
+    "url": "https://raw.githubusercontent.com/datasets/global-temp/main/data/annual.csv",
+    "retrieved": "2026-09-30",
+    "sha256": "0f4aae8df361a808db2a9f47885af7530829a43760b4e3e3dcd9ebab2b630b67"
+  },
+  {
+    "file": "tierney2020_da_atm.nc",
+    "url": "https://raw.githubusercontent.com/jesstierney/lgmDA/master/version1.0/Tierney2020_DA_atm.nc",
+    "retrieved": "2026-09-30",
+    "sha256": "13928a214cf6ee05e546f7a403fc2024489a5c401e2c6b76f430038fbdae3752"
+  }
+]

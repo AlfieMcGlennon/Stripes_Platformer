@@ -1,0 +1,1 @@
+{"meta":{"dataset":"Tierney et al. (2020) LGM data assimilation v1.0","citation":"Tierney et al. (2020), Nature 584, 569-573, doi:10.1038/s41586-020-2617-x","method":"area-weighted global mean of deltaSAT (LGM 23-19 ka minus Late Holocene 4-0 ka)"},"lgmDelta":-6.06,"lgmGridErrorMean":0.41,"lgmAgeYearsBP":21000,"deglaciationYearsAssumed":10000}
