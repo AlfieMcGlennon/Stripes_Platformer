@@ -1,6 +1,6 @@
 # Memory / handoff
 
-**Phase:** v0.2 — feel + visuals pass, cherry-pick level, honest finale, mobile + deploy setup.
+**Phase:** v0.3 — all v0.2 review fixes applied; "Your Stripes" share card added.
 
 ## Done
 - v0.1 (2026-09-30): playable prototype, real data pipeline.
@@ -14,6 +14,14 @@
   - Mobile: pointer events, one touch layout table, any tap = continue, zoom button, visualViewport sizing, rotate hint, captions lifted above buttons. Verified with Playwright touch emulation.
   - Deploy: .github/workflows/deploy.yml, favicon, meta/OG tags.
 - 21 vitest + 5 pytest; full bot playthrough, no console errors (~2.5 min bot, ~6–8 min human).
+
+- v0.3 (2026-09-30), fixes from docs/REVIEW-v0.2.md:
+  - Credibility: race caption now says ~11x for the same 175 years and 23–34x for the last 50 (ratios no longer rounded up); 2025 called "the latest year", ranked 3rd; why-beat makes CO₂ a feedback then, the trigger now; farming caption fits the geometry; landmarks corrected; credits disclose palette extension, flat Holocene, seam, averages.
+  - Cherry-pick now uses the real "cooling since 2016" claim (2016–22 −0.12/decade, one more step into 2023 flips it to +0.14), then zooms out; 20% of 7-year windows since 1970 slope down.
+  - Pacing: stripes CELL 12→9, era captions (aerosol stall, 1970s onset, 2016 callback), legend from the first step; fewer taps at the slide finale; day ticks 0.5 s; longer hold after averaging; all text ≥7 px; desktop "[Z] hold" chip.
+  - Code: audio unlock + fullscreen inside gesture handlers (iOS); pixel-drawn touch icons (no emoji); fonts awaited; letterbox taps clamp to buttons; zoom button only live when shown; portrait hint pauses the game; play() cancels zooms; Scene.onExit; climate themes clamped + pre-warmed; ImageData skies; memoised colours; outline culling; DPR capped at 2; renderer split into terrainDraw/actors/touch/color.
+  - New: "Your Stripes" scene (birth year → lifetime stripes + trend warming, PNG share card, ?y=YYYY).
+  - CI runs pytest data checks. 28 vitest + 5 pytest.
 
 ## Next up
 1. Push to a real GitHub repo, enable Pages (Settings → Pages → GitHub Actions). Add an og:image screenshot.

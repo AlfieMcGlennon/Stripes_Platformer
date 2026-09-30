@@ -52,10 +52,17 @@ const HOT: Theme = { key: "hot", skyTop: "#2a1a2e", skyBottom: "#d9734e", far: "
  * steps and blend colours between the three anchors.
  */
 export function climateTheme(v: number): Theme {
-  const phase = Math.round(climatePhase(v) * 4) / 4;
+  return themeForPhase(Math.max(0, Math.min(2, Math.round(climatePhase(v) * 4) / 4)));
+}
+
+/** Every theme the slide can show (phases 0, 0.25 ... 2), for pre-warming. */
+export function allClimateThemes(): Theme[] {
+  return Array.from({ length: 9 }, (_, i) => themeForPhase(i / 4));
+}
+
+function themeForPhase(phase: number): Theme {
   const [a, b, t] = phase <= 1 ? [ICE, MILD, phase] : [MILD, HOT, phase - 1];
-  const mix = (x: string, y: string) => lerpHex(x, y, t).replace(/rgb\((\d+),(\d+),(\d+)\)/, (_, r, g, bl) =>
-    `#${[r, g, bl].map((n: string) => Number(n).toString(16).padStart(2, "0")).join("")}`);
+  const mix = (x: string, y: string) => lerpHex(x, y, t);
   return {
     key: `climate-${phase}`,
     skyTop: mix(a.skyTop, b.skyTop),
@@ -87,7 +94,7 @@ export function drawThermometer(r: Renderer, v: number): void {
   px.fillRect(x - 1, top + h, 7, 7);
   px.fillStyle = "#ffffff";
   px.fillRect(x - 1, Math.round(yFor(0)), 7, 1);
-  r.text("0", x + 9, yFor(0) - 4, { size: 6, color: COLORS.dim });
+  r.text("0", x + 9, yFor(0) - 4, { size: 7, color: COLORS.dim });
 }
 
 /**
@@ -136,7 +143,7 @@ export function drawRateRace(r: Renderer, t: number): void {
     const v = GLOBAL.annual.values[Math.min(GLOBAL.annual.values.length - 1, k)];
     return [v, v];
   });
-  r.text(`year ${shown} of ${years}`, 160, top + panelH + 14, { size: 6, color: COLORS.dim, align: "center" });
+  r.text(`year ${shown} of ${years}`, 160, top + panelH + 14, { size: 7, color: COLORS.dim, align: "center" });
 }
 
 /**
@@ -173,7 +180,8 @@ export function drawMagnifier(
   }
   px.globalAlpha = 1;
   if (appear >= 1) {
-    r.text(`last ${toYear - fromYear} years, zoomed in`, box.x + box.w / 2, box.y + box.h + 4, { size: 6, color: COLORS.accent, align: "center" });
-    r.text("1850 →", box.x + ((1850 - fromYear) / (toYear - fromYear)) * box.w - 2, box.y + box.h - 12, { size: 6, align: "right" });
+    r.text(`last ${toYear - fromYear} years, zoomed in 20×`, box.x + box.w / 2, box.y + box.h + 4, { size: 7, color: COLORS.accent, align: "center" });
+    r.text("1850 →", box.x + ((1850 - fromYear) / (toYear - fromYear)) * box.w - 2, box.y + box.h - 12, { size: 7, align: "right" });
+    r.text(`${toYear}: +${DERIVED.lastYearAnomaly.toFixed(1)} °C`, box.x + box.w - 3, box.y + 3, { size: 7, align: "right" });
   }
 }

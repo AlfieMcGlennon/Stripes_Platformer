@@ -1,5 +1,4 @@
 import type { InputFrame } from "../core";
-import { unlock } from "../core/audio";
 import { GLOBAL } from "../data";
 import { drawBackdrop, THEMES } from "../render/backdrop";
 import { COLORS, stripeColor } from "../render/palette";
@@ -17,13 +16,8 @@ export class TitleScene implements Scene {
 
   update(input: InputFrame, dt: number): void {
     this.time += dt;
-    if (this.time > 0.3 && input.anyPressed) {
-      unlock();
-      if (matchMedia("(pointer: coarse)").matches) {
-        document.documentElement.requestFullscreen?.().catch(() => undefined);
-      }
-      this.done = true;
-    }
+    // Audio unlock and fullscreen happen in the input gesture handler (main.ts).
+    if (input.anyPressed) this.done = true;
   }
 
   draw(r: Renderer): void {

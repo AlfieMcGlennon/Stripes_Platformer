@@ -40,5 +40,6 @@ def test_rate_range_and_cherry_pick():
     assert 0 < d["rateRatioLow"] <= d["rateRatioHigh"]
     c = d["cherry"]
     assert c["trendPerDecade"] < 0 < c["longTrendPerDecade"]
+    assert c["trendPlusOneYear"] > 0  # the whole point: one more year flips it
     assert 0 < c["coolingWindowShare"] < 0.5
     assert len(d["warmestTen"]) == 10

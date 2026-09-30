@@ -1,6 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { DERIVED, olsSlope } from "../src/data";
-import { cherryValues } from "../src/scenes/cherry";
 import { buildPathValues, CELL, PX_PER_DEGREE, xForYear } from "../src/scenes/slide";
 import { blendCamera } from "../src/scenes/zoom";
 import {
@@ -58,17 +56,6 @@ describe("the slide", () => {
     expect(p.x).toBeLessThanOrEqual(12);
     expect(t).toBeLessThan(40);
     expect(rampTime).toBeGreaterThan(cliffTime * 5);
-  });
-});
-
-describe("cherry-pick level", () => {
-  it("the in-game trend of the chosen window matches the data script", () => {
-    const values = cherryValues();
-    const first = DERIVED.cherry.start - DERIVED.cherry.searchedFrom;
-    const trend = olsSlope(values.slice(first, first + DERIVED.cherry.length)) * 10;
-    expect(trend).toBeCloseTo(DERIVED.cherry.trendPerDecade, 2);
-    expect(trend).toBeLessThan(0);
-    expect(DERIVED.cherry.longTrendPerDecade).toBeGreaterThan(0);
   });
 });
 

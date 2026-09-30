@@ -1,4 +1,5 @@
 import { mulberry32 } from "../core/random";
+import { lerpRgb, parseColor, type RGB } from "./color";
 
 /**
  * Parallax backgrounds: a dithered sky gradient, two mountain layers and
@@ -30,22 +31,7 @@ const BAYER = [
   [15, 7, 13, 5],
 ];
 
-export function hexToRgb(hex: string): [number, number, number] {
-  const n = parseInt(hex.slice(1), 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-}
-
-export function rgbString(c: [number, number, number]): string {
-  return `rgb(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])})`;
-}
-
-export function lerpRgb(a: [number, number, number], b: [number, number, number], t: number): [number, number, number] {
-  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
-}
-
-export function lerpHex(a: string, b: string, t: number): string {
-  return rgbString(lerpRgb(hexToRgb(a), hexToRgb(b), t));
-}
+export { lerpColor as lerpHex } from "./color";
 
 const skyCache = new Map<string, HTMLCanvasElement>();
 const ridgeCache = new Map<string, HTMLCanvasElement>();
@@ -57,27 +43,43 @@ function makeCanvas(w: number, h: number): [HTMLCanvasElement, CanvasRenderingCo
   return [c, c.getContext("2d")!];
 }
 
-/** Sky quantised into bands and ordered-dithered between them: the classic 16-bit look. */
+/**
+ * Sky quantised into bands and ordered-dithered between them: the classic
+ * 16-bit look. Written straight into ImageData (one pass, a few ms).
+ */
 function skyCanvas(theme: Theme, w: number, h: number): HTMLCanvasElement {
   const cached = skyCache.get(theme.key);
   if (cached) return cached;
   const [canvas, ctx] = makeCanvas(w, h);
-  const top = hexToRgb(theme.skyTop);
-  const bottom = hexToRgb(theme.skyBottom);
+  const top = parseColor(theme.skyTop);
+  const bottom = parseColor(theme.skyBottom);
   const bands = 7;
+  const img = ctx.createImageData(w, h);
   for (let y = 0; y < h; y++) {
     const level = (y / (h - 1)) * bands;
     const lo = Math.floor(level);
     const frac = level - lo;
-    const c0 = rgbString(lerpRgb(top, bottom, lo / bands));
-    const c1 = rgbString(lerpRgb(top, bottom, Math.min(bands, lo + 1) / bands));
+    const c0: RGB = lerpRgb(top, bottom, lo / bands);
+    const c1: RGB = lerpRgb(top, bottom, Math.min(bands, lo + 1) / bands);
     for (let x = 0; x < w; x++) {
-      ctx.fillStyle = BAYER[y % 4][x % 4] < frac * 16 ? c1 : c0;
-      ctx.fillRect(x, y, 1, 1);
+      const c = BAYER[y % 4][x % 4] < frac * 16 ? c1 : c0;
+      const i = (y * w + x) * 4;
+      img.data[i] = c[0];
+      img.data[i + 1] = c[1];
+      img.data[i + 2] = c[2];
+      img.data[i + 3] = 255;
     }
   }
+  ctx.putImageData(img, 0, 0);
   skyCache.set(theme.key, canvas);
   return canvas;
+}
+
+/** Build a theme's cached art now (e.g. during a fade) so play never hitches. */
+export function prewarmTheme(theme: Theme, w: number, h: number): void {
+  skyCanvas(theme, w, h);
+  ridgeCanvas(theme, "far", w * 2);
+  ridgeCanvas(theme, "near", w * 2);
 }
 
 /** A tileable mountain strip; `rough` controls peakiness. */
@@ -149,14 +151,19 @@ export function drawSnow(ctx: CanvasRenderingContext2D, density: number, time: n
 }
 
 let ditherCanvas: HTMLCanvasElement | null = null;
+const patterns = new WeakMap<CanvasRenderingContext2D, CanvasPattern>();
 
-/** 4x4 checker of translucent black, used to texture terrain interiors. */
+/** 4x4 checker of translucent black, used to texture terrain interiors. Cached per context. */
 export function ditherPattern(ctx: CanvasRenderingContext2D): CanvasPattern {
+  const cached = patterns.get(ctx);
+  if (cached) return cached;
   if (!ditherCanvas) {
     const [c, g] = makeCanvas(4, 4);
     g.fillStyle = "rgba(0,0,0,0.22)";
     for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) if (BAYER[y][x] < 6) g.fillRect(x, y, 1, 1);
     ditherCanvas = c;
   }
-  return ctx.createPattern(ditherCanvas, "repeat")!;
+  const pattern = ctx.createPattern(ditherCanvas, "repeat")!;
+  patterns.set(ctx, pattern);
+  return pattern;
 }

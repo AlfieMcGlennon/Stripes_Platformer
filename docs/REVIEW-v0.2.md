@@ -1,5 +1,7 @@
 # v0.2 review: combined to-do list
 
+> **Status (v0.3): everything below has been addressed, except the items marked *open*.** See MEMORY.md.
+
 Three reviews of v0.2 (game design, climate science, code/mobile), merged and ranked.
 Items marked [verify] are literature figures the reviewer cited from memory.
 

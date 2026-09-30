@@ -50,7 +50,7 @@ describe("height metaphor", () => {
 describe("palette and camera", () => {
   it("saturates stripe colours outside the range", () => {
     expect(stripePosition(10, 0, 1)).toBe(1);
-    expect(stripeColor(-10, 0, 1)).toBe("rgb(5,48,97)");
+    expect(stripeColor(-10, 0, 1)).toBe("#053061");
   });
 
   it("tweens zoom in log space and lands exactly on the target", () => {

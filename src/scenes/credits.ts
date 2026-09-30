@@ -30,21 +30,22 @@ export class CreditsScene implements Scene {
       [`Global temperature: ${GLOBAL.meta.dataset}, Met Office Hadley Centre / CRU`, COLORS.text, 7],
       [`(Morice et al. 2021, ${GLOBAL.meta.licence}), vs ${GLOBAL.meta.baseline}`, COLORS.text, 7],
       ["Ice age: Tierney et al. 2020, Nature · IPCC AR6 WG1 SPM A.2.2", COLORS.text, 7],
-      ["Warming stripes concept: Ed Hawkins, showyourstripes.info (CC BY 4.0)", COLORS.text, 7],
+      ["Stripes concept: Ed Hawkins, showyourstripes.info (CC BY 4.0) · colours: ColorBrewer RdBu", COLORS.text, 7],
       ["", "", 0],
       ["SIMPLIFICATIONS", COLORS.dim, 7],
       ["Level 0 heights are made up; every climate number is real.", COLORS.text, 7],
-      ["The ice-age exit is drawn as a straight line at its average pace over", COLORS.text, 7],
-      ["an assumed 7,000–10,000 years; the last 10,000 years are drawn flat.", COLORS.text, 7],
-      ["Paleo records are smoothed, so the rate comparison is between averages.", COLORS.text, 7],
+      ["Ice-age exit: a straight line at its average pace over an assumed 7,000–10,000", COLORS.text, 7],
+      ["years; faster bursts happened. Holocene drawn flat (it varied by a few tenths of", COLORS.text, 7],
+      ["a degree). Paleo data joins HadCRUT5 at 1850. Ice-age colours extend the stripes", COLORS.text, 7],
+      ["scale below its usual range. Only the 50-year rate comparison is like-for-like.", COLORS.text, 7],
     ];
     let y = 18;
     for (const [text, color, size] of lines) {
       if (text) r.text(text, VIEW_W / 2, y, { size, color, align: "center" });
-      y += size ? size + 3.5 : 6;
+      y += size ? size + 2.5 : 4;
     }
     if (Math.floor(this.time * 2) % 2 === 0 && this.time > 1.5) {
-      r.text("▶ play again", VIEW_W / 2, VIEW_H - 14, { size: 8, color: COLORS.accent, align: "center" });
+      r.text("press any key / tap to play again", VIEW_W / 2, VIEW_H - 14, { size: 8, color: COLORS.accent, align: "center" });
     }
   }
 }

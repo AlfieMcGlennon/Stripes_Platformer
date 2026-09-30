@@ -16,6 +16,10 @@ export interface Scene {
   readonly done: boolean;
   /** Whether the on-screen zoom button should show (touch devices). */
   readonly zoomAvailable?: boolean;
+  /** Word on the desktop Z chip (default "hold"). */
+  readonly zoomHint?: string;
+  /** Called once when the scene is replaced (stop sounds, release state). */
+  onExit?(): void;
 }
 
 /** A caption that appears when the player crosses x (in the given direction). */
@@ -91,6 +95,9 @@ export abstract class WalkScene implements Scene {
 
   /** Replace the running script. */
   play(beats: Beat[]): void {
+    // A new script cancels any camera move or zoom in progress.
+    this.tween = null;
+    this.zoomBase = null;
     this.beats = [...beats];
     this.beatTimer = 0;
     this.waiting = false;

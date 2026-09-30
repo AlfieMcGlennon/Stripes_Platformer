@@ -39,9 +39,12 @@ RECENT_TREND_YEARS = 50
 # range over that assumption instead of a single falsely precise number.
 DEGLACIATION_YEARS = 10_000
 DEGLACIATION_YEARS_SHORT = 7_000
-# Cherry-pick level: search every window of this length since this year for the
-# one with the most negative trend, and say in-game that this is what we did.
-CHERRY_WINDOW = 8
+# Cherry-pick level: a real talking point, "it's been cooling since 2016". The
+# window starts on a super El Nino peak and ends in a triple La Nina. We also
+# report how that claim changes with one more year, and how common short
+# downward windows are, so the game can show why short windows mislead.
+CHERRY_START = 2016
+CHERRY_END = 2022
 CHERRY_FROM = 1970
 
 sources: list[dict] = []
@@ -141,15 +144,17 @@ def build() -> dict:
     deglacial_rate_fast = -lgm_delta / DEGLACIATION_YEARS_SHORT * 100
     latest_decade = statistics.fmean(annual[y] for y in years[-10:])
 
-    windows = []
-    for start in range(CHERRY_FROM, last_year - CHERRY_WINDOW + 2):
-        span = list(range(start, start + CHERRY_WINDOW))
-        windows.append((ols_slope(span, [annual[y] for y in span]) * 10, start))
-    cherry_slope, cherry_start = min(windows)
-    cooling_share = sum(1 for s, _ in windows if s < 0) / len(windows)
+    def decade_trend(first: int, last: int) -> float:
+        span = list(range(first, last + 1))
+        return ols_slope(span, [annual[y] for y in span]) * 10
+
+    cherry_len = CHERRY_END - CHERRY_START + 1
+    windows = [decade_trend(s, s + cherry_len - 1) for s in range(CHERRY_FROM, last_year - cherry_len + 2)]
+    cooling_share = sum(1 for s in windows if s < 0) / len(windows)
     since = [y for y in years if y >= CHERRY_FROM]
     long_slope = ols_slope(since, [annual[y] for y in since]) * 10
     warmest = sorted(sorted(years, key=lambda y: annual[y])[-10:])
+    last_year_rank = sorted(years, key=lambda y: -annual[y]).index(last_year) + 1
 
     meta_hc = {
         "dataset": HADCRUT_VERSION, "units": "degC", "baseline": f"{BASELINE[0]}-{BASELINE[1]}",
@@ -178,15 +183,19 @@ def build() -> dict:
         "deglacialRatePerCentury": round(deglacial_rate, 3),
         "deglacialRateFastPerCentury": round(deglacial_rate_fast, 3),
         "deglaciationYearsRange": [DEGLACIATION_YEARS_SHORT, DEGLACIATION_YEARS],
-        # Rounded to 5s: the inputs don't justify more precision than that.
-        "rateRatioLow": int(5 * round(recent_rate / deglacial_rate_fast / 5)),
-        "rateRatioHigh": int(5 * round(recent_rate / deglacial_rate / 5)),
+        # Plain integers, rounded down/up honestly (no generous rounding to 5s).
+        "rateRatioLow": int(recent_rate / deglacial_rate_fast),
+        "rateRatioHigh": int(round(recent_rate / deglacial_rate)),
         "cherry": {
-            "start": cherry_start, "length": CHERRY_WINDOW, "searchedFrom": CHERRY_FROM,
-            "trendPerDecade": round(cherry_slope, 3), "coolingWindowShare": round(cooling_share, 3),
-            "windowsSearched": len(windows), "longTrendPerDecade": round(long_slope, 3),
+            "start": CHERRY_START, "end": CHERRY_END, "searchedFrom": CHERRY_FROM,
+            "trendPerDecade": round(decade_trend(CHERRY_START, CHERRY_END), 3),
+            "trendPlusOneYear": round(decade_trend(CHERRY_START, CHERRY_END + 1), 3),
+            "trendToLatest": round(decade_trend(CHERRY_START, last_year), 3),
+            "coolingWindowShare": round(cooling_share, 3), "windowsSearched": len(windows),
+            "longTrendPerDecade": round(long_slope, 3),
         },
         "warmestTen": warmest,
+        "lastYearRank": last_year_rank,
     }
     return {"global": global_json, "paleo": paleo_json, "derived": derived_json}
 

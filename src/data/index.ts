@@ -37,14 +37,18 @@ export interface DerivedData {
   rateRatioHigh: number;
   cherry: {
     start: number;
-    length: number;
+    end: number;
     searchedFrom: number;
     trendPerDecade: number;
+    trendPlusOneYear: number;
+    trendToLatest: number;
     coolingWindowShare: number;
     windowsSearched: number;
     longTrendPerDecade: number;
   };
   warmestTen: number[];
+  /** 1 = warmest year on record. */
+  lastYearRank: number;
 }
 
 /** Ordinary least-squares slope of values against their index. */

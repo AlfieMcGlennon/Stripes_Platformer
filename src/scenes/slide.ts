@@ -2,12 +2,12 @@ import type { InputFrame } from "../core";
 import { worldToScreen } from "../core";
 import { setSlideVolume, sfx } from "../core/audio";
 import { annualFor, DERIVED, GLOBAL, PALEO, signed } from "../data";
-import { drawBackdrop, drawSnow } from "../render/backdrop";
+import { drawBackdrop, drawSnow, prewarmTheme } from "../render/backdrop";
 import { COLORS } from "../render/palette";
 import { VIEW_H, VIEW_W, type Renderer } from "../render/renderer";
 import { buildTerrain, emit, groundAt, stepSled, terrainWidth } from "../world";
 import { revealCamera, WalkScene } from "./scene";
-import { climateTheme, drawMagnifier, landColor, drawRateRace, drawThermometer, snowFor, tempColor } from "./slideArt";
+import { allClimateThemes, climateTheme, drawMagnifier, landColor, drawRateRace, drawThermometer, snowFor, tempColor } from "./slideArt";
 
 /**
  * Level 4: sled back through time. x is a true time axis, so steepness is the
@@ -68,13 +68,29 @@ function formatYear(yearCE: number): string {
 
 /** Well-known moments along the way (approximate dates), so the ramp has places. */
 const LANDMARKS: [number, string][] = [
-  [1769, "steam engine"],
+  [1769, "Watt's steam engine"],
   [-2560, "pyramids of Giza"],
-  [-3000, "Stonehenge"],
+  [-3000, "Stonehenge begun"],
   [-9500, "first farming"],
   [-15000, "Lascaux cave paintings"],
-  [-18000, "mammoths · Britain joined to Europe"],
+  [-18000, "ice over Scotland · mammoths"],
 ];
+
+/**
+ * The race panel compares two 175-year spans, so its caption says ~10x; the
+ * 23-34x figure is a different comparison (last 50 years) and is labelled as such.
+ */
+export function raceCaption(): string[] {
+  const years = DERIVED.lastYear - GLOBAL.annual.start;
+  const slow = (DERIVED.deglacialRatePerCentury * years) / 100;
+  const fast = (DERIVED.deglacialRateFastPerCentury * years) / 100;
+  const measured = DERIVED.lastYearAnomaly;
+  const times = Math.round(measured / ((slow + fast) / 2));
+  return [
+    `Same ${years} years: ice-age pace +${slow.toFixed(2)}–${fast.toFixed(2)} °C; measured +${measured.toFixed(1)} °C. About ${times}× faster.`,
+    `Over just the last ${DERIVED.recentTrendYears} years: about ${DERIVED.rateRatioLow}–${DERIVED.rateRatioHigh}×. IPCC: the fastest 50-year warming in at least 2,000 years.`,
+  ];
+}
 
 export class SlideScene extends WalkScene {
   private ended = false;
@@ -87,13 +103,15 @@ export class SlideScene extends WalkScene {
     const terrain = buildTerrain({ values: buildPathValues(), cellWidth: CELL, valueScale: PX_PER_DEGREE, zeroY: 0, mode: "linear" });
     super(terrain, terrainWidth(terrain) - 6);
     this.player.facing = -1;
+    // Build all climate skies now (during the fade) so sledding never hitches.
+    for (const theme of allClimateThemes()) prewarmTheme(theme, VIEW_W, VIEW_H);
     this.lookAhead = -30;
     const lgm = Math.abs(PALEO.lgmDelta).toFixed(0);
     const [short, long] = DERIVED.deglaciationYearsRange.map((y) => (y / 1000).toFixed(0));
-    this.play([{ say: ["Let's go back in time. Push ← to slide."], wait: false }]);
+    this.play([{ say: ["Let's go back in time. Hold ← to slide."], wait: false }]);
     this.triggers = [
       { x: xForYear(1850), dir: -1, lines: [`Whoa. That drop was just ${DERIVED.lastYear - 1850} years.`] },
-      { x: xForYear(-1000), dir: -1, lines: ["Before 1850: about 10,000 relatively stable years.", "Farming, towns and cities all began in this stretch."] },
+      { x: xForYear(-1000), dir: -1, lines: ["Before 1850: about 10,000 relatively stable years.", "Farming, towns and cities grew up as the climate settled."] },
       { x: xForYear(DEGLACIATION_END_CE), dir: -1, lines: ["Further back, the last ice age was ending."] },
       { x: xForYear((DEGLACIATION_START_CE + DEGLACIATION_END_CE) / 2), dir: -1, lines: [`About ${lgm} °C of warming over roughly ${short}–${long} thousand years.`, "(Drawn as a straight line at its average pace.)"] },
     ];
@@ -118,6 +136,10 @@ export class SlideScene extends WalkScene {
     }
   }
 
+  onExit(): void {
+    setSlideVolume(0);
+  }
+
   private valueAt(x: number): number {
     return -groundAt(this.terrain, x) / PX_PER_DEGREE;
   }
@@ -135,13 +157,18 @@ export class SlideScene extends WalkScene {
       { camera: () => revealCamera(this.terrain, 30, 20), seconds: 4 },
       { run: () => { this.revealed = true; sfx.reveal(); } },
       { pause: 2.5 },
-      { say: ["21,000 years in one picture.", "Everything since 1850 is that red sliver. Zoom in on it, and it's a wall."] },
+      { say: ["21,000 years in one picture.", "Everything since 1850 is that red sliver. Zoomed in, it's a wall."] },
       { run: () => { this.raceT = 0; this.captionLines = []; } },
       { until: () => this.raceT >= 1 },
-      { say: ["Same 175 years, same scale.", "Left: the pace the ice age ended at. Right: what we measured."] },
-      { say: [`Recent warming is roughly ${DERIVED.rateRatioLow}–${DERIVED.rateRatioHigh}× faster than that average pace.`, "IPCC: fastest 50-year warming in at least 2,000 years."] },
-      { say: ["The ice age ended through slow shifts in Earth's orbit, amplified by CO₂ and melting ice.", "Today's warming is driven by our CO₂, mostly from burning fossil fuels."] },
-      { say: ["Day to day, it's noise. Zoom out, and it's this."] },
+      { say: raceCaption() },
+      {
+        say: [
+          "The ice age ended as orbital shifts warmed the planet; the oceans released CO₂ and ice melted, amplifying it.",
+          "Today the trigger is us: greenhouse gases, mostly CO₂ from fossil fuels (IPCC AR6).",
+        ],
+      },
+      { say: ["Day to day, it's noise. Zoom out, and it's this."], wait: false },
+      { pause: 3 },
       { run: () => (this.done = true) },
     ]);
   }
@@ -206,8 +233,9 @@ export class SlideScene extends WalkScene {
       const s = worldToScreen(this.cam, x, groundAt(this.terrain, x), VIEW_W, VIEW_H);
       r.text(text, s.sx, s.sy + dy, { size: 8, color, align });
     };
-    label(8, "ice age", "#ffffff", -16, "left");
-    label(xForYear(-7200), "10,000 relatively stable years", "#ffffff", -14);
+    label(24, "ice age", "#ffffff", -26, "left");
+    // Placed low in the dark ground so it never sits under the magnifier box.
+    label(xForYear(-5000), "10,000 relatively stable years", "#ffffff", 64);
     r.text("← 21,000 years →", VIEW_W / 2, VIEW_H - 50, { size: 7, color: COLORS.dim, align: "center" });
     if (this.revealTime > 1.2) drawMagnifier(r, this.cam, this.terrain, (x) => this.valueAt(x), xForYear, Math.min(1, (this.revealTime - 1.2) / 0.8));
   }

@@ -62,7 +62,7 @@ export class MonthsScene extends WalkScene {
           },
         },
       },
-      { pause: 0.8 },
+      { pause: 1.8 },
       { say: ["Smoother. But still bumpy, year to year.", "Any single year, you could brush off."] },
       { run: () => (this.done = true) },
     ]);
@@ -96,6 +96,6 @@ export class MonthsScene extends WalkScene {
       const diff = this.monthly[i] - this.monthly[i - 1];
       r.text(`vs last month ${signed(diff)}`, 6, 28, { size: 7, color: diff >= 0 ? "#f4a582" : "#92c5de" });
     }
-    r.text(`vs ${GLOBAL.meta.baseline} average`, VIEW_W - 6, 5, { size: 6, color: COLORS.dim, align: "right" });
+    r.text(`vs ${GLOBAL.meta.baseline} average`, VIEW_W - 6, 5, { size: 7, color: COLORS.dim, align: "right" });
   }
 }

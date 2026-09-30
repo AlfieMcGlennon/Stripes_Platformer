@@ -31,8 +31,18 @@ export class Input {
   private jumpTapQueued = false;
   private anyQueued = false;
   touchSeen = false;
+  /** Whether the on-screen zoom button is live (only during a zoom beat). */
+  zoomActive = false;
 
-  constructor(target: HTMLElement, toView: (clientX: number, clientY: number) => { x: number; y: number }) {
+  /**
+   * `onGesture` runs synchronously inside real user-gesture events. iOS only
+   * lets audio start (and Android fullscreen) from inside such a handler.
+   */
+  constructor(
+    target: HTMLElement,
+    toView: (clientX: number, clientY: number) => { x: number; y: number },
+    onGesture: () => void = () => undefined,
+  ) {
     window.addEventListener("keydown", (e) => {
       // Leave browser shortcuts (Ctrl/Cmd + arrows etc.) alone.
       if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -40,6 +50,7 @@ export class Input {
       if (!e.repeat) this.pressed.add(e.code);
       this.held.add(e.code);
       this.anyQueued = true;
+      onGesture();
     });
     window.addEventListener("keyup", (e) => this.held.delete(e.code));
     window.addEventListener("blur", () => {
@@ -49,7 +60,7 @@ export class Input {
 
     const zoneFor = (e: PointerEvent) => {
       const v = toView(e.clientX, e.clientY);
-      return e.pointerType === "mouse" ? null : buttonAt(v.x, v.y);
+      return e.pointerType === "mouse" ? null : buttonAt(v.x, v.y, 6, this.zoomActive);
     };
     target.addEventListener("pointerdown", (e) => {
       e.preventDefault();
@@ -57,6 +68,7 @@ export class Input {
       const zone = zoneFor(e);
       this.pointers.set(e.pointerId, zone);
       this.anyQueued = true;
+      onGesture();
       if (zone === "jump") this.jumpTapQueued = true;
       // Any tap that isn't steering counts as "continue".
       if (zone !== "left" && zone !== "right") this.tapQueued = true;
@@ -65,7 +77,10 @@ export class Input {
       if (this.pointers.has(e.pointerId)) this.pointers.set(e.pointerId, zoneFor(e));
     });
     const release = (e: PointerEvent) => this.pointers.delete(e.pointerId);
-    target.addEventListener("pointerup", release);
+    target.addEventListener("pointerup", (e) => {
+      release(e);
+      onGesture();
+    });
     target.addEventListener("pointercancel", release);
   }
 

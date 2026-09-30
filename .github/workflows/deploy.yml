@@ -28,6 +28,8 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - run: npm test
+      # Data sanity checks read only the committed JSON (no numpy/network needed).
+      - run: pip install pytest && python -m pytest -q scripts/test_data.py
       # src/data/*.json is committed, so CI never needs Python or network access to data hosts.
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3

@@ -1,9 +1,10 @@
-import { worldToScreen, type CameraState } from "../core/camera";
-import { TOUCH_BUTTONS } from "../core/layout";
-import { groundAt, type Particle, type PlayerState, type Terrain } from "../world";
-import { ditherPattern, hexToRgb, rgbString } from "./backdrop";
+import type { CameraState } from "../core/camera";
+import type { Particle, PlayerState, Terrain } from "../world";
+import { drawParticles, drawPlayer } from "./actors";
+import { shade } from "./color";
 import { COLORS } from "./palette";
-import { drawSprite, heroFrame, SLED, SPRITE_H, SPRITE_W } from "./sprites";
+import { drawLine, drawSlope, drawStepOutline, drawSteps } from "./terrainDraw";
+import { drawTouchButtons } from "./touch";
 
 export const VIEW_W = 320;
 export const VIEW_H = 180;
@@ -61,7 +62,8 @@ export class Renderer {
   }
 
   resize(): void {
-    const dpr = window.devicePixelRatio || 1;
+    // Capped at 2: a 3x phone canvas costs 2.25x the fill for no visible gain on pixel art.
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
     const cssW = window.visualViewport?.width ?? window.innerWidth;
     const cssH = window.visualViewport?.height ?? window.innerHeight;
     this.canvas.style.width = `${cssW}px`;
@@ -143,148 +145,32 @@ export class Renderer {
     }
   }
 
-  /**
-   * Stepped terrain: base colour, dithered interior, lit top edge and shaded
-   * sides where a neighbour is taller.
-   */
   steps(t: Terrain, cam: CameraState, fill: (i: number) => string, opts: { edge?: string; alpha?: (i: number) => number } = {}): void {
-    const ctx = this.px;
-    const pattern = ditherPattern(ctx);
-    for (let i = 0; i < t.groundY.length; i++) {
-      const a = worldToScreen(cam, t.x0 + i * t.cellWidth, t.groundY[i], VIEW_W, VIEW_H);
-      const b = worldToScreen(cam, t.x0 + (i + 1) * t.cellWidth, t.groundY[i], VIEW_W, VIEW_H);
-      if (b.sx < 0 || a.sx > VIEW_W) continue;
-      const alpha = opts.alpha ? opts.alpha(i) : 1;
-      if (alpha <= 0.01) continue;
-      ctx.globalAlpha = alpha;
-      const x0 = Math.floor(a.sx);
-      const w = Math.max(1, Math.ceil(b.sx) - x0);
-      const top = Math.round(a.sy);
-      const base = fill(i);
-      ctx.fillStyle = base;
-      ctx.fillRect(x0, top, w, VIEW_H - top);
-      if (w >= 4) {
-        ctx.fillStyle = pattern;
-        ctx.fillRect(x0, top + 3, w, VIEW_H - top - 3);
-        ctx.fillStyle = shade(base, 1.25);
-        ctx.fillRect(x0, top + 1, w, 2);
-        const leftTaller = i > 0 && t.groundY[i - 1] < t.groundY[i];
-        if (leftTaller) {
-          ctx.fillStyle = shade(base, 0.7);
-          ctx.fillRect(x0, top, 1, VIEW_H - top);
-        }
-      }
-      ctx.fillStyle = opts.edge ?? shade(base, 1.6);
-      ctx.fillRect(x0, top, w, 1);
-    }
-    ctx.globalAlpha = 1;
+    drawSteps(this.px, t, cam, fill, opts);
   }
 
-  /** Smooth terrain filled column by column with a colour chosen per world x. */
-  slope(t: Terrain, cam: CameraState, colorAt: (worldX: number) => string, edgeAt: (worldX: number) => string = () => "rgba(255,255,255,0.85)"): void {
-    const ctx = this.px;
-    const pattern = ditherPattern(ctx);
-    for (let sx = 0; sx < VIEW_W; sx++) {
-      const wx = (sx + 0.5 - VIEW_W / 2) / cam.zoomX + cam.cx;
-      if (wx < t.x0 || wx > t.x0 + (t.groundY.length - 1) * t.cellWidth) continue;
-      const sy = Math.round(worldToScreen(cam, wx, groundAt(t, wx), VIEW_W, VIEW_H).sy);
-      const base = colorAt(wx);
-      ctx.fillStyle = base;
-      ctx.fillRect(sx, sy, 1, VIEW_H - sy);
-      ctx.fillStyle = pattern;
-      ctx.fillRect(sx, sy + 3, 1, VIEW_H - sy - 3);
-      ctx.fillStyle = shade(base, 1.3);
-      ctx.fillRect(sx, sy + 1, 1, 2);
-      ctx.fillStyle = edgeAt(wx);
-      ctx.fillRect(sx, sy, 1, 1);
-    }
+  slope(t: Terrain, cam: CameraState, colorAt: (worldX: number) => string, edgeAt?: (worldX: number) => string): void {
+    drawSlope(this.px, t, cam, colorAt, edgeAt);
   }
 
-  /** Continuous outline along a stepped terrain's top, risers included. */
   stepOutline(t: Terrain, cam: CameraState, color: string): void {
-    let prev: { x: number; y: number } | null = null;
-    for (let i = 0; i < t.groundY.length; i++) {
-      const a = worldToScreen(cam, t.x0 + i * t.cellWidth, t.groundY[i], VIEW_W, VIEW_H);
-      const b = worldToScreen(cam, t.x0 + (i + 1) * t.cellWidth, t.groundY[i], VIEW_W, VIEW_H);
-      if (prev) this.line(prev.x, prev.y, a.sx, a.sy, color, 1, false);
-      this.line(a.sx, a.sy, b.sx, b.sy, color, 1, false);
-      prev = { x: b.sx, y: b.sy };
-    }
+    drawStepOutline(this.px, t, cam, color);
   }
 
-  /**
-   * The hero. Zoomed far out it becomes a bright dot with a bobbing arrow,
-   * because "you are here" must stay visible.
-   */
   player(p: PlayerState, cam: CameraState, time: number, opts: { highlight?: boolean; sled?: boolean } = {}): void {
-    const ctx = this.px;
-    const s = worldToScreen(cam, p.x, p.y, VIEW_W, VIEW_H);
-    const small = cam.zoomX < 0.6;
-    if (opts.highlight || small) {
-      const bob = Math.round(Math.sin(time * 5) * 2);
-      const top = Math.round(s.sy) - (small ? 12 : SPRITE_H + 10) + bob;
-      ctx.fillStyle = "#1a1a2e";
-      ctx.fillRect(Math.round(s.sx) - 3, top - 1, 7, 7);
-      ctx.fillStyle = COLORS.accent;
-      ctx.fillRect(Math.round(s.sx) - 1, top, 3, 3);
-      ctx.fillRect(Math.round(s.sx) - 2, top + 3, 5, 1);
-      ctx.fillRect(Math.round(s.sx) - 1, top + 4, 3, 1);
-      ctx.fillRect(Math.round(s.sx), top + 5, 1, 1);
-    }
-    if (small) {
-      ctx.fillStyle = "#1a1a2e";
-      ctx.fillRect(Math.round(s.sx) - 2, Math.round(s.sy) - 4, 5, 5);
-      ctx.fillStyle = COLORS.accent;
-      ctx.fillRect(Math.round(s.sx) - 1, Math.round(s.sy) - 3, 3, 3);
-      return;
-    }
-    const moving = Math.abs(p.vx) > 1;
-    const frame = heroFrame(p.grounded || !!opts.sled, moving && !opts.sled, p.stride);
-    const x = Math.round(s.sx - SPRITE_W / 2);
-    const lift = opts.sled ? 3 : 0;
-    drawSprite(ctx, frame, x, Math.round(s.sy) - SPRITE_H - lift, p.facing === -1);
-    if (opts.sled) drawSprite(ctx, SLED, x - 1, Math.round(s.sy) - 4, p.facing === -1);
+    drawPlayer(this.px, p, cam, time, opts);
   }
 
-  /** Pixel line (Bresenham) with an outline so it reads on any background. */
   line(x0: number, y0: number, x1: number, y1: number, color: string, thickness = 1, outlined = true): void {
-    const ctx = this.px;
-    const plot = (fill: string, grow: number) => {
-      let x = Math.round(x0), y = Math.round(y0);
-      const tx = Math.round(x1), ty = Math.round(y1);
-      const dx = Math.abs(tx - x), dy = -Math.abs(ty - y);
-      const sx = x < tx ? 1 : -1, sy = y < ty ? 1 : -1;
-      let err = dx + dy;
-      ctx.fillStyle = fill;
-      for (let guard = 0; guard < 4000; guard++) {
-        ctx.fillRect(x - grow, y - grow, thickness + grow * 2, thickness + grow * 2);
-        if (x === tx && y === ty) break;
-        const e2 = 2 * err;
-        if (e2 >= dy) { err += dy; x += sx; }
-        if (e2 <= dx) { err += dx; y += sy; }
-      }
-    };
-    if (outlined) plot("#05060d", 1);
-    plot(color, 0);
+    drawLine(this.px, x0, y0, x1, y1, color, thickness, outlined);
   }
 
   particles(list: Particle[], cam: CameraState): void {
-    for (const p of list) {
-      const s = worldToScreen(cam, p.x, p.y, VIEW_W, VIEW_H);
-      this.px.globalAlpha = Math.max(0, p.life / p.maxLife);
-      this.px.fillStyle = p.color;
-      this.px.fillRect(Math.round(s.sx), Math.round(s.sy), p.size, p.size);
-    }
-    this.px.globalAlpha = 1;
+    drawParticles(this.px, list, cam);
   }
 
   touchButtons(showZoom: boolean): void {
-    for (const b of TOUCH_BUTTONS) {
-      if (b.id === "zoom" && !showZoom) continue;
-      this.px.fillStyle = b.id === "zoom" ? "rgba(255,209,102,0.25)" : "rgba(255,255,255,0.1)";
-      this.px.fillRect(b.x, b.y, b.w, b.h);
-      this.text(b.label, b.x + b.w / 2, b.y + b.h / 2 - 5, { align: "center", color: COLORS.dim, size: 10 });
-    }
+    drawTouchButtons(this.px, showZoom);
   }
 
   present(): void {
@@ -315,8 +201,4 @@ export class Renderer {
   }
 }
 
-/** Multiply an rgb/hex colour's brightness. */
-export function shade(color: string, k: number): string {
-  const rgb = color.startsWith("#") ? hexToRgb(color) : (color.match(/\d+/g) ?? ["0", "0", "0"]).slice(0, 3).map(Number) as [number, number, number];
-  return rgbString([Math.min(255, rgb[0] * k), Math.min(255, rgb[1] * k), Math.min(255, rgb[2] * k)]);
-}
+export { shade };

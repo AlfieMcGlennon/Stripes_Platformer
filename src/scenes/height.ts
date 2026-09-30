@@ -65,7 +65,7 @@ export class HeightScene extends WalkScene {
   protected onUpdate(dt: number): void {
     if (this.ticking && this.shownDays < WEEK) {
       this.dayTimer += dt;
-      if (this.dayTimer > 0.8) {
+      if (this.dayTimer > 0.5) {
         this.dayTimer = 0;
         this.shownDays++;
       }
@@ -103,7 +103,7 @@ export class HeightScene extends WalkScene {
     px.fillRect(x + 5, top, 1, rulerH);
     px.fillStyle = "#6b5e3e";
     for (let i = 0; i <= rulerH; i += 4) px.fillRect(x, top + i, i % 8 === 0 ? 4 : 2, 1);
-    r.text("(magnified)", x + 3, top - 10, { size: 6, color: COLORS.dim, align: "center" });
+    r.text("(magnified)", x + 3, top - 10, { size: 7, color: COLORS.dim, align: "center" });
     if (this.shownDays > 0) {
       const h = this.heights[this.shownDays - 1];
       const markerY = Math.round(base.sy - 16 - (h - START_CM) * PX_PER_CM);
