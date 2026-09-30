@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Loaded Dice</title>
+    <meta name="description" content="Episode 3 of the stripes series: a small shift in the average temperature makes extreme days much more common." />
+    <meta name="theme-color" content="#0b1020" />
+    <meta property="og:title" content="Loaded Dice" />
+    <meta property="og:description" content="Catch thirty summers of real daily temperatures, then thirty more. The middle moved a degree; the hot tail nearly doubled." />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <style>
+      html, body {
+        margin: 0; height: 100%; background: #000; overflow: hidden;
+        touch-action: none; overscroll-behavior: none;
+        -webkit-user-select: none; user-select: none;
+      }
+      canvas { display: block; }
+      .sr {
+        position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+        overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+      }
+      .fallback {
+        position: fixed; inset: 0; display: grid; place-items: center; z-index: 3;
+        margin: 0; padding: 24px; background: #0b1020; color: #f2efe6; text-align: center;
+        font: 15px/1.6 ui-sans-serif, system-ui, sans-serif;
+      }
+      .fallback a { color: #ffd166; }
+    </style>
+  </head>
+  <body>
+    <canvas id="game" aria-label="Loaded Dice: catch thirty summers of real daily temperatures, then thirty more, and see that a one degree shift in the average nearly doubles the number of hot days.">
+      Loaded Dice is a short interactive about extreme heat. Summer days from the central England
+      daily temperature record fall down a temperature axis, so the pile they land in draws the
+      distribution. You play thirty summers from 1961 to 1990, then thirty from 1996 to 2025. The
+      average summer day is about one degree warmer in the second period — roughly a third of the
+      spread that already existed — but days reaching 28 °C or more happen about 1.8 times as often,
+      and the further out you look the bigger the multiple becomes. A small shift in the middle of a
+      distribution is a large change at its edge.
+    </canvas>
+
+    <div id="live" class="sr" role="status" aria-live="polite"></div>
+
+    <noscript>
+      <p class="fallback">
+        Loaded Dice needs JavaScript. It is a short interactive showing that a one-degree shift in
+        average summer temperature nearly doubles the number of hot days, using the
+        <a href="https://www.metoffice.gov.uk/hadobs/hadcet/">Met Office HadCET</a> daily record for
+        central England — the longest daily instrumental series in the world.
+      </p>
+    </noscript>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

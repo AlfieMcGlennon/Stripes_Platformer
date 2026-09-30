@@ -1,0 +1,19 @@
+{
+  "name": "@stripes/loaded-dice",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Episode 3: a small shift in the average makes extremes much more common.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --build"
+  },
+  "dependencies": {
+    "@fontsource/pixelify-sans": "^5.3.0",
+    "@fontsource/silkscreen": "^5.3.0",
+    "@stripes/engine": "*"
+  }
+}

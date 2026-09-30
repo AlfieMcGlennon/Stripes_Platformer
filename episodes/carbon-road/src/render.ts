@@ -9,17 +9,8 @@ export const VIEW_H = 270;
 
 export { BODY_FONT, TITLE_FONT } from "@stripes/engine";
 
-/** This episode's UI tokens. The engine owns the data-colour scale and the chrome. */
-export const COLORS = {
-  ink: "#f2efe6",
-  dim: "#8a90a6",
-  gold: "#ffd166",
-  hot: "#d1495b",
-  cold: "#4393c3",
-  plate: "#0d1126",
-  plateEdge: "#1b2140",
-  shadow: "#05060d",
-};
+/** Series chrome, from the engine: three episodes were each defining this. */
+export { UI as COLORS } from "@stripes/engine";
 
 /**
  * This episode draws its world with plain canvas calls rather than through terrain

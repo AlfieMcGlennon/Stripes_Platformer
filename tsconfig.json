@@ -1,8 +1,17 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/engine" },
-    { "path": "./episodes/height-check" },
-    { "path": "./episodes/carbon-road" }
+    {
+      "path": "./packages/engine"
+    },
+    {
+      "path": "./episodes/height-check"
+    },
+    {
+      "path": "./episodes/carbon-road"
+    },
+    {
+      "path": "./episodes/loaded-dice"
+    }
   ]
 }
