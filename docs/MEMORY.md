@@ -33,7 +33,7 @@
 
 ## Next up
 1. Enable Pages (Settings → Pages → GitHub Actions), then run the manual `deploy` workflow. Add an og:image screenshot.
-2. Test on a real phone (touch feel, the new text sizes, audio unlock on iOS) and playtest the new caption dwells — nobody has played v0.3.1 yet.
+2. v0.3.1 playtested on desktop (2026-09-30) and confirmed working end to end. Still untested: a real phone (touch feel, the new text sizes, audio unlock on iOS), the reduce-motion path, and a screen reader against the new text panel.
 3. `docs/REVIEW-v0.3.md` §B is the ranked to-do list. Top three: ship HadCRUT5's uncertainty columns (already in the source CSV, discarded by `parse_hadcrut`); apply a cited late-Holocene → 1850-1900 offset; move the deglaciation onset to ~18 ka so the farming landmark stops sitting on the ramp.
 4. Data upgrades when a network can reach them: ERA5 daily (level 1), Osman 2021 LGMR curve (slide).
 5. Optional: save progress, level select, music.
