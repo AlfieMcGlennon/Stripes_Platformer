@@ -102,6 +102,12 @@ mirror.
    band behind the stripes reveal and the share card. `paleo.lgmGridErrorMean` (0.41) is
    computed, typed and referenced nowhere — and should be replaced by Tierney's published CI
    (−6.5…−5.7) rather than a mean of spatially-correlated grid errors.
+   **Unblocked 2026-09-30:** the two official CSVs are now committed under `data/source/` and
+   `build_data.py` checks there before the network, so this can be done on any machine including
+   sandboxed sessions where metoffice.gov.uk is blocked. Confirmed additive: the official series
+   and the mirror-derived series already committed differ by at most 0.0001 degC across all 176
+   years, and every caption figure is identical to 4 dp, so adding the band moves no number.
+   Band widths for scale: 0.346 degC in 1850, 0.203 in 1950, 0.079 in 2025.
 2. **The late-Holocene → 1850-1900 offset is still unapplied.** Labels are now honest about the
    two zeros (A3), but `pathValue` still hard-sets the Holocene to exactly 0. Emit a cited
    `lateHoloceneToPreindustrialOffset` from `build_data.py` and apply it. Literature puts it at

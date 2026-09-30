@@ -1,0 +1,9 @@
+{
+  "url": "https://www.metoffice.gov.uk/hadobs/hadcrut5/data/HadCRUT.5.1.0.0/analysis/diagnostics/HadCRUT.5.1.0.0.analysis.summary_series.global.annual.csv",
+  "retrieved": "2026-09-30",
+  "mirror": false,
+  "sha256": "16633b8d7c4fe6026d53549f509355964ab56ca689a6f007f27d4a5fa87d6ec6",
+  "header": "Time,Anomaly (deg C),Lower confidence limit (2.5%),Upper confidence limit (97.5%)",
+  "licence": "Open Government Licence v3",
+  "citation": "Morice, C.P. et al. (2021) An updated assessment of near-surface temperature change from 1850: the HadCRUT5 data set. JGR Atmospheres, doi:10.1029/2019JD032361. Met Office Hadley Centre / CRU."
+}

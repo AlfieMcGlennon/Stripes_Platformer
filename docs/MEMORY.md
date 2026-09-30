@@ -34,7 +34,7 @@
 ## Next up
 1. Enable Pages (Settings → Pages → GitHub Actions), then run the manual `deploy` workflow. Add an og:image screenshot.
 2. v0.3.1 playtested on desktop (2026-09-30) and confirmed working end to end. Still untested: a real phone (touch feel, the new text sizes, audio unlock on iOS), the reduce-motion path, and a screen reader against the new text panel.
-3. `docs/REVIEW-v0.3.md` §B is the ranked to-do list. Top three: ship HadCRUT5's uncertainty columns (already in the source CSV, discarded by `parse_hadcrut`); apply a cited late-Holocene → 1850-1900 offset; move the deglaciation onset to ~18 ka so the farming landmark stops sitting on the ramp.
+3. `docs/REVIEW-v0.3.md` §B is the ranked to-do list. Top three: ship HadCRUT5's uncertainty columns (§B1 — now unblocked anywhere, the official CSVs are committed under `data/source/` and verified to change no existing figure); move the deglaciation onset to ~18 ka and the Holocene to 11.7 ka (§B3, fixes three findings at once); drop the `grounded` gate so every year crossed ticks (§B4). §B2 needs a human to check the late-Holocene offset against the literature before it goes in.
 4. Data upgrades when a network can reach them: ERA5 daily (level 1), Osman 2021 LGMR curve (slide).
 5. Optional: save progress, level select, music.
 
@@ -43,7 +43,9 @@
 - Canvas text cannot respond to browser zoom: the view is fitted to the viewport, so `cssW * dpr` is invariant under page zoom. That is why there is an in-game text-size control.
 - `core/motion.ts` is imported by scenes, so it must stay safe where `matchMedia` and `localStorage` do not exist — vitest runs in node.
 - Costume thresholds come from `GLOBAL.stripes`, so they follow the data; never key a costume to a single year's value.
-- `datasets/global-temp` mirror labels HadCRUT5 as "GCAG"; values are vs 1961–1990 and get rebased.
+- `datasets/global-temp` mirror labels HadCRUT5 as "GCAG"; values are vs 1961–1990 and get rebased. It carries no confidence limits, which is why the official CSVs are committed under `data/source/` (checked before `scripts/raw/` and before the network). Verified equivalent to 0.0001 degC.
+- The official annual CSV includes the current incomplete year; `complete_years()` filters it, so `lastYear` is the last *complete* year. Don't remove that guard.
+- Non-ASCII in a bash heredoc gets mangled in this environment; write patch scripts to a file instead of piping them in.
 - Variable jump height was tried and removed: a tap must clear real-data steps.
 - Camera must not follow while controls are off, or reveals drift (fixed in WalkScene).
 - Playtest bots: use `window.__sceneId`, hold KeyZ while `__scene.zoomAvailable`.

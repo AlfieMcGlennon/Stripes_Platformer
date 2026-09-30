@@ -19,6 +19,12 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent.parent
 RAW = ROOT / "scripts" / "raw"
 OUT = ROOT / "src" / "data"
+# Committed copies of the official Met Office summary CSVs, checked before the
+# network so any machine -- CI, a sandboxed session, an offline laptop -- can
+# rebuild the data exactly. metoffice.gov.uk is blocked on some networks, and the
+# GitHub mirror we fall back to carries only the central estimate, with no
+# confidence limits. To refresh, replace the file and its .source.json sidecar.
+SOURCE = ROOT / "data" / "source"
 
 # Official Met Office URLs first; the datahub mirror (same files, re-hosted on
 # GitHub) is the fallback for networks that block metoffice.gov.uk.
@@ -63,8 +69,25 @@ def _header(name: str, data: bytes) -> dict:
     return {"header": first[:200]}
 
 
+def _record(name: str, data: bytes, origin: str, meta_file: Path) -> None:
+    """Add one entry to sources.json, carrying provenance from a sidecar if present."""
+    entry = {"file": name, "sha256": hashlib.sha256(data).hexdigest(), "origin": origin}
+    if meta_file.exists():
+        side = json.loads(meta_file.read_text())
+        # The sidecar's own checksum is a claim about the file; keep ours as the truth.
+        side.pop("sha256", None)
+        entry.update(side)
+    entry.update(_header(name, data))
+    sources.append(entry)
+
+
 def fetch(urls: list[str], name: str) -> bytes:
     RAW.mkdir(parents=True, exist_ok=True)
+    committed = SOURCE / name
+    if committed.exists():
+        data = committed.read_bytes()
+        _record(name, data, "data/source (committed)", SOURCE / f"{name}.source.json")
+        return data
     cached = RAW / name
     if cached.exists():
         data = cached.read_bytes()

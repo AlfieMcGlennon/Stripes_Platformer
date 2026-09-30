@@ -14,7 +14,7 @@ npm test           # vitest: physics, terrain, "real data is jumpable"
 npm run build      # static site in dist/
 
 pip install -r scripts/requirements.txt
-npm run data       # rebuild src/data/*.json from source
+npm run data       # rebuild src/data/*.json from source (offline: see data/source/)
 python -m pytest scripts/
 ```
 
