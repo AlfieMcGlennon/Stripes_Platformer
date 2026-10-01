@@ -101,9 +101,15 @@ BENCH.forEach((lines, i) => {
 
 for (const stop of CORRIDOR) markers.push({ x: xForLead(stop.lead), lines: stop.lines });
 
+/*
+ * These beats each reveal one more bar, so unlike the stations they cannot share a
+ * position: firing together put all four bars on screen under the caption that had
+ * not yet asked the first question. Seventy pixels apart is a little over a second
+ * of walking at this speed, which the hold leaves room for.
+ */
 climateLines().forEach((lines, i) => {
   markers.push({
-    x: PLACES.climate - 180,
+    x: PLACES.climate - 180 + i * 70,
     lines,
     onReach: () => (s.climateShown = Math.max(s.climateShown, i)),
   });
@@ -158,7 +164,9 @@ function hud(): void {
       size: 8, color: reading >= 0 ? COLORS.hot : COLORS.cold,
     });
   });
-  if (!s.fitted) return;
+  // The lead-time readout answers the corridor's question, so it goes away with the
+  // corridor rather than sitting over the climate panel reading "+30d, 0.01".
+  if (!s.fitted || s.walk.x > PLACES.corridorTo + 140) return;
   const lead = Math.round(leadAt(s.walk.x));
   const skill = bestSkill(lead);
   renderer.text(`+${lead}d`, VIEW_W - 98, 4, { size: 10, color: COLORS.gold, title: true });

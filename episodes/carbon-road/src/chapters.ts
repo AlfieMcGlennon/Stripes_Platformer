@@ -15,7 +15,7 @@ const pct = (share: number): string => `${Math.round(share * 100)}%`;
 
 export const TITLE = {
   name: "CARBON ROAD",
-  tagline: "everything you burn stays up there",
+  tagline: "everything you burn counts, for ever",
 };
 
 export interface Mark {
@@ -34,22 +34,22 @@ export const MARKS: Mark[] = [
   {
     atYear: 1850,
     lines: [
-      "This road is a timeline. Where you stand is the year, and the bar at the top is",
-      "all the carbon dioxide put into the air up to that year. It only ever goes one way.",
+      "This road is a timeline: where you stand is the year, and the bar at the top is all",
+      "the CO₂ emitted by that year. Walk back and the bar falls, because you are earlier.",
     ],
   },
   {
     atYear: 1862,
     lines: [
-      "1850. Energy means muscle, firewood and the first coal.",
-      `The world is ${signed(warmingAt(1850), 2)} °C against its 1850–1900 average, and nobody could tell.`,
+      "The 1850s. Energy means muscle, firewood and the first coal, and nobody alive",
+      "could have noticed the difference it was making.",
     ],
   },
   {
     atYear: 1872,
     lines: [
-      `Walking a decade takes a moment. ${emissionsAt(1872).toFixed(1)} Gt a year is going up.`,
-      "Look behind you: the bar has barely moved.",
+      `Walking a decade takes a moment. The world is burning ${emissionsAt(1872).toFixed(1)} billion tonnes of CO₂ a year.`,
+      "That is the flow. Look behind you: the bar, which is the total, has barely moved.",
     ],
   },
   {
@@ -76,8 +76,15 @@ export const MARKS: Mark[] = [
   {
     atYear: 1935,
     lines: [
-      "Smog you could see, in cities you could not breathe in. It got cleaned up.",
-      "The carbon dioxide was invisible, so it stayed. That is the whole difference.",
+      "Smog you could see, in cities you could not breathe in. That got cleaned up.",
+      "The haze still thickening here stands for the invisible total. Nobody cleaned that up.",
+    ],
+  },
+  {
+    atYear: 1945,
+    lines: [
+      "Two gauges, and from here they climb together: the total emitted, and the warming.",
+      `${gt(cumulativeAt(1945))} emitted so far, and the world is ${signed(warmingAt(1945), 2)} °C against 1850–1900.`,
     ],
   },
   {
@@ -91,21 +98,21 @@ export const MARKS: Mark[] = [
     atYear: 1985,
     lines: [
       "Check the bar. It is climbing faster than you are walking.",
-      `${FIRST_1000}: the first thousand gigatonnes, ${FIRST_1000 - START_YEAR} years after you set off.`,
+      `The first thousand gigatonnes took until ${FIRST_1000} — ${FIRST_1000 - START_YEAR} years after you set off.`,
     ],
   },
   {
     atYear: 2005,
     lines: [
-      `The most recent thousand took ${LAST_YEAR - LAST_1000} years.`,
+      `The most recent thousand will take ${LAST_YEAR - LAST_1000} years, ${LAST_1000} to ${LAST_YEAR}.`,
       "Same amount of carbon dioxide, delivered about five times faster.",
     ],
   },
   {
     atYear: 2022,
     lines: [
-      `1960 to 2024: ${gt(emittedBetween(1960, 2024).gt)} — ${pct(emittedBetween(1960, 2024).share)} of all of it, inside one lifetime.`,
-      `Warming now: ${signed(warmingAt(LAST_YEAR), 2)} °C. The bar reads ${gt(cumulativeAt(LAST_YEAR))}.`,
+      `1960 onwards: ${gt(emittedBetween(1960, LAST_YEAR).gt)} — ${pct(emittedBetween(1960, LAST_YEAR).share)} of all of it, inside one lifetime.`,
+      "Keep walking to the end of the record. The bar and the year always agree.",
     ],
   },
   {
@@ -118,22 +125,22 @@ export const MARKS: Mark[] = [
   {
     atX: ZERO_FROM + 70,
     lines: [
-      "Emissions: zero. No exhaust behind you.",
-      "Now watch the bar. Not the needle — the bar.",
+      "Emissions: zero. No exhaust behind you, and the yearly figure reads 0 Gt/yr.",
+      "Now watch the bar underneath it.",
     ],
   },
   {
     atX: ZERO_FROM + 200,
     lines: [
-      `It stopped climbing. It did not fall. ${gt(cumulativeAt(LAST_YEAR))} is still up there.`,
-      "Carbon dioxide already in the air stays for a very long time, and so does its warming.",
+      `It stopped climbing, and it did not fall. All ${gt(cumulativeAt(LAST_YEAR))} has been emitted,`,
+      "and cannot be un-emitted. It lasts a very long time up there, and so does the warming.",
     ],
   },
   {
     atX: ZERO_FROM + 330,
     lines: [
-      "IPCC AR6: the warming still to come after net zero is likely small.",
-      "Small is not negative. Stopping stops it getting worse. It does not undo it.",
+      "IPCC AR6: the warming still to come after net zero is likely small, and could fall",
+      "either side of zero. Either way, stopping stops it getting worse. It does not undo it.",
     ],
   },
 ];
@@ -145,11 +152,15 @@ export const GALLERY_TALK: string[][] = [
     "This is the flow.",
   ],
   [
-    "What stayed up there. Not one dip in the spiky line shows up here.",
-    "This is the stock, and it is the one that counts.",
+    "The running total. Not one dip in the spiky line shows up here.",
+    "This is the stock, and it is the one warming tracks.",
   ],
   [
     "And the temperature, on the same years. It follows the smooth line, not the spiky one.",
+    "Every dip in the flow is missing from this one too.",
+  ],
+  [
+    "The last panel plots the two against each other: one dot per year, 1850 bottom left.",
     `Observed warming per thousand gigatonnes: ${(FIT.slope * 1000).toFixed(2)} °C, correlation ${FIT.r.toFixed(2)}.`,
   ],
 ];

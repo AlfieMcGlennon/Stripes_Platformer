@@ -8,7 +8,13 @@ import { bestSkill, bestWeights, CLIMATE, horizon, PERIOD, SITES, skillOf } from
  * Each one is short on purpose. The reader is standing somewhere and can stay as
  * long as they like, so nothing needs to be said twice or at length.
  */
-const USEFUL = 0.05;
+/**
+ * Where this episode draws the line under "useful". It is our line, not an official
+ * one, and it has to be said on screen wherever the horizon post is named -- the same
+ * rule episode 3 follows for its 28 °C. Move it and the post moves (0.10 gives six
+ * days, 0.02 gives eleven); the collapse either side of it does not move at all.
+ */
+export const USEFUL = 0.05;
 export const HORIZON = horizon(USEFUL);
 export const PERSISTENCE = [1, 0, 0, 0];
 
@@ -35,7 +41,7 @@ export const STATION_LINES: string[][][] = [
     [`${place(0)}. Your own thermometer: today's reading, against a normal day for the date.`],
     [
       `Guess that tomorrow is the same as today, and you score ${two(skillOf(PERSISTENCE, 1))}.`,
-      `Zero would mean no better than saying "an ordinary day for the time of year".`,
+      `Zero would mean no better than saying "an ordinary day for the time of year". One is perfect.`,
     ],
   ],
   [
@@ -59,8 +65,7 @@ export const STATION_LINES: string[][][] = [
 ];
 
 export const BENCH = [
-  ["All four. Now let least squares weigh them, against every day from " +
-    `${PERIOD.from} to ${PERIOD.to}.`],
+  [`All four. Now let the record choose how to weigh them, over ${PERIOD.from} to ${PERIOD.to}.`],
   [
     `For tomorrow: ${SITES.map((_, i) => `${place(i)} ${two(bestWeights(1)[i])}`).join(", ")}.`,
     `Score ${two(bestSkill(1))}.`,
@@ -103,8 +108,8 @@ export const CORRIDOR: { lead: number; lines: string[] }[] = [
   {
     lead: HORIZON,
     lines: [
-      `This post is +${HORIZON} days, where useful skill runs out.`,
-      "No combination of these four gets past it. There is nothing left in them to use.",
+      `This post is +${HORIZON} days: where the best possible mix drops below ${two(USEFUL)}.`,
+      "That line is ours, not an official one. Move it and the post moves; the collapse does not.",
     ],
   },
   {
@@ -138,7 +143,10 @@ export function climateLines(): string[][] {
       `Next decade warmer than the last? ${decade.hits} of ${decade.total}.`,
       `Next thirty years? ${thirty.hits} of ${thirty.total}.`,
     ],
-    [`And since ${since1970.since}: ${since1970.hits} out of ${since1970.total}. Every time.`],
+    [
+      `And since ${since1970.since}, every thirty-year stretch beat the thirty before it:`,
+      `${since1970.total} windows, each a year apart, so they overlap — one answer, not ${since1970.total} tries.`,
+    ],
     [
       "Nobody can tell you the temperature three weeks from Tuesday.",
       "That is not the same as nobody knowing which way the next thirty years go.",
@@ -154,7 +162,8 @@ export const CREDITS: string[] = [
   "Met Office Hadley Centre, Open Government Licence v3.",
   "Valentia, De Bilt and Balmoral: GHCN-Daily, NOAA NCEI,",
   "Menne et al. (2012), J. Atmos. Oceanic Technol.",
-  `Fitted over every day from ${PERIOD.from} to ${PERIOD.to}.`,
+  `Fitted over the days from ${PERIOD.from} to ${PERIOD.to} on which all`,
+  "four stations reported, which is fewer than every day in that span.",
   "",
   "HOW IT WORKS",
   "Anomalies are departures from a smoothed day-of-year average,",
@@ -167,6 +176,12 @@ export const CREDITS: string[] = [
   "Not a weather model: real forecasting solves physics on a grid,",
   "not four thermometers, and reaches further than this does.",
   "The point is the horizon, which no amount of skill removes.",
+  `"Useful" is set at a skill of ${two(USEFUL)} here, which is this`,
+  "episode's choice: move the line and the post moves, but the",
+  "collapse either side of it does not.",
+  "The thirty-year rows count windows one year apart, so they",
+  "overlap heavily and are one consistent story rather than 27",
+  "independent tests. The year-to-year row really is separate tries.",
   "One region, one variable, and skill measured on the same days",
   "it was fitted to — so these scores flatter the method.",
 ];

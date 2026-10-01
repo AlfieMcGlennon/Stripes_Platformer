@@ -3,13 +3,14 @@ import "@fontsource/silkscreen/400.css";
 import {
   mountPanel, newWalk, reduceMotion, screenX, showBootFailure, stepWalk, type Marker, type Walk,
 } from "@stripes/engine";
-import { BEST_SHIFT, EARLY_DAYS, EARLY_STATS, HOTTEST } from "./data";
+import { BEST_SHIFT, EARLY_DAYS, EARLY_STATS, HOTTEST, LATE_DAYS, SAMPLE_YEAR } from "./data";
 import {
   BASE_Y, drawGround, drawPost, drawSky, drawSpread, drawWalker, groundFor, MAX_H, pushedGround,
   tempAtX, WORLD, xForTemp,
 } from "./land";
 import {
-  CREDITS, EDGE, FAR_THRESHOLD, MARKS, pushedReadout, THRESHOLD, TITLE, walkReadout,
+  CREDITS, EDGE, FAR_THRESHOLD, MARKS, pushedReadout, SAMPLE_PEAK, THRESHOLD, TITLE,
+  walkReadout,
 } from "./script";
 import { SECTIONS, STANDFIRST } from "./story";
 import { COLORS, createRenderer, VIEW_H, VIEW_W } from "./view";
@@ -22,6 +23,8 @@ const canvas = document.getElementById("game") as HTMLCanvasElement;
 const renderer = createRenderer(canvas);
 
 const EARLY_GROUND = groundFor(EARLY_DAYS);
+/** The measured later landscape, drawn as the target once pushing is possible. */
+const LATE_GROUND = groundFor(LATE_DAYS);
 
 const s = {
   walk: newWalk({ x: xForTemp(11), cy: BASE_Y - VIEW_H / 2 + 46, speed: 54, lookAhead: 40 }) as Walk,
@@ -166,12 +169,17 @@ function draw(): void {
 
   const g = ground();
   drawSky(renderer, s.walk, s.time);
-  drawGround(renderer, s.walk, g, s.push > 0.01 ? EARLY_GROUND : undefined);
+  drawGround(
+    renderer, s.walk, g,
+    s.push > 0.01 ? EARLY_GROUND : undefined,
+    s.canPush ? LATE_GROUND : undefined,
+  );
   drawSpread(renderer, s.walk, EARLY_STATS.mean, EARLY_STATS.sd, "most summer days");
   // Labelled "avg", because the summit of the ground is a different place.
   drawPost(renderer, s.walk, g, EARLY_STATS.mean, `avg ${EARLY_STATS.mean.toFixed(1)} °C`, COLORS.gold, 36);
   drawPost(renderer, s.walk, g, THRESHOLD, `${THRESHOLD} °C`, COLORS.hot, 26);
   drawPost(renderer, s.walk, g, FAR_THRESHOLD, `${FAR_THRESHOLD} °C`, COLORS.hot, 20);
+  drawPost(renderer, s.walk, g, SAMPLE_PEAK, `${SAMPLE_YEAR}`, COLORS.ink, 24);
   drawPost(renderer, s.walk, g, HOTTEST.value, `${HOTTEST.year}`, COLORS.ink, 16);
   drawWalker(renderer, s.walk, g);
   hud();

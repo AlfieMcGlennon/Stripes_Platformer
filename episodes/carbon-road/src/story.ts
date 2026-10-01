@@ -1,5 +1,7 @@
 import type { StorySection } from "@stripes/engine";
-import { emittedBetween, FIT, LAST_YEAR, START_YEAR, TOTAL_EMITTED, warmingAt, yearReaching } from "./data";
+import {
+  emittedBetween, emittedDuring, FIT, LAST_YEAR, START_YEAR, TOTAL_EMITTED, warmingAt, yearReaching,
+} from "./data";
 
 /**
  * The whole explainer as text, with the same figures as the drive, computed from the
@@ -15,17 +17,18 @@ export const SECTIONS: StorySection[] = [
   {
     heading: "A flow and a stock",
     paragraphs: [
-      "Emissions are a flow: how much carbon dioxide we put into the air in a given year. Concentration is a stock: how much is up there in total. The two behave completely differently, and almost every confusion about climate policy comes from treating the second like the first.",
-      `Warming tracks the stock. By ${LAST_YEAR} humanity had emitted about ${gt(TOTAL_EMITTED)} of CO₂ since ${START_YEAR}, and the world had warmed about ${warmingAt(LAST_YEAR).toFixed(1)} °C above its 1850–1900 average.`,
+      "Emissions are a flow: how much carbon dioxide we put into the air in a given year. The total ever emitted is a stock: it only ever adds up. The two behave completely differently, and almost every confusion about climate policy comes from treating the second like the first.",
+      `Warming tracks that total. By ${LAST_YEAR} humanity had emitted about ${gt(TOTAL_EMITTED)} of CO₂ since ${START_YEAR}, and the world had warmed about ${warmingAt(LAST_YEAR).toFixed(1)} °C above its 1850–1900 average.`,
+      "The bar across the top of the interactive is that total emitted, not the amount now in the air: roughly half of what has been emitted has been taken up by the oceans and by land plants. Warming tracks the cumulative total, which is why the total is the thing worth watching.",
     ],
   },
   {
     heading: "Four ways of moving",
     paragraphs: [
-      `Horse and cart, ${1850}–${1880}: about ${gt(emittedBetween(1850, 1880).gt)}, ${pct(emittedBetween(1850, 1880).share)} of everything ever emitted. Energy meant muscle, firewood and the first coal, and nobody alive could have noticed the difference it made.`,
-      `Coal and steam, 1880–1910: ${gt(emittedBetween(1880, 1910).gt)}, ${pct(emittedBetween(1880, 1910).share)}. Annual emissions nearly doubled as coal moved from the hearth into the economy.`,
-      `Oil and the motor car, 1910–1960: ${gt(emittedBetween(1910, 1960).gt)}, ${pct(emittedBetween(1910, 1960).share)}, through two wars and a depression. The smog of this era was visible, so it got cleaned up. The carbon dioxide was invisible, so it stayed.`,
-      `The jet age, 1960–2024: ${gt(emittedBetween(1960, 2024).gt)} — ${pct(emittedBetween(1960, 2024).share)} of all of it, inside a single lifetime.`,
+      `Horse and cart, 1850–1879: about ${gt(emittedDuring(1850, 1880).gt)}, ${pct(emittedDuring(1850, 1880).share)} of everything ever emitted. Energy meant muscle, firewood and the first coal, and nobody alive could have noticed the difference it made.`,
+      `Coal and steam, 1880–1909: ${gt(emittedDuring(1880, 1910).gt)}, ${pct(emittedDuring(1880, 1910).share)}. Annual emissions nearly doubled as coal moved from the hearth into the economy.`,
+      `Oil and the motor car, 1910–1959: ${gt(emittedDuring(1910, 1960).gt)}, ${pct(emittedDuring(1910, 1960).share)}, through two wars and a depression. The smog of this era was visible, so it got cleaned up. The carbon dioxide was invisible, so it stayed.`,
+      `The jet age, 1960–${LAST_YEAR}: ${gt(emittedBetween(1960, LAST_YEAR).gt)} — ${pct(emittedBetween(1960, LAST_YEAR).share)} of all of it, inside a single lifetime. The four shares above are a partition of the whole record, so they add to 100%.`,
     ],
   },
   {
@@ -39,8 +42,8 @@ export const SECTIONS: StorySection[] = [
     heading: "Why stopping is not undoing",
     paragraphs: [
       "When emissions fall to zero, the flow stops. The stock does not fall with it: carbon dioxide already in the air stays there for a very long time, so the warming it has caused stays too.",
-      "The IPCC's Sixth Assessment Report puts the further warming after emissions reach net zero as likely small — the zero-emissions commitment. Small is not negative. Net zero stops the warming getting worse; it does not reverse it.",
-      "That is why the bar in the interactive plateaus rather than falling, and why the hazards stop increasing without going away.",
+      "The IPCC's Sixth Assessment Report puts the further warming after emissions reach net zero as likely small — the zero-emissions commitment — and assesses that it could fall either side of zero. Either way the point holds: net zero stops the warming getting worse; it does not reverse it.",
+      "That is why the bar in the interactive plateaus rather than falling once you walk past the end of the record.",
     ],
   },
   {
@@ -54,7 +57,7 @@ export const SECTIONS: StorySection[] = [
     heading: "What is real here and what is furniture",
     paragraphs: [
       "Emissions and cumulative emissions are the Global Carbon Budget via Our World in Data; temperature is HadCRUT5 from the Met Office Hadley Centre and CRU. Cumulative emissions accumulate from 1850, the first year of the series, not from 1750.",
-      "The road, the vehicles, the hazards and the eras are illustration. The hazard rate rises with cumulative emissions because that is the argument being made, not because it came from a dose-response study. This episode is a prototype: its numbers are committed arrays rather than output from the series data pipeline.",
+      "The road, the vehicles, the roadside and the eras are illustration. The haze thickening behind you is keyed to the running total because that is the argument being made, not because it came from a dose-response study. This episode is a prototype: its numbers are committed arrays rather than output from the series data pipeline.",
     ],
   },
 ];

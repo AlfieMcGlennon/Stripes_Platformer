@@ -9,10 +9,10 @@ import {
 } from "./art";
 import { drawBackdrop, drawRoad, LANES, prewarm, ROAD_Y, THEMES, type Theme } from "./backdrop";
 import { CREDITS, GALLERY_TALK, MARKS, TITLE } from "./chapters";
-import { cumulativeAt, emissionsAt, LAST_YEAR, TOTAL_EMITTED } from "./data";
+import { cumulativeAt, emissionsAt, LAST_YEAR, signed, TOTAL_EMITTED, warmingAt } from "./data";
 import { visibleProps } from "./props";
 import { COLORS, createRenderer, VIEW_H, VIEW_W } from "./render";
-import { drawReveal } from "./reveal";
+import { drawPanel, PANEL_COUNT, PANEL_STEP } from "./reveal";
 import {
   depotYears, drawDepotAt, drawYearPosts, eraAt, GALLERY_FROM, groundFor, isNetZero, ROAD_END,
   TRIP_FROM, vehicleAt, xForYear, yearAt, ZERO_FROM,
@@ -75,7 +75,7 @@ const markers: Marker[] = MARKS.map((m) => ({
   x: m.atYear !== undefined ? xForYear(m.atYear) : (m.atX ?? 0),
   lines: m.lines,
 }));
-GALLERY_TALK.forEach((lines, i) => markers.push({ x: GALLERY_FROM + 60 + i * 290, lines }));
+GALLERY_TALK.forEach((lines, i) => markers.push({ x: GALLERY_FROM + 40 + i * PANEL_STEP, lines }));
 markers.push({ x: ROAD_END - 20, lines: [], onReach: () => (s.atEnd = true) });
 markers.sort((a, b) => a.x - b.x);
 
@@ -85,6 +85,7 @@ const netZero = (): boolean => isNetZero(s.walk.x);
 const stockGt = (): number => cumulativeAt(netZero() ? LAST_YEAR : year());
 const stock = (): number => stockGt() / TOTAL_EMITTED;
 const emissions = (): number => (netZero() ? 0 : emissionsAt(year()));
+const warming = (): number => warmingAt(netZero() ? LAST_YEAR : year());
 
 const ERA_THEMES: Record<number, Theme> = {
   1850: THEMES.dawn,
@@ -159,21 +160,44 @@ function drawProps(): void {
   }
 }
 
+/** Warming is drawn from -0.3 to 1.6 °C, with a tick where zero falls. */
+const W_LO = -0.3;
+const W_HI = 1.6;
+
+/*
+ * Two gauges, one above the other, both driven by where you are standing: the total
+ * ever emitted, and the warming. The episode's claim is that the second tracks the
+ * first, so the reader has to be able to watch them climb together. Previously
+ * warming appeared in two captions and nowhere else, which left half the point as
+ * text beside a mechanic that only ever demonstrated the other half.
+ */
 function hud(): void {
-  renderer.rect(0, 0, VIEW_W, 30, "rgba(5,6,13,0.8)");
-  renderer.text(netZero() ? "after" : String(Math.round(year())), 8, 4, {
+  renderer.rect(0, 0, VIEW_W, 40, "rgba(5,6,13,0.8)");
+  renderer.text(netZero() ? "after" : String(Math.round(year())), 8, 3, {
     size: 13, color: COLORS.gold, title: true,
   });
-  const gx = 84;
-  const gw = VIEW_W - gx - 96;
-  renderer.rect(gx, 6, gw, 9, COLORS.shadow);
-  renderer.rect(gx + 1, 7, Math.round((gw - 2) * stock()), 7, COLORS.hot);
-  renderer.text("CO₂ IN THE AIR: TOTAL EVER EMITTED", gx, 18, { size: 7, color: COLORS.dim });
-  renderer.text(`${Math.round(stockGt())} Gt`, VIEW_W - 8, 18, { size: 8, align: "right" });
   const e = emissions();
-  renderer.text(e > 0 ? `${e.toFixed(1)} Gt/yr` : "0 Gt/yr", VIEW_W - 8, 5, {
-    size: 9, color: e > 0 ? COLORS.cold : "#6fd08c", align: "right",
+  renderer.text(e > 0 ? `${e.toFixed(1)} Gt/yr` : "0 Gt/yr", 8, 22, {
+    size: 9, color: e > 0 ? COLORS.cold : "#6fd08c",
   });
+
+  const gx = 132;
+  const gw = VIEW_W - gx - 104;
+  // Not "in the air": about half of what has been emitted has been taken up by
+  // oceans and land. Warming tracks the cumulative total, which is why the total is
+  // the thing on the gauge -- but the gauge must not claim to be a concentration.
+  renderer.rect(gx, 5, gw, 8, COLORS.shadow);
+  renderer.rect(gx + 1, 6, Math.round((gw - 2) * stock()), 6, COLORS.hot);
+  renderer.text("CO₂ EMITTED, TOTAL EVER", gx, 15, { size: 7, color: COLORS.dim });
+  renderer.text(`${Math.round(stockGt())} Gt`, VIEW_W - 8, 4, { size: 8, align: "right" });
+
+  const w = warming();
+  const t = Math.max(0, Math.min(1, (w - W_LO) / (W_HI - W_LO)));
+  renderer.rect(gx, 24, gw, 8, COLORS.shadow);
+  renderer.rect(gx + 1, 25, Math.round((gw - 2) * t), 6, COLORS.gold);
+  renderer.rect(gx + 1 + Math.round((gw - 2) * (-W_LO / (W_HI - W_LO))), 24, 1, 8, COLORS.dim);
+  renderer.text("WARMING SINCE 1850–1900", gx, 34, { size: 7, color: COLORS.dim });
+  renderer.text(`${signed(w, 2)} °C`, VIEW_W - 8, 23, { size: 8, color: COLORS.gold, align: "right" });
 }
 
 function drawCredits(): void {
@@ -214,15 +238,11 @@ function draw(): void {
   drawYearPosts(renderer, s.walk);
   for (const d of depotYears()) drawDepotAt(renderer, s.walk, d);
 
-  // The gallery: the three series hung along the roadside and walked past, rather
-  // than a panel that arrives at the end.
-  if (s.walk.x > GALLERY_FROM - 240) {
-    const base = Math.round(screenX(s.walk, GALLERY_FROM, VIEW_W));
-    for (let step = 1; step <= 3; step++) {
-      const ox = base + (step - 1) * 290 - 40;
-      if (ox < -440 || ox > VIEW_W + 40) continue;
-      drawReveal(renderer, step, 1, ox);
-    }
+  // The gallery: the four series hung along the roadside and walked past, rather
+  // than a panel that arrives at the end. Each panel clips itself to the view.
+  if (s.walk.x > GALLERY_FROM - 420) {
+    const base = screenX(s.walk, GALLERY_FROM, VIEW_W);
+    for (let id = 1; id <= PANEL_COUNT; id++) drawPanel(renderer, id, base + (id - 1) * PANEL_STEP);
   }
 
   for (const p of s.puffs) {

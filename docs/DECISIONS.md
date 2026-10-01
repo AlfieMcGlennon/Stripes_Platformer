@@ -184,3 +184,57 @@ boundary year twice and the four shares printed as "of everything ever emitted" 
 now sum to exactly 100%: 3.7%, 6.4%, 18.9% and 70.9% since 1960. Found by the episode's first test.
 **Affects:** `episodes/carbon-road/src/{data,chapters}.ts`, new `tests/road.test.ts` and a `test`
 script, since episode 2 had neither.
+
+### 2026-10-01 — The gauge is emissions, not concentration
+**Decision:** Carbon Road's bar is labelled "CO₂ EMITTED, TOTAL EVER", and a second gauge beside it
+shows warming since 1850–1900. The prose says plainly that roughly half of what has been emitted has
+been taken up by oceans and land.
+**Reasoning:** The bar the reader watches for the whole walk read "CO₂ IN THE AIR: TOTAL EVER EMITTED"
+over `cumulativeAt(year)`. Those are two different quantities and only one of them was being drawn.
+The warming claim was never wrong — warming does track cumulative emissions — but the label was, in
+the one readout the episode is built around, and the credits said nothing about sinks.
+**Second gauge:** warming previously appeared in two captions and nowhere else, so half the episode's
+own point ("warming tracks the total") was text beside a mechanic that only demonstrated accumulation.
+Two gauges climbing together makes the walk carry the whole claim.
+**Affects:** `episodes/carbon-road/src/{main,chapters,story,reveal}.ts`.
+
+### 2026-10-01 — Four roadside panels that do not erase the road
+**Decision:** `drawReveal(r, step, grow, offsetX)` becomes `drawPanel(r, id, offsetX)`: one panel, no
+`clear`, clipping itself to the view. `PANEL_STEP`/`PANEL_COUNT` own the spacing, and the gallery is
+sized from them.
+**Reasoning:** The function began life as a full-screen reveal and still opened with
+`r.clear("#070a16")`. Hung along the roadside it was called once per panel per frame, so each call
+erased the road, the sky and the previous panels, and only the last survived — and `step === 4`, which
+holds the warming-against-total scatter, its fitted slope and the on-screen "not the IPCC's TCRE"
+label, was never called from anywhere. The episode's most carefully hedged figure was quoted in a
+caption with no chart on screen and a disclaimer in dead code.
+**Affects:** `episodes/carbon-road/src/{reveal,main,road,chapters}.ts`, new gallery tests.
+
+### 2026-10-01 — A chosen threshold is said on screen, in every episode
+**Decision:** Forecaster's `USEFUL = 0.05` is exported, named in the horizon caption with "that line
+is ours, not an official one", and disclosed in the credits along with the overlapping-window caveat.
+Tests assert the disclosure text.
+**Reasoning:** Episode 3 discloses its 28 °C three times; episode 4 rested its whole "+8 days" result
+on an undisclosed cut and said "where useful skill runs out" as though it were a fact of the world.
+A looser line puts the post further out. The collapse either side of it does not move, which is the
+actual finding and survives saying so.
+**Also:** the climate half compared 76/147 year-pairs against 27 thirty-year windows drawn as four
+identical bars. The windows are one year apart, so they overlap by 29 years and are one consistent
+story rather than 27 independent tries; the captions and credits now say so. And the fog lifts over
+the last 140 px of the corridor — it had no upper bound, so the climate question, the turn the episode
+builds to, was read through weather fog at alpha 0.88 under a HUD still reading "+30d, 0.01".
+**Affects:** `episodes/forecaster/src/{script,world,main}.ts`, `tests/forecast.test.ts`.
+
+### 2026-10-01 — Prose and captions are checked against each other
+**Decision:** Every figure and every described mechanic in each episode's reading panel has to match
+the walk. Fixed: Carbon Road's prose still used the inclusive `emittedBetween` for all four era spans
+(101%, and three of four Gt figures disagreed with the captions it sits beside) and still explained
+hazards that had been cut from the episode; Loaded Dice's prose described "tiles" that do not exist, a
+threshold the reader could move that is a constant, and claimed "the further out you look, the larger
+the multiple" — which is false (2.0× at 27 °C, 1.3× at 31 °C) and which the live corner readout
+contradicts as the reader walks.
+**Also in Loaded Dice:** the measured later landscape is now drawn as a dotted target while pushing,
+so "checking it rather than asserting it" is something you can see land rather than two numbers in the
+corner; the sample-summer mark moved from 34 °C to the 33.1 °C where that summer actually peaked, with
+a post; and the corner readout names both periods instead of only the credits naming them.
+**Affects:** `episodes/carbon-road/src/story.ts`, `episodes/loaded-dice/src/{story,script,land,main}.ts`.

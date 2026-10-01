@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { BEST_SHIFT, BIN_HI, BIN_LO, EARLY_DAYS, EARLY_STATS, LATE_DAYS } from "../src/data";
+import {
+  BEST_SHIFT, BIN_HI, BIN_LO, EARLY_DAYS, EARLY_STATS, LATE_DAYS, SAMPLE_SUMMER,
+} from "../src/data";
 import { groundFor, heightAt, MAX_H, PER_DEGREE, pushedGround, tempAtX, xForTemp } from "../src/land";
-import { FAR_THRESHOLD, THRESHOLD } from "../src/script";
+import { FAR_THRESHOLD, MARKS, SAMPLE_PEAK, THRESHOLD } from "../src/script";
 
 const early = groundFor(EARLY_DAYS);
 const late = groundFor(LATE_DAYS);
@@ -78,5 +80,30 @@ describe("the hot edge is legible, which is the point of the episode", () => {
   it("drops the cold edge when the land is pushed, so the trade is visible too", () => {
     const pushed = pushedGround(BEST_SHIFT.degrees);
     expect(heightAt(early, 15) - heightAt(pushed, 15)).toBeGreaterThan(2);
+  });
+});
+
+describe("the captions stand on what they point at", () => {
+  it("puts the sample-summer mark on the day that summer actually peaked", () => {
+    const peak = Math.max(...SAMPLE_SUMMER.map((d) => d.v)) / 10;
+    expect(SAMPLE_PEAK).toBeCloseTo(peak, 6);
+    const mark = MARKS.find((m) => m.lines.join(" ").includes("peaked"));
+    expect(mark?.at).toBeCloseTo(peak, 6);
+  });
+
+  /*
+   * The walk holds still for the length of a caption, so marks close together mean
+   * stop, a moment of walking, stop again. 54 px a second over 46 px a degree.
+   */
+  it("leaves close to a second of walking between consecutive marks", () => {
+    const xs = MARKS.map((m) => m.at).sort((a, b) => a - b);
+    for (let i = 1; i < xs.length; i++) {
+      expect(((xs[i] - xs[i - 1]) * 46) / 54).toBeGreaterThan(0.9);
+    }
+  });
+
+  it("reads in the order it is walked, so nothing refers back to a mark ahead", () => {
+    const xs = MARKS.map((m) => m.at);
+    expect(xs).toEqual([...xs].sort((a, b) => a - b));
   });
 });

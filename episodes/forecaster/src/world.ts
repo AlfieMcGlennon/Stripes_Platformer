@@ -123,9 +123,17 @@ export function drawCorridor(r: Renderer, w: Walk, horizonLead: number): void {
     r.text(`+${horizonLead}d`, hx + 1, GROUND_Y - 57, { size: 7, color: "#1a0d10", align: "center" });
   }
 
-  if (density > 0.02) {
+  /*
+   * The fog lifts over the last stretch out of the corridor. It used to be drawn at
+   * full density for ever, because there was no upper bound on x -- so the climate
+   * question, which is the turn the whole episode builds to, was read through the
+   * weather fog at alpha 0.88. Letting it clear as the reader walks out is the beat.
+   */
+  const leaving = Math.max(0, Math.min(1, (w.x - PLACES.corridorTo) / 140));
+  const visible = density * (1 - leaving);
+  if (visible > 0.02) {
     const ctx = r.px;
-    ctx.globalAlpha = Math.min(0.88, density * 0.95);
+    ctx.globalAlpha = Math.min(0.88, visible * 0.95);
     const grad = ctx.createLinearGradient(0, GROUND_Y - 90, 0, GROUND_Y + 8);
     grad.addColorStop(0, "rgba(150,154,172,0.5)");
     grad.addColorStop(1, "rgba(120,124,142,0.95)");

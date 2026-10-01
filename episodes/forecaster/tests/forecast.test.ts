@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   bestSkill, bestWeights, CLIMATE, horizon, LEADS, PERIOD, SAMPLE, SITES, skillOf,
 } from "../src/data";
-import { HORIZON, PERSISTENCE } from "../src/script";
+import { CORRIDOR, CREDITS, HORIZON, PERSISTENCE, USEFUL } from "../src/script";
 
 describe("the shipped statistics", () => {
   it("covers every lead from one day to thirty, fitted on the same sample", () => {
@@ -91,5 +91,42 @@ describe("the two claims the episode makes", () => {
     expect(year.hits / year.total).toBeLessThan(0.62);
     expect(thirty.hits / thirty.total).toBeGreaterThan(0.75);
     expect(since1970.hits).toBe(since1970.total);
+  });
+});
+
+/*
+ * The horizon is wherever the line is drawn: a looser line puts the post further out.
+ * The series' own rule is that a chosen threshold must be said on screen, which is
+ * what episode 3 does for its 28 degrees and what this episode did not do for 0.05.
+ */
+describe("the chosen threshold", () => {
+  it("is the line the horizon post actually stands on", () => {
+    expect(bestSkill(HORIZON)).toBeLessThan(USEFUL);
+    expect(bestSkill(HORIZON - 1)).toBeGreaterThanOrEqual(USEFUL);
+  });
+
+  it("is named on screen wherever the horizon is named, not only in the credits", () => {
+    const stop = CORRIDOR.find((c) => c.lead === HORIZON);
+    expect(stop).toBeDefined();
+    const text = stop!.lines.join(" ");
+    expect(text).toContain(USEFUL.toFixed(2));
+    expect(text.toLowerCase()).toContain("not an official one");
+  });
+
+  it("is disclosed in the credits, along with the overlapping-window caveat", () => {
+    const credits = CREDITS.join(" ");
+    expect(credits).toContain(USEFUL.toFixed(2));
+    expect(credits.toLowerCase()).toContain("overlap");
+  });
+
+  it("moves if the line moves, which is the thing being disclosed", () => {
+    expect(CORRIDOR.map((c) => c.lead)).toContain(HORIZON);
+    // A stricter line lands earlier, a looser one later. The collapse does not move:
+    // skill falls by more than half between every one of these posts.
+    expect(horizon(0.1)).toBeLessThan(HORIZON);
+    expect(horizon(0.02)).toBeGreaterThan(HORIZON);
+    for (const lead of [1, 2, 3, 5]) {
+      expect(bestSkill(lead + 2)).toBeLessThan(bestSkill(lead) * 0.6);
+    }
   });
 });

@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { MARKS } from "../src/chapters";
+import { GALLERY_TALK, MARKS } from "../src/chapters";
+import { PANEL_COUNT, PANEL_STEP } from "../src/reveal";
 import {
   CUMULATIVE, cumulativeAt, EMISSIONS, emittedBetween, emittedDuring, FIT, LAST_YEAR, START_YEAR,
   TOTAL_EMITTED, warmingAt, WARMING, yearReaching,
 } from "../src/data";
-import { depotYears, eraAt, ERAS, PER_YEAR, TRIP_FROM, vehicleAt, xForYear, yearAt } from "../src/road";
+import {
+  depotYears, eraAt, ERAS, GALLERY_FROM, GALLERY_TO, PER_YEAR, TRIP_FROM, vehicleAt, xForYear,
+  yearAt,
+} from "../src/road";
 
 describe("the committed series", () => {
   it("covers the same years in all three, with no gaps", () => {
@@ -134,5 +138,26 @@ describe("the captions along it", () => {
 
   it("is in the order it reads in, so nothing refers back to a mark ahead of it", () => {
     expect(xs).toEqual([...xs].sort((a, b) => a - b));
+  });
+});
+
+/*
+ * The gallery was once a full-screen reveal retrofitted to hang along the road, and
+ * it drew four stacked panels per call after clearing the whole view -- so the road
+ * vanished, the panels erased each other, and the fourth was never called at all.
+ */
+describe("the roadside gallery", () => {
+  it("has one caption per panel", () => {
+    expect(GALLERY_TALK).toHaveLength(PANEL_COUNT);
+    for (const lines of GALLERY_TALK) expect(lines.length).toBeGreaterThan(0);
+  });
+
+  it("is long enough to hold every panel with its spacing", () => {
+    expect(GALLERY_TO - GALLERY_FROM).toBeGreaterThanOrEqual(PANEL_STEP * PANEL_COUNT);
+  });
+
+  it("spaces the panels far enough apart to read one at a time", () => {
+    // 480 px of view, so a step wider than the view means one panel dominates it.
+    expect(PANEL_STEP).toBeGreaterThan(300);
   });
 });

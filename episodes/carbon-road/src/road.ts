@@ -3,6 +3,7 @@ import { ART, type VehicleArt } from "./art";
 import { LANES, ROAD_Y } from "./backdrop";
 import { LAST_YEAR, START_YEAR } from "./data";
 import { COLORS, VIEW_W, type Renderer } from "./render";
+import { PANEL_COUNT, PANEL_STEP } from "./reveal";
 
 /**
  * The road as a timeline you walk. Where you are standing is which year it is, so
@@ -20,9 +21,9 @@ export const TRIP_TO = TRIP_FROM + (LAST_YEAR - START_YEAR) * PER_YEAR;
 /** After 2024: the stretch where emissions have stopped. */
 export const ZERO_FROM = TRIP_TO + 90;
 export const ZERO_TO = ZERO_FROM + 420;
-/** The gallery at the end, where the three series hang as a mural. */
+/** The gallery at the end: four panels hung along the roadside, one per PANEL_STEP. */
 export const GALLERY_FROM = ZERO_TO + 140;
-export const GALLERY_TO = GALLERY_FROM + 1180;
+export const GALLERY_TO = GALLERY_FROM + PANEL_STEP * PANEL_COUNT + 60;
 export const ROAD_END = GALLERY_TO + 160;
 
 export function yearAt(worldX: number): number {

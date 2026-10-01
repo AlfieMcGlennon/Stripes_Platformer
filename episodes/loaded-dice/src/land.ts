@@ -100,13 +100,26 @@ export function drawSky(r: Renderer, w: Walk, time: number): void {
  * The ground itself, one screen column at a time, so the silhouette is the
  * distribution exactly rather than a smoothed drawing of it.
  */
-export function drawGround(r: Renderer, w: Walk, g: Ground, ghost?: Ground): void {
+export function drawGround(
+  r: Renderer, w: Walk, g: Ground, ghost?: Ground, target?: Ground,
+): void {
   for (let sx = 0; sx < VIEW_W; sx++) {
     const celsius = tempAtX(w.cam.cx + sx - VIEW_W / 2);
     if (celsius < BIN_LO || celsius > BIN_HI) continue;
     const top = Math.round(groundY(g, celsius));
     r.rect(sx, top, 1, VIEW_H - top, binColour(celsius));
     r.rect(sx, top, 1, 1, "rgba(255,255,255,0.5)");
+    /*
+     * The measured later landscape, dotted, as the thing the push is aimed at. The
+     * episode claims a plain sideways shift reproduces it; without the target drawn
+     * there was nothing to land on, and "checking it rather than asserting it" came
+     * down to comparing two numbers in the corner. The 35% it does not account for
+     * is visible here too, which is the episode's own honesty made physical.
+     */
+    if (target && sx % 3 === 0) {
+      const aim = Math.round(groundY(target, celsius));
+      if (aim < BASE_Y) r.rect(sx, aim, 1, 1, COLORS.ink);
+    }
     if (!ghost) continue;
     /*
      * Where the ground was before the push. The old surface sits in the sky

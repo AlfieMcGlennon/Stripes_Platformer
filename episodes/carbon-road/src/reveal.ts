@@ -1,14 +1,20 @@
-import { CUMULATIVE, EMISSIONS, FIT, LAST_INDEX, MAX_EMISSIONS, TOTAL_EMITTED, WARMING } from "./data";
+import {
+  CUMULATIVE, EMISSIONS, FIT, LAST_INDEX, LAST_YEAR, MAX_EMISSIONS, START_YEAR, TOTAL_EMITTED,
+  WARMING,
+} from "./data";
 import { COLORS, Renderer, VIEW_W } from "./render";
 
 /**
- * The zoom-out, inside the level. Four steps: the spiky flow, the smooth stock it
- * built, temperature over the same years, then all of it as one straight line.
+ * The four panels hung along the roadside at the end: the spiky flow, the running
+ * total it built, temperature over the same years, then the two plotted against each
+ * other. Walked past rather than shown.
  */
-const BASE_PX = 40;
-const PY = 48;
-const PW = 400;
-const PH = 138;
+const PY = 52;
+const PW = 300;
+const PH = 120;
+/** World pixels between one panel's left edge and the next's. */
+export const PANEL_STEP = 340;
+export const PANEL_COUNT = 4;
 
 function plate(r: Renderer, x: number, y: number, w: number, h: number, label: string, right: string): void {
   r.rect(x - 1, y - 1, w + 2, h + 2, COLORS.shadow);
@@ -61,39 +67,46 @@ function series(
 }
 
 function years(r: Renderer, x: number, y: number, w: number): void {
-  r.text("1850", x, y, { size: 8, color: COLORS.dim });
-  r.text("2024", x + w, y, { size: 8, color: COLORS.dim, align: "right" });
+  r.text(String(START_YEAR), x, y, { size: 8, color: COLORS.dim });
+  r.text(String(LAST_YEAR), x + w, y, { size: 8, color: COLORS.dim, align: "right" });
 }
 
-/** `step` is 1..4; `grow` is 0..1 for the draw-on animation. */
-export function drawReveal(r: Renderer, step: number, grow: number, offsetX = 0): void {
-  const PX = BASE_PX + offsetX;
-  r.clear("#070a16");
-  const upTo = Math.max(1, Math.round(LAST_INDEX * grow));
+/**
+ * One roadside panel, drawn in world space at `offsetX`.
+ *
+ * These were once steps of a full-screen reveal, which is why this began by clearing
+ * the whole view. Hung along the road instead, that clear meant four calls in one
+ * frame erased the road, the sky and each other, leaving only whichever panel was
+ * drawn last -- and the fourth was never called at all, so the scatter, its fitted
+ * slope and the "not TCRE" label on it had no way to reach the screen. A panel now
+ * paints nothing it does not own.
+ */
+export function drawPanel(r: Renderer, id: number, offsetX: number): void {
+  const x = Math.round(offsetX);
+  if (x > VIEW_W + 8 || x + PW < -8) return;
+  const last = LAST_INDEX;
 
-  if (step < 4) {
-    const gap = 6;
-    const ph = Math.floor((PH - gap * 2) / 3);
-    plate(r, PX, PY, PW, ph, "EMITTED EACH YEAR", "43 Gt/yr");
-    series(r, PX, PY, PW, ph, EMISSIONS, 0, MAX_EMISSIONS, COLORS.cold, "bar", upTo);
-
-    if (step >= 2) {
-      const y2 = PY + ph + gap;
-      plate(r, PX, y2, PW, ph, "TOTAL STILL UP THERE", `${Math.round(TOTAL_EMITTED)} Gt`);
-      series(r, PX, y2, PW, ph, CUMULATIVE, 0, TOTAL_EMITTED, COLORS.hot, "area", upTo);
-    }
-    if (step >= 3) {
-      const y3 = PY + (ph + gap) * 2;
-      plate(r, PX, y3, PW, ph, "WARMING VS 1850-1900", "+1.5 °C");
-      series(r, PX, y3, PW, ph, WARMING, -0.3, 1.6, COLORS.gold, "line", upTo);
-    }
-    years(r, PX + 2, PY + PH + 2, PW - 4);
+  if (id === 1) {
+    plate(r, x, PY, PW, PH, "EMITTED EACH YEAR", `peak ${MAX_EMISSIONS.toFixed(0)} Gt/yr`);
+    series(r, x, PY, PW, PH, EMISSIONS, 0, MAX_EMISSIONS, COLORS.cold, "bar", last);
+  } else if (id === 2) {
+    plate(r, x, PY, PW, PH, "TOTAL EVER EMITTED", `${Math.round(TOTAL_EMITTED)} Gt`);
+    series(r, x, PY, PW, PH, CUMULATIVE, 0, TOTAL_EMITTED, COLORS.hot, "area", last);
+  } else if (id === 3) {
+    plate(r, x, PY, PW, PH, "WARMING VS 1850-1900", `+${WARMING[last].toFixed(1)} °C`);
+    series(r, x, PY, PW, PH, WARMING, -0.3, 1.6, COLORS.gold, "line", last);
+  } else {
+    drawScatter(r, x);
     return;
   }
+  years(r, x + 2, PY + PH + 2, PW - 4);
+}
 
-  plate(r, PX, PY, PW, PH, "WARMING AGAINST TOTAL EMITTED", "one dot = one year");
-  const xAt = (v: number) => PX + 4 + (v / TOTAL_EMITTED) * (PW - 40);
-  const yAt = (v: number) => PY + PH - 5 - ((v + 0.3) / 1.9) * (PH - 18);
+/** Warming against the total that caused it: the two series as one relationship. */
+function drawScatter(r: Renderer, x: number): void {
+  plate(r, x, PY, PW, PH, "WARMING AGAINST TOTAL", "one dot = one year");
+  const xAt = (v: number): number => x + 4 + (v / TOTAL_EMITTED) * (PW - 44);
+  const yAt = (v: number): number => PY + PH - 5 - ((v + 0.3) / 1.9) * (PH - 20);
   const ctx = r.px;
 
   ctx.strokeStyle = "#4a5382";
@@ -104,15 +117,22 @@ export function drawReveal(r: Renderer, step: number, grow: number, offsetX = 0)
   ctx.stroke();
   ctx.setLineDash([]);
 
-  for (let i = 0; i <= upTo; i++) {
+  for (let i = 0; i <= LAST_INDEX; i++) {
     const t = i / LAST_INDEX;
-    r.rect(xAt(CUMULATIVE[i]) - 1, yAt(WARMING[i]) - 1, 2, 2,
+    r.rect(Math.round(xAt(CUMULATIVE[i])) - 1, Math.round(yAt(WARMING[i])) - 1, 2, 2,
       `rgb(${Math.round(67 + t * 142)},${Math.round(147 - t * 74)},${Math.round(195 - t * 104)})`);
   }
 
-  r.text(`${(FIT.slope * 1000).toFixed(2)} °C per 1000 Gt`, PX + PW - 4, PY + PH - 20, { size: 9, align: "right" });
-  r.text(`r ${FIT.r.toFixed(2)}`, PX + PW - 4, PY + PH - 11, { size: 8, color: COLORS.dim, align: "right" });
-  r.text("0", PX + 4, PY + PH + 2, { size: 8, color: COLORS.dim });
-  r.text(`${Math.round(TOTAL_EMITTED)} Gt emitted`, PX + PW - 4, PY + PH + 2, { size: 8, color: COLORS.dim, align: "right" });
-  r.text("not the IPCC's TCRE — measured from these two series", VIEW_W / 2, PY - 10, { size: 8, color: COLORS.dim, align: "center" });
+  r.text(`${(FIT.slope * 1000).toFixed(2)} °C per 1000 Gt`, x + PW - 4, PY + PH - 22, {
+    size: 9, align: "right",
+  });
+  r.text(`r ${FIT.r.toFixed(2)}`, x + PW - 4, PY + PH - 12, { size: 8, color: COLORS.dim, align: "right" });
+  r.text("0", x + 4, PY + PH + 2, { size: 8, color: COLORS.dim });
+  r.text(`${Math.round(TOTAL_EMITTED)} Gt emitted`, x + PW - 4, PY + PH + 2, {
+    size: 8, color: COLORS.dim, align: "right",
+  });
+  // The hedge belongs on the picture, not only in the credits.
+  r.text("measured from these two series — not the IPCC's TCRE", x + PW / 2, PY - 10, {
+    size: 8, color: COLORS.dim, align: "center",
+  });
 }
