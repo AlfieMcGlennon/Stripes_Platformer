@@ -155,7 +155,9 @@ export function drawSpread(r: Renderer, w: Walk, mean: number, sd: number, label
   r.rect(lo, y, Math.max(1, hi - lo), 1, COLORS.dim);
   r.rect(lo, y - 3, 1, 7, COLORS.dim);
   r.rect(hi, y - 3, 1, 7, COLORS.dim);
-  r.text(label, (lo + hi) / 2, y - 11, { size: 7, color: COLORS.dim, align: "center" });
+  // Below the bar, not above it: the average's post is centred on the same x and its
+  // label hangs just above, so a label over the bar lands on top of it.
+  r.text(label, (lo + hi) / 2, y + 5, { size: 7, color: COLORS.dim, align: "center" });
 }
 
 export function drawWalker(r: Renderer, w: Walk, g: Ground): void {

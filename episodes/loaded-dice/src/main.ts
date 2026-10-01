@@ -176,7 +176,9 @@ function draw(): void {
   );
   drawSpread(renderer, s.walk, EARLY_STATS.mean, EARLY_STATS.sd, "most summer days");
   // Labelled "avg", because the summit of the ground is a different place.
-  drawPost(renderer, s.walk, g, EARLY_STATS.mean, `avg ${EARLY_STATS.mean.toFixed(1)} °C`, COLORS.gold, 36);
+  // 30 not 36: the root scale stands the ground at the average 78px tall, so the old
+  // post height put this label two pixels under the HUD band.
+  drawPost(renderer, s.walk, g, EARLY_STATS.mean, `avg ${EARLY_STATS.mean.toFixed(1)} °C`, COLORS.gold, 30);
   drawPost(renderer, s.walk, g, THRESHOLD, `${THRESHOLD} °C`, COLORS.hot, 26);
   drawPost(renderer, s.walk, g, FAR_THRESHOLD, `${FAR_THRESHOLD} °C`, COLORS.hot, 20);
   drawPost(renderer, s.walk, g, SAMPLE_PEAK, `${SAMPLE_YEAR}`, COLORS.ink, 24);
