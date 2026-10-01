@@ -1,8 +1,10 @@
 # The Stripes Series
 
-Small browser games that each make one climate idea physical. No frameworks, no game engine, no
-accounts: a pixel canvas, a shared TypeScript engine, and a Python pipeline that turns published
-climate datasets into the ground you walk on.
+Interactive explainers that each make one climate idea physical. Not games: there is no score, no
+failure and nothing to come back and beat. Each one exists to land a single point once, clearly, and
+then get out of the way. No frameworks, no game engine, no accounts — a pixel canvas, a shared
+TypeScript engine, and a Python pipeline that turns published climate datasets into the thing you
+are handling.
 
 This is a communication project first. Climate is a subject where the evidence is settled and the
 explanation still routinely fails to land, and where the usual formats — a chart, a paragraph, a
@@ -30,9 +32,10 @@ online, lets you walk the evidence and reach the wrong conclusion honestly, then
 step and flips it. Being briefly wrong on purpose is a better teacher than being told.
 
 **It fits a different learning style.** The same content exists here in four registers — the
-mechanic, the picture, the number, and a generated text version for anyone using a screen reader or
-who would simply rather read. None is a translation of the others; each carries the argument on its
-own terms.
+mechanic, the picture, the number, and a written version carried in every episode for anyone using a
+screen reader, anyone whose browser cannot run it, and anyone who would simply rather read. None is
+a summary of the others; each carries the whole argument on its own terms. Open “Read it instead” in
+any episode.
 
 ## The directive
 

@@ -2,8 +2,8 @@ import "@fontsource/pixelify-sans/400.css";
 import "@fontsource/silkscreen/400.css";
 import { Input } from "./core";
 import { isMuted, toggleMute, unlock } from "./core/audio";
-import { reduceMotion, setReduceMotion } from "@stripes/engine";
-import { storySections } from "./story";
+import { mountPanel, reduceMotion, showBootFailure } from "@stripes/engine";
+import { storySections, STANDFIRST } from "./story";
 import { COLORS } from "./render/palette";
 import { Renderer, VIEW_H, VIEW_W } from "./render/renderer";
 import {
@@ -53,67 +53,17 @@ function onGesture(): void {
 }
 
 const input = new Input(canvas, (x, y) => renderer.clientToView(x, y), onGesture);
+let syncPanel: () => void = () => undefined;
 window.addEventListener("keydown", (e) => {
-  if (e.code === "KeyM") syncPanel(toggleMute());
+  if (e.code === "KeyM") {
+    toggleMute();
+    syncPanel();
+  }
   if (e.code === "KeyT") {
     renderer.cycleTextScale();
     syncPanel();
   }
 });
-
-/**
- * The accessibility panel is plain HTML, so it works with a keyboard, a screen
- * reader and a thumb without the canvas having to reimplement any of it. It also
- * carries the text size control: canvas text cannot respond to browser zoom,
- * because the view is fitted to the viewport, so page zoom leaves it unchanged.
- */
-const byId = <T extends HTMLElement>(id: string): T | null => document.getElementById(id) as T | null;
-
-function syncPanel(_muted = isMuted()): void {
-  const size = byId<HTMLButtonElement>("text-size");
-  if (size) size.textContent = `Text size: ${renderer.textScale}×`;
-  const motion = byId<HTMLButtonElement>("reduce-motion");
-  if (motion) {
-    motion.textContent = `Reduce motion: ${reduceMotion() ? "on" : "off"}`;
-    motion.setAttribute("aria-pressed", String(reduceMotion()));
-  }
-  const mute = byId<HTMLButtonElement>("mute");
-  if (mute) {
-    mute.textContent = `Sound: ${isMuted() ? "off" : "on"}`;
-    mute.setAttribute("aria-pressed", String(isMuted()));
-  }
-}
-
-function buildPanel(): void {
-  byId<HTMLButtonElement>("text-size")?.addEventListener("click", () => {
-    renderer.cycleTextScale();
-    syncPanel();
-  });
-  byId<HTMLButtonElement>("reduce-motion")?.addEventListener("click", () => {
-    setReduceMotion(!reduceMotion());
-    syncPanel();
-  });
-  byId<HTMLButtonElement>("mute")?.addEventListener("click", () => {
-    unlock();
-    toggleMute();
-    syncPanel();
-  });
-  const story = byId("story");
-  if (story) {
-    story.replaceChildren();
-    for (const section of storySections()) {
-      const h = document.createElement("h2");
-      h.textContent = section.heading;
-      story.append(h);
-      for (const text of section.paragraphs) {
-        const p = document.createElement("p");
-        p.textContent = text;
-        story.append(p);
-      }
-    }
-  }
-  syncPanel();
-}
 
 // ?level=<id or number> jumps straight to a scene, which is handy while tuning.
 function startIndex(): number {
@@ -210,27 +160,17 @@ function frame(now: number): void {
   renderer.present();
 }
 
-/**
- * Any failure here used to leave a silent black page: the loop was scheduled off
- * an unhandled promise, and a null 2D context threw during module evaluation. The
- * text version is already in the DOM, so the honest fallback is to say so and
- * point at it.
- */
-function bootFailed(err: unknown): void {
-  console.error("Height Check failed to start", err);
-  const note = document.createElement("p");
-  note.className = "fallback";
-  note.textContent =
-    "Height Check could not start in this browser. Open “Text version & accessibility” at the bottom of the page for the whole story in text.";
-  document.body.append(note);
-  byId("panel")?.setAttribute("open", "");
-}
-
 try {
-  buildPanel();
+  syncPanel = mountPanel({
+    title: "Height Check",
+    standfirst: STANDFIRST,
+    sections: storySections(),
+    renderer,
+    audio: { isMuted, toggle: toggleMute, unlock },
+  });
   void fontsReady()
     .then(() => requestAnimationFrame(frame))
-    .catch(bootFailed);
+    .catch(showBootFailure);
 } catch (err) {
-  bootFailed(err);
+  showBootFailure(err);
 }

@@ -1,6 +1,11 @@
 # CLAUDE.md
 
 Monorepo for the stripes series: a shared pixel engine plus one folder per episode.
+
+**These are explainers, not games.** No score, no fail state, no replay value: each episode lands one
+point once and stops. If a control does not teach, cut it. Every episode ships a written version of
+its whole argument via the engine's reading panel, because a lot of readers will want the point
+without the interaction.
 Read `docs/MEMORY.md` first, then `docs/ARCHITECTURE.md`.
 
 ```

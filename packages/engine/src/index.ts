@@ -11,6 +11,9 @@
 export { css, lerpColor, lerpRgb, parseColor, shade, type RGB } from "./color";
 export { RDBU, stripeColor, stripePosition } from "./palette";
 export { UI } from "./ui";
+export {
+  mountPanel, showBootFailure, type AudioControl, type PanelOptions, type StorySection,
+} from "./panel";
 export { mulberry32 } from "./random";
 export { reduceMotion, setReduceMotion } from "./motion";
 export {

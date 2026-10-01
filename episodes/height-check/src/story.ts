@@ -10,6 +10,9 @@ import { allRisingFromYears, DERIVED, GLOBAL, PALEO, signed } from "./data";
  *
  * Every number comes from the data pipeline, the same as the captions do.
  */
+export const STANDFIRST =
+  "Why a single day, or a single year, tells you nothing about a climate trend.";
+
 export interface StorySection {
   heading: string;
   paragraphs: string[];

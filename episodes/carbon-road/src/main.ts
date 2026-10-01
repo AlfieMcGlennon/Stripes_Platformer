@@ -1,5 +1,6 @@
 import "@fontsource/pixelify-sans/400.css";
 import "@fontsource/silkscreen/400.css";
+import { mountPanel, showBootFailure } from "@stripes/engine";
 import {
   ART, drawBillboard, drawDepot, drawFence, drawHeroStanding, drawHeroWalking, drawMilepost,
   drawStreetlight, drawTelegraphPole, seatRider, type VehicleArt,
@@ -10,6 +11,7 @@ import { cumulativeAt, emissionsAt, LAST_YEAR, TOTAL_EMITTED } from "./data";
 import { visibleProps } from "./props";
 import { COLORS, createRenderer, VIEW_H, VIEW_W } from "./render";
 import { drawReveal } from "./reveal";
+import { SECTIONS, STANDFIRST } from "./story";
 
 const STEP = 1 / 60;
 /** Where the vehicle you are travelling in sits on screen. */
@@ -423,5 +425,12 @@ async function fontsReady(timeoutMs = 1500): Promise<void> {
   await Promise.race([load, new Promise((resolve) => setTimeout(resolve, timeoutMs))]).catch(() => undefined);
 }
 
-prewarm();
-void fontsReady().then(() => requestAnimationFrame(frame));
+try {
+  mountPanel({ title: "Carbon Road", standfirst: STANDFIRST, sections: SECTIONS, renderer });
+  prewarm();
+  void fontsReady()
+    .then(() => requestAnimationFrame(frame))
+    .catch(showBootFailure);
+} catch (err) {
+  showBootFailure(err);
+}
