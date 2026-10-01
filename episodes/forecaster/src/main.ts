@@ -1,57 +1,46 @@
 import "@fontsource/pixelify-sans/400.css";
 import "@fontsource/silkscreen/400.css";
 import { mountPanel, reduceMotion, showBootFailure } from "@stripes/engine";
-import { bestWeights, CLIMATE, LEADS, SAMPLE, SITES, skillOf } from "./data";
-import { drawCurve, drawEquation, drawMap, drawSliders, drawStreaks } from "./plot";
+import { bestSkill, bestWeights, CLIMATE, SAMPLE, SITES } from "./data";
 import {
-  bestBeat, CREDITS, DIFFERENT, GIVES_UP, HORIZON, LEAD, PERSISTENCE_BEAT, streakBeats, TITLE,
-  WEIGHTS,
+  BENCH, climateLines, CORRIDOR, CREDITS, HORIZON, OPENING, STATION_LINES, TITLE,
 } from "./script";
 import { SECTIONS, STANDFIRST } from "./story";
-import { COLORS, createRenderer, CURVE, VIEW_H, VIEW_W } from "./view";
+import { GROUND_Y, newWalk, screenX, stepWalk, type Marker } from "./trail";
+import { COLORS, createRenderer, VIEW_H, VIEW_W } from "./view";
+import {
+  drawBench, drawClimate, drawCorridor, drawGround, drawSky, drawStation, drawWalker, leadAt,
+  PLACES, xForLead,
+} from "./world";
 
 const STEP = 1 / 60;
-const MAX_LEAD = LEADS[LEADS.length - 1].lead;
-
-type Phase = "title" | "weights" | "lead" | "givesup" | "climate" | "credits";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const renderer = createRenderer(canvas);
 
 const s = {
-  phase: "title" as Phase,
+  walk: newWalk(PLACES.start),
   time: 0,
-  weights: [0.5, 0, 0, 0] as number[],
-  selected: 0,
-  lead: 1,
-  /** Which real day's readings are on the panel. */
+  /** How many stations have been reached; the HUD grows as they do. */
+  collected: 0,
+  /** Set once the bench is reached, so the equation exists only after it is earned. */
+  fitted: false,
+  climateShown: 0,
   day: 0,
-  showBest: false,
-  /** Lead times used to show the fit shrinking its own coefficients. */
-  shrinkStep: 0,
-  streaksShown: 0,
-  talk: null as string[][] | null,
-  talkLine: 0,
-  afterTalk: "title" as Phase,
+  atEnd: false,
 };
 
 /* ---------- input ---------- */
 const held = new Set<string>();
-let advance = false;
-let switchRow = 0;
+let nextPressed = false;
+let touchDir = 0;
 
 const LEFT = ["ArrowLeft", "KeyA"];
 const RIGHT = ["ArrowRight", "KeyD"];
-const UP = ["ArrowUp", "KeyW"];
-const DOWN = ["ArrowDown", "KeyS"];
 
 addEventListener("keydown", (e) => {
-  if ([...LEFT, ...RIGHT, ...UP, ...DOWN, "Space", "Enter"].includes(e.code)) e.preventDefault();
-  if (!held.has(e.code)) {
-    if (e.code === "Space" || e.code === "Enter") advance = true;
-    if (UP.includes(e.code)) switchRow = -1;
-    if (DOWN.includes(e.code)) switchRow = 1;
-  }
+  if ([...LEFT, ...RIGHT, "Space", "Enter"].includes(e.code)) e.preventDefault();
+  if (!held.has(e.code) && (e.code === "Space" || e.code === "Enter")) nextPressed = true;
   held.add(e.code);
 });
 addEventListener("keyup", (e) => held.delete(e.code));
@@ -59,140 +48,119 @@ addEventListener("keyup", (e) => held.delete(e.code));
 canvas.addEventListener("pointerdown", (e) => {
   e.preventDefault();
   const p = renderer.clientToView(e.clientX, e.clientY);
-  // Tapping a slider row selects it; tapping its bar sets the weight; else continue.
-  if (s.phase === "weights" && p.x > 140 && p.y > 30 && p.y < 110) {
-    const row = Math.max(0, Math.min(3, Math.floor((p.y - 34) / 18)));
-    s.selected = row;
-    if (p.x > 252) s.weights[row] = Math.max(-0.2, Math.min(1, ((p.x - 252) / 180) * 1.2 - 0.2));
-  } else if (s.phase === "lead" && p.y > CURVE.y - 6 && p.y < CURVE.y + CURVE.h + 10) {
-    s.lead = Math.max(1, Math.min(MAX_LEAD, 1 + ((p.x - CURVE.x) / CURVE.w) * (MAX_LEAD - 1)));
-  } else advance = true;
+  // The bottom strip is "I have read that"; the sides walk.
+  if (p.y > VIEW_H - 62) nextPressed = true;
+  else touchDir = p.x < VIEW_W / 2 ? -1 : 1;
 });
+canvas.addEventListener("pointermove", (e) => {
+  if (touchDir === 0) return;
+  touchDir = renderer.clientToView(e.clientX, e.clientY).x < VIEW_W / 2 ? -1 : 1;
+});
+addEventListener("pointerup", () => (touchDir = 0));
 
 const pressing = (keys: string[]): boolean => keys.some((k) => held.has(k));
 
-/* ---------- helpers ---------- */
+/* ---------- the road ---------- */
 const anomalies = (): number[] => SAMPLE[s.day % SAMPLE.length].x;
-const today = (): string => SAMPLE[s.day % SAMPLE.length].d;
 
-function beginTalk(block: string[][], after: Phase): void {
-  s.talk = block;
-  s.talkLine = 0;
-  s.afterTalk = after;
-}
+/**
+ * Everything that happens is hung on a place. Arriving somewhere is what produces a
+ * caption, so the reader sets the pace and can walk back to re-read the road.
+ */
+const markers: Marker[] = [
+  { x: PLACES.start + 26, lines: OPENING[0] },
+  { x: PLACES.start + 96, lines: OPENING[1] },
+];
+
+PLACES.stations.forEach((x, i) => {
+  STATION_LINES[i].forEach((lines, beat) => {
+    markers.push({
+      x: x + beat * 36,
+      lines,
+      onReach: beat === 0 ? () => (s.collected = Math.max(s.collected, i + 1)) : undefined,
+    });
+  });
+});
+
+BENCH.forEach((lines, i) => {
+  markers.push({
+    x: PLACES.bench - 50 + i * 32,
+    lines,
+    onReach: i === 0 ? () => (s.fitted = true) : undefined,
+  });
+});
+
+for (const stop of CORRIDOR) markers.push({ x: xForLead(stop.lead), lines: stop.lines });
+
+climateLines().forEach((lines, i) => {
+  markers.push({
+    x: PLACES.climate - 180 + i * 46,
+    lines,
+    onReach: () => (s.climateShown = Math.max(s.climateShown, i)),
+  });
+});
+
+markers.push({
+  x: PLACES.end - 80,
+  lines: ["That is the whole road. Keep going for where the numbers came from."],
+});
+markers.push({ x: PLACES.end - 2, lines: [], onReach: () => (s.atEnd = true) });
+markers.sort((a, b) => a.x - b.x);
 
 /* ---------- update ---------- */
 function update(dt: number): void {
   s.time += dt;
-  const go = advance;
-  const row = switchRow;
-  advance = false;
-  switchRow = 0;
+  const next = nextPressed;
+  nextPressed = false;
 
-  if (s.talk) {
-    if (!go) return;
-    s.talkLine++;
-    // The two staged phases reveal themselves as the talk advances, so there is
-    // exactly one thing new on screen per press.
-    if (s.phase === "givesup") s.shrinkStep = Math.min(2, s.talkLine);
-    if (s.phase === "climate") s.streaksShown = Math.max(0, Math.min(CLIMATE.length, s.talkLine - DIFFERENT.length + 1));
-    if (s.talkLine < s.talk.length) return;
-    s.talk = null;
-    s.phase = s.afterTalk;
-    if (s.phase === "climate") {
-      s.streaksShown = 0;
-      beginTalk([...DIFFERENT, ...streakBeats()], "credits");
+  if (s.atEnd) {
+    if (next) {
+      s.atEnd = false;
+      s.walk = newWalk(PLACES.start);
+      s.collected = 0;
+      s.fitted = false;
+      s.climateShown = 0;
+      for (const m of markers) m.fired = false;
     }
     return;
   }
 
-  switch (s.phase) {
-    case "title":
-      if (go) beginTalk(WEIGHTS, "weights");
-      return;
+  // A new morning every few seconds, so the readings are not one lucky day.
+  if (!reduceMotion() && Math.floor(s.time / 4) !== Math.floor((s.time - dt) / 4)) s.day++;
 
-    case "weights": {
-      if (row) s.selected = (s.selected + row + SITES.length) % SITES.length;
-      const step = 0.5 * dt;
-      if (pressing(RIGHT)) s.weights[s.selected] = Math.min(1, s.weights[s.selected] + step);
-      if (pressing(LEFT)) s.weights[s.selected] = Math.max(-0.2, s.weights[s.selected] - step);
-      // Cycle the day being shown, so the readings are not a single lucky morning.
-      if (!reduceMotion() && Math.floor(s.time * 0.5) !== Math.floor((s.time - dt) * 0.5)) s.day++;
-      if (go) {
-        const naive = Math.abs(s.weights[0] - 1) < 0.08 && s.weights.slice(1).every((w) => Math.abs(w) < 0.08);
-        beginTalk(naive ? bestBeat(1) : PERSISTENCE_BEAT, "weights");
-        if (naive) s.weights = bestWeights(1);
-        return;
-      }
-      return;
-    }
-
-    case "lead": {
-      const step = 9 * dt;
-      if (pressing(RIGHT)) s.lead = Math.min(MAX_LEAD, s.lead + step);
-      if (pressing(LEFT)) s.lead = Math.max(1, s.lead - step);
-      if (go) {
-        if (!s.showBest) {
-          s.showBest = true;
-          beginTalk([LEAD[1]], "lead");
-        } else {
-          s.lead = HORIZON;
-          s.phase = "givesup";
-          s.shrinkStep = 0;
-          beginTalk([LEAD[2], ...GIVES_UP], "climate");
-        }
-      }
-      return;
-    }
-
-    // Both of these are driven entirely by their caption blocks, set when entered.
-    case "givesup":
-    case "climate":
-      return;
-
-    case "credits":
-      if (go) {
-        s.phase = "title";
-        s.weights = [0.5, 0, 0, 0];
-        s.lead = 1;
-        s.showBest = false;
-        s.shrinkStep = 0;
-        s.streaksShown = 0;
-      }
-      return;
-  }
+  stepWalk(
+    s.walk,
+    { left: pressing(LEFT) || touchDir < 0, right: pressing(RIGHT) || touchDir > 0, next },
+    dt,
+    markers,
+    { min: PLACES.start, max: PLACES.end },
+  );
 }
 
 /* ---------- draw ---------- */
 function hud(): void {
-  renderer.rect(0, 0, VIEW_W, 26, "rgba(5,6,13,0.8)");
-  renderer.text("FORECASTER", 8, 5, { size: 10, color: COLORS.gold, title: true });
-  const score = skillOf(s.weights, s.lead);
-  renderer.text(`${today()}  ·  +${Math.round(s.lead)} day${Math.round(s.lead) === 1 ? "" : "s"} ahead`, 110, 7,
-    { size: 8, color: COLORS.dim });
-  renderer.text(`score ${score.toFixed(2)}`, VIEW_W - 8, 6, {
-    size: 9, color: score > 0.3 ? COLORS.gold : score > 0 ? COLORS.ink : COLORS.hot, align: "right",
-  });
-}
-
-function drawShrinking(): void {
-  const leads = [1, 7, 14];
-  renderer.text("what the fit chooses, as you ask for more", 40, 40, { size: 8, color: COLORS.ink });
-  leads.slice(0, s.shrinkStep + 1).forEach((lead, row) => {
-    const y = 60 + row * 40;
-    const w = bestWeights(lead);
-    renderer.text(`+${lead} day${lead === 1 ? "" : "s"}`, 40, y, { size: 9, color: COLORS.gold, title: true });
-    SITES.forEach((site, i) => {
-      const x = 118 + i * 88;
-      renderer.text(site.name.split(",")[0], x, y, { size: 7, color: COLORS.dim });
-      renderer.rect(x, y + 10, 72, 6, COLORS.plate);
-      renderer.rect(x, y + 10, Math.max(1, Math.round(72 * Math.max(0, w[i]))), 6, COLORS.cold);
-      renderer.text(w[i].toFixed(2), x, y + 18, { size: 7, color: COLORS.ink });
+  if (s.collected === 0) return;
+  renderer.rect(0, 0, VIEW_W, 22, "rgba(5,6,13,0.78)");
+  SITES.slice(0, s.collected).forEach((site, i) => {
+    const x = 8 + i * 82;
+    const reading = anomalies()[i] / 10;
+    renderer.text(site.name.split(",")[0], x, 3, { size: 7, color: COLORS.dim });
+    renderer.text(`${reading >= 0 ? "+" : "−"}${Math.abs(reading).toFixed(1)}`, x, 11, {
+      size: 8, color: reading >= 0 ? COLORS.hot : COLORS.cold,
     });
+  });
+  if (!s.fitted) return;
+  const lead = Math.round(leadAt(s.walk.x));
+  const skill = bestSkill(lead);
+  renderer.text(`+${lead}d`, VIEW_W - 98, 4, { size: 10, color: COLORS.gold, title: true });
+  renderer.text("best possible", VIEW_W - 8, 3, { size: 7, color: COLORS.dim, align: "right" });
+  renderer.text(skill.toFixed(2), VIEW_W - 8, 10, {
+    size: 9, color: skill > 0.3 ? COLORS.gold : skill > 0.05 ? COLORS.ink : COLORS.hot, align: "right",
   });
 }
 
 function drawCredits(): void {
+  renderer.clear(COLORS.ground);
   let y = 8;
   for (const line of CREDITS) {
     if (!line) {
@@ -209,50 +177,44 @@ function drawCredits(): void {
     y += heading ? 11 : 9;
   }
   if (reduceMotion() || Math.floor(s.time * 2) % 2 === 0) {
-    renderer.text("SPACE to run it again", VIEW_W / 2, VIEW_H - 12, { size: 8, color: COLORS.gold, align: "center" });
+    renderer.text("SPACE to walk it again", VIEW_W / 2, VIEW_H - 12, {
+      size: 8, color: COLORS.gold, align: "center",
+    });
   }
 }
 
 function draw(): void {
-  renderer.clear(COLORS.ground);
-
-  if (s.phase === "credits") {
+  if (s.atEnd) {
     drawCredits();
     renderer.present();
     return;
   }
 
-  if (s.phase === "climate") {
-    hud();
-    renderer.text("a different question", VIEW_W / 2, 30, { size: 10, color: COLORS.gold, align: "center", title: true });
-    drawStreaks(renderer, CLIMATE, s.streaksShown);
-  } else if (s.phase === "givesup") {
-    hud();
-    drawShrinking();
-  } else {
-    hud();
-    drawMap(renderer, s.weights, s.selected, anomalies());
-    drawSliders(renderer, s.weights, s.selected, anomalies());
-    drawEquation(renderer, s.weights, anomalies(), Math.round(s.lead));
-    drawCurve(renderer, s.weights, s.lead, s.showBest, HORIZON);
+  drawSky(renderer, s.walk, s.time);
+  drawGround(renderer, s.walk);
+  drawCorridor(renderer, s.walk, HORIZON);
+  PLACES.stations.forEach((_, i) => drawStation(renderer, s.walk, i, i < s.collected, anomalies()[i]));
+  drawBench(renderer, s.walk, bestWeights(1), s.fitted);
+  drawClimate(renderer, s.walk, CLIMATE, s.climateShown + 1);
+  drawWalker(renderer, s.walk);
+  hud();
 
-    if (s.phase === "title") {
-      renderer.rect(0, 86, VIEW_W, 40, "rgba(5,6,13,0.88)");
-      renderer.text(TITLE.name, VIEW_W / 2, 92, { size: 18, color: COLORS.gold, align: "center", title: true });
-      renderer.text(TITLE.tagline, VIEW_W / 2, 112, { size: 9, color: COLORS.ink, align: "center" });
-    }
+  // The title stands in the world at the start, so there is no screen to get past.
+  const titleX = Math.round(screenX(s.walk, PLACES.start - 6));
+  if (titleX > -200 && titleX < VIEW_W + 40) {
+    renderer.text(TITLE.name, titleX, GROUND_Y - 98, { size: 16, color: COLORS.gold, title: true });
+    renderer.text(TITLE.tagline, titleX, GROUND_Y - 78, { size: 8, color: COLORS.ink });
   }
 
-  if (s.talk) renderer.caption(s.talk[s.talkLine], "SPACE", s.time);
-  else {
-    const prompts: Partial<Record<Phase, string[]>> = {
-      title: TITLE.caption,
-      weights: WEIGHTS[0],
-      lead: LEAD[0],
-    };
-    const lines = prompts[s.phase];
-    if (lines) renderer.caption(lines, s.phase === "weights" || s.phase === "lead" ? false : "SPACE", s.time);
+  // A nudge onward, only while standing still with nothing left to read.
+  const idle = !pressing(RIGHT) && !pressing(LEFT) && touchDir === 0;
+  if (idle && !s.walk.pending.length && s.walk.captionAge > 1.5) {
+    renderer.text("→", VIEW_W - 16, GROUND_Y - 28, {
+      size: 12, color: Math.floor(s.time * 2) % 2 ? COLORS.gold : COLORS.dim, align: "center",
+    });
   }
+
+  renderer.caption(s.walk.caption, s.walk.pending.length ? "SPACE" : false, s.time);
   renderer.present();
 }
 
