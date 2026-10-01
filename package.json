@@ -17,7 +17,8 @@
     "data": "python scripts/build_data.py",
     "check": "npm run typecheck && npm run test && npm run build && npm run build:site",
     "build:site": "node scripts/build_site.mjs",
-    "dev:dice": "npm run dev --workspace @stripes/loaded-dice"
+    "dev:dice": "npm run dev --workspace @stripes/loaded-dice",
+    "dev:forecast": "npm run dev --workspace @stripes/forecaster"
   },
   "devDependencies": {
     "typescript": "^7.0.2",

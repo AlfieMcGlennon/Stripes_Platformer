@@ -9,7 +9,7 @@ import { cp, mkdir, rm } from "node:fs/promises";
  * exercises the same code locally and in CI. The assembly used to be six lines of
  * shell inside a manual-only workflow, which meant it had never once run.
  */
-const EPISODES = ["height-check", "carbon-road", "loaded-dice"];
+const EPISODES = ["height-check", "carbon-road", "loaded-dice", "forecaster"];
 
 await rm("site", { recursive: true, force: true });
 await mkdir("site", { recursive: true });

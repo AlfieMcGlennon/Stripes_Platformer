@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Forecaster</title>
+    <meta name="description" content="Episode 4 of the stripes series: weather is predictable for about a week, climate for decades. They are different questions." />
+    <meta name="theme-color" content="#0b1020" />
+    <meta property="og:title" content="Forecaster" />
+    <meta property="og:description" content="Build a weather forecast out of four thermometers, push it into the future, and watch it run out of road at about eight days." />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <style>
+      html, body {
+        margin: 0; height: 100%; background: #000; overflow: hidden;
+        touch-action: none; overscroll-behavior: none;
+        -webkit-user-select: none; user-select: none;
+      }
+      canvas { display: block; }
+      .fallback {
+        position: fixed; inset: 0; display: grid; place-items: center; z-index: 3;
+        margin: 0; padding: 24px; background: #0b1020; color: #f2efe6; text-align: center;
+        font: 15px/1.6 ui-sans-serif, system-ui, sans-serif;
+      }
+      .fallback a { color: #ffd166; }
+    </style>
+  </head>
+  <body>
+    <canvas id="game" aria-label="Forecaster: build a weather forecast from four thermometers, push it further into the future, and find that useful skill runs out after about eight days — while the question of whether the next thirty years will be warmer than the last thirty has been answered correctly every time since 1970.">
+      Forecaster is a short interactive about how far ahead weather can be predicted. A forecast here is
+      a weighted sum of today's temperature anomaly at four places: central England, Valentia in
+      Ireland, De Bilt in the Netherlands and Balmoral in Scotland. You choose the weights and the
+      equation is fitted against every day from 1960 to 2025. Copying today's weather works tomorrow
+      and is worse than useless three days out. Even the best possible weights lose useful skill after
+      about eight days, because there is no information left in those thermometers about that day. Then
+      the same record is asked a different question: not what next Tuesday will be, but whether the next
+      thirty years will average warmer than the last thirty. Asked of a single year that is a coin flip,
+      right about half the time. Asked of thirty years since 1970 it has been right every single time.
+      Nobody can tell you the temperature three weeks from Tuesday; that is not the same as nobody
+      knowing which way the next thirty years go.
+    </canvas>
+
+    <noscript>
+      <p class="fallback">
+        Forecaster needs JavaScript. It shows that weather forecasts lose useful skill after about a
+        week, while the direction of the next thirty years has been predictable every time since 1970.
+        Data: <a href="https://www.metoffice.gov.uk/hadobs/hadcet/">Met Office HadCET</a> and
+        <a href="https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-daily">NOAA GHCN-Daily</a>.
+      </p>
+    </noscript>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

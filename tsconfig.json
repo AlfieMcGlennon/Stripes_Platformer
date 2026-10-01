@@ -12,6 +12,9 @@
     },
     {
       "path": "./episodes/loaded-dice"
+    },
+    {
+      "path": "./episodes/forecaster"
     }
   ]
 }

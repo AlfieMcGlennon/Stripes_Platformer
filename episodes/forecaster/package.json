@@ -1,0 +1,19 @@
+{
+  "name": "@stripes/forecaster",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Episode 4: weather is predictable for days, climate for decades. They are different questions.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --build"
+  },
+  "dependencies": {
+    "@fontsource/pixelify-sans": "^5.3.0",
+    "@fontsource/silkscreen": "^5.3.0",
+    "@stripes/engine": "*"
+  }
+}
