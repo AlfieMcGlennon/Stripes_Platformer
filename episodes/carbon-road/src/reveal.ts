@@ -5,7 +5,7 @@ import { COLORS, Renderer, VIEW_W } from "./render";
  * The zoom-out, inside the level. Four steps: the spiky flow, the smooth stock it
  * built, temperature over the same years, then all of it as one straight line.
  */
-const PX = 40;
+const BASE_PX = 40;
 const PY = 48;
 const PW = 400;
 const PH = 138;
@@ -66,7 +66,8 @@ function years(r: Renderer, x: number, y: number, w: number): void {
 }
 
 /** `step` is 1..4; `grow` is 0..1 for the draw-on animation. */
-export function drawReveal(r: Renderer, step: number, grow: number): void {
+export function drawReveal(r: Renderer, step: number, grow: number, offsetX = 0): void {
+  const PX = BASE_PX + offsetX;
   r.clear("#070a16");
   const upTo = Math.max(1, Math.round(LAST_INDEX * grow));
 
