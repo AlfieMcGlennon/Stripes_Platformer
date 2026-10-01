@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   BIN_HI, BIN_LO, EARLY, EARLY_DAYS, EARLY_STATS, histogram, HOTTEST, LATE, LATE_DAYS, LATE_STATS,
-  ratioAt, SAMPLE_SUMMER, SAMPLE_YEAR, SHIFT,
+  BEST_SHIFT, countAbove, matchError, ratioAt, SAMPLE_SUMMER, SAMPLE_YEAR, shiftedDays, SHIFT,
 } from "../src/data";
-import { FAR_THRESHOLD, readout, smallCounts, THRESHOLD } from "../src/script";
+import { FAR_THRESHOLD, PUSH_EXPLAINS, smallCounts, tailReadout, THRESHOLD } from "../src/script";
 
 describe("the two normals", () => {
   it("are equal-length thirty-year periods, so the comparison is like-for-like", () => {
@@ -97,8 +97,43 @@ describe("the threshold readout the player drags", () => {
   });
 
   it("formats a readout with both periods and a multiple", () => {
-    const line = readout(28);
+    const line = tailReadout(28);
     expect(line).toContain("→");
     expect(line).toMatch(/\d\.\d×/);
+  });
+});
+
+describe("pushing the pile, which is the episode's central claim", () => {
+  it("moves every day by the same amount and nothing else", () => {
+    const pushed = shiftedDays(1);
+    expect(pushed.length).toBe(EARLY_DAYS.length);
+    for (let i = 0; i < pushed.length; i++) expect(pushed[i] - EARLY_DAYS[i]).toBe(10);
+  });
+
+  it("makes hot days monotonically more common the further it is pushed", () => {
+    let previous = -1;
+    for (const d of [0, 0.5, 1, 1.5, 2]) {
+      const n = countAbove(shiftedDays(d), THRESHOLD);
+      expect(n).toBeGreaterThan(previous);
+      previous = n;
+    }
+  });
+
+  it("best matches the measured later period near the shift that really happened", () => {
+    // This is the whole argument: slide the earlier distribution by about the
+    // amount the average actually moved, and it lands on the measured one.
+    expect(BEST_SHIFT.degrees).toBeGreaterThan(SHIFT.degrees - 0.4);
+    expect(BEST_SHIFT.degrees).toBeLessThan(SHIFT.degrees + 0.4);
+  });
+
+  it("fits better at the best shift than at no shift at all", () => {
+    expect(BEST_SHIFT.error).toBeLessThan(matchError(0) * 0.6);
+  });
+
+  it("does not claim a plain push explains everything", () => {
+    // A sideways slide accounts for most of the change but not all of it, and the
+    // script says so rather than overclaiming.
+    expect(PUSH_EXPLAINS).toBeGreaterThan(40);
+    expect(PUSH_EXPLAINS).toBeLessThan(95);
   });
 });

@@ -60,7 +60,7 @@ compares equal spans and quotes a range.
 
 - **Two playable episodes** from one engine: episode 1 finished and reviewed, episode 2 a
   working prototype. Both build to one site; Pages deployment is manual and has not been run yet.
-- **61 unit tests and 5 data tests**, run on every push, including a canary that fails the build if
+- **66 unit tests and 5 data tests**, run on every push, including a canary that fails the build if
   a data revision ever makes a step in the terrain too tall to jump.
 - **Reproducible offline, for the instrumental record.** The official Met Office CSVs are committed
   under `data/source/` with provenance sidecars recording URL, retrieval date, SHA-256, CSV header

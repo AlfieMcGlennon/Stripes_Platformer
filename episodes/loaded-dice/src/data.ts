@@ -86,3 +86,53 @@ export { SUMMER_DAYS };
  */
 export const SAMPLE_YEAR = 1976;
 export const SAMPLE_SUMMER: { l: string; v: number }[] = [{"l":"1 June 1976","v":159},{"l":"2 June 1976","v":163},{"l":"3 June 1976","v":160},{"l":"4 June 1976","v":189},{"l":"5 June 1976","v":198},{"l":"6 June 1976","v":235},{"l":"7 June 1976","v":246},{"l":"8 June 1976","v":284},{"l":"9 June 1976","v":269},{"l":"10 June 1976","v":190},{"l":"11 June 1976","v":198},{"l":"12 June 1976","v":198},{"l":"13 June 1976","v":227},{"l":"14 June 1976","v":216},{"l":"15 June 1976","v":216},{"l":"16 June 1976","v":154},{"l":"17 June 1976","v":176},{"l":"18 June 1976","v":201},{"l":"19 June 1976","v":141},{"l":"20 June 1976","v":181},{"l":"21 June 1976","v":208},{"l":"22 June 1976","v":241},{"l":"23 June 1976","v":262},{"l":"24 June 1976","v":258},{"l":"25 June 1976","v":290},{"l":"26 June 1976","v":293},{"l":"27 June 1976","v":298},{"l":"28 June 1976","v":303},{"l":"29 June 1976","v":301},{"l":"30 June 1976","v":297},{"l":"1 July 1976","v":304},{"l":"2 July 1976","v":318},{"l":"3 July 1976","v":331},{"l":"4 July 1976","v":313},{"l":"5 July 1976","v":313},{"l":"6 July 1976","v":316},{"l":"7 July 1976","v":304},{"l":"8 July 1976","v":295},{"l":"9 July 1976","v":235},{"l":"10 July 1976","v":234},{"l":"11 July 1976","v":273},{"l":"12 July 1976","v":263},{"l":"13 July 1976","v":218},{"l":"14 July 1976","v":219},{"l":"15 July 1976","v":231},{"l":"16 July 1976","v":217},{"l":"17 July 1976","v":227},{"l":"18 July 1976","v":244},{"l":"19 July 1976","v":216},{"l":"20 July 1976","v":184},{"l":"21 July 1976","v":196},{"l":"22 July 1976","v":205},{"l":"23 July 1976","v":197},{"l":"24 July 1976","v":200},{"l":"25 July 1976","v":213},{"l":"26 July 1976","v":211},{"l":"27 July 1976","v":234},{"l":"28 July 1976","v":205},{"l":"29 July 1976","v":228},{"l":"30 July 1976","v":193},{"l":"31 July 1976","v":172},{"l":"1 Aug 1976","v":190},{"l":"2 Aug 1976","v":193},{"l":"3 Aug 1976","v":202},{"l":"4 Aug 1976","v":200},{"l":"5 Aug 1976","v":207},{"l":"6 Aug 1976","v":214},{"l":"7 Aug 1976","v":218},{"l":"8 Aug 1976","v":229},{"l":"9 Aug 1976","v":232},{"l":"10 Aug 1976","v":243},{"l":"11 Aug 1976","v":252},{"l":"12 Aug 1976","v":257},{"l":"13 Aug 1976","v":252},{"l":"14 Aug 1976","v":240},{"l":"15 Aug 1976","v":253},{"l":"16 Aug 1976","v":259},{"l":"17 Aug 1976","v":264},{"l":"18 Aug 1976","v":240},{"l":"19 Aug 1976","v":252},{"l":"20 Aug 1976","v":272},{"l":"21 Aug 1976","v":249},{"l":"22 Aug 1976","v":266},{"l":"23 Aug 1976","v":272},{"l":"24 Aug 1976","v":289},{"l":"25 Aug 1976","v":288},{"l":"26 Aug 1976","v":267},{"l":"27 Aug 1976","v":206},{"l":"28 Aug 1976","v":194},{"l":"29 Aug 1976","v":214},{"l":"30 Aug 1976","v":177},{"l":"31 Aug 1976","v":190}];
+
+/**
+ * The early period with every day moved by the same amount. This is a real
+ * operation on real data, not an interpolation: it answers "what if every summer
+ * day had been this much warmer?", which is a question the record can be asked.
+ *
+ * It is also the episode's central claim made checkable. If sliding 1961-1990 to
+ * the right by about a degree lands it on top of measured 1996-2025, then a shift
+ * of the whole distribution is a fair description of what happened -- and the
+ * player can test that themselves rather than take it from a caption.
+ */
+export function shiftedDays(degrees: number): number[] {
+  const delta = Math.round(degrees * 10);
+  return EARLY_DAYS.map((t) => t + delta);
+}
+
+/** Days at or above a threshold, out of a tenths array. */
+export function countAbove(tenths: number[], threshold: number): number {
+  const limit = threshold * 10;
+  let n = 0;
+  for (const t of tenths) if (t >= limit) n++;
+  return n;
+}
+
+/**
+ * How well a shifted early period matches the measured late one, as the mean
+ * absolute difference in bin counts, per bin. Lower is better; used to tell the
+ * player when they have found the shift that actually happened.
+ */
+export function matchError(degrees: number): number {
+  const a = histogram(shiftedDays(degrees), BIN_LO, BIN_HI);
+  const b = histogram(LATE_DAYS, BIN_LO, BIN_HI);
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) sum += Math.abs(a[i] - b[i]);
+  return sum / a.length;
+}
+
+/** The shift that minimises that error, found by search rather than assumed. */
+export const BEST_SHIFT = (() => {
+  let best = 0;
+  let lowest = Infinity;
+  for (let d = 0; d <= 25; d++) {
+    const e = matchError(d / 10);
+    if (e < lowest) {
+      lowest = e;
+      best = d / 10;
+    }
+  }
+  return { degrees: best, error: lowest };
+})();
