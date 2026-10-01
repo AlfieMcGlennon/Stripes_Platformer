@@ -1,156 +1,143 @@
 import {
-  BEST_SHIFT, countAbove, EARLY, EARLY_STATS, HOTTEST, LATE, LATE_STATS, matchError, ratioAt,
-  RECORD_FROM, RECORD_TO, SAMPLE_SUMMER, SAMPLE_YEAR, shiftedDays, SHIFT,
+  BEST_SHIFT, BIN_HI, countAbove, EARLY, EARLY_STATS, HOTTEST, LATE, LATE_STATS, matchError,
+  ratioAt, SAMPLE_YEAR, shiftedDays,
 } from "./data";
 
 /**
- * Every figure is counted from the arrays in `data.ts` at runtime, so a data refresh
- * cannot leave a caption stale. The only typed numbers are the thresholds, which are
- * this game's choice and say so on screen.
+ * Captions hung on temperatures, because in this episode the ground you are
+ * standing on *is* a temperature: horizontal position is the reading, and the
+ * height of the land is how many days landed on it. Walking from the cold end to
+ * the hot end is reading the distribution left to right, at your own pace.
  *
- * The script's job here is as much explanation as narration. A reader who has never
- * been shown what a distribution is cannot be expected to care that its tail moved,
- * so three beats are spent naming the parts of the shape before anything is claimed
- * about it.
+ * Every figure is counted from the two committed arrays at runtime.
  */
-
 export const THRESHOLD = 28;
 export const FAR_THRESHOLD = 32;
+/** Where the ground runs out at the hot end. */
+export const EDGE = BIN_HI - 0.5;
 
 const one = (n: number): string => n.toFixed(1);
 const two = (n: number): string => n.toFixed(2);
-
-const sampleMean = SAMPLE_SUMMER.reduce((a, d) => a + d.v, 0) / SAMPLE_SUMMER.length / 10;
-const sampleHottest = Math.max(...SAMPLE_SUMMER.map((d) => d.v)) / 10;
 
 /** How much of the real change a plain sideways push accounts for. */
 export const PUSH_EXPLAINS = Math.round((1 - BEST_SHIFT.error / matchError(0)) * 100);
 
 export const TITLE = {
   name: "LOADED DICE",
-  tagline: "one degree on the average, and a summer that behaves differently",
-  caption: [
-    "Every tile is one real summer day in central England, since 1878.",
-    "We will build a picture out of them, then push it.",
-  ],
+  tagline: "a degree on the average, and a summer that behaves differently",
 };
 
-/** Phase: pour thirty summers, narrated as it fills. */
-export const BUILD = [
-  "Hold SPACE to pour thirty summers of days. Let go whenever you like.",
-];
-
-export const AFTER_BUILD = [
-  [
-    `${EARLY_STATS.years} summers, ${EARLY_STATS.years * 92} days, ${EARLY.label}.`,
-    "Each day sat down at its own temperature, and they stacked up.",
-  ],
-  [
-    "This is a distribution: not a trend, not a timeline.",
-    "It says how often each temperature happened, with time thrown away.",
-  ],
-];
-
-/** Phase: name the parts of the shape. */
-export const ANATOMY = [
-  [
-    `The tall middle is the ordinary summer day: about ${one(EARLY_STATS.mean)} °C.`,
-    "Most days are near it, which is why the pile is tall there.",
-  ],
-  [
-    `The shaded band is one spread either side — about ${one(EARLY_STATS.sd)} °C.`,
-    "Roughly two days in three land inside it. That is what 'normal weather' means.",
-  ],
-  [
-    "The thin ends are the extremes. Few days, but they are the ones that hurt.",
-    `Days of ${THRESHOLD} °C or more: ${one(EARLY_STATS.perSummer(THRESHOLD))} a summer, back then.`,
-  ],
-];
-
-/** Phase: the player pushes the whole curve. */
-export const PUSH = [
-  [
-    "Now push the whole pile to the right with ← →.",
-    "Every day gets warmer by the same amount. Nothing else changes.",
-  ],
-  [
-    "Keep going. Watch the counter, not the middle.",
-    "The middle is barely moving. Ask yourself what the counter is doing.",
-  ],
-];
-
-/** Live readout while pushing. */
-export function pushReadout(degrees: number): string {
-  const now = countAbove(shiftedDays(degrees), THRESHOLD) / EARLY_STATS.years;
-  const times = now / EARLY_STATS.perSummer(THRESHOLD);
-  return `${THRESHOLD} °C days: ${one(now)} a summer   ${times.toFixed(2)}×`;
+/** A place on the ground, and what is worth saying when you reach it. */
+export interface Mark {
+  at: number;
+  lines: string[];
 }
 
-/** Shown once the player's push is close to the shift that really happened. */
-export const MATCHED_HINT = "that is about where the record actually sits — SPACE";
-
-export const MATCH = [
-  [
-    `You pushed it ${two(BEST_SHIFT.degrees)} °C. Here is ${LATE.label}, measured, on top.`,
-    "Thirty real summers, thirty-five years later. It is where you just put it.",
-  ],
-  [
-    `The average summer day really did move ${one(SHIFT.degrees)} °C —`,
-    `${two(SHIFT.sds)} of the spread it already had. A nudge.`,
-  ],
-  [
-    `A plain sideways push accounts for about ${PUSH_EXPLAINS}% of the change.`,
-    "Not all of it: the shape shifted a little too. But mostly, it just slid.",
-  ],
+export const MARKS: Mark[] = [
+  { at: 11.5, lines: ["Hold → to walk. You can stop, read, and walk back whenever you like."] },
+  {
+    at: 13,
+    lines: [
+      `This ground is ${EARLY.label}: thirty summers of daily highs in central England.`,
+      "Where you stand is a temperature. How high the land is, is how many days landed on it.",
+    ],
+  },
+  {
+    at: 15,
+    lines: [
+      "So this thin ground is a cold summer day. They happen, and not often.",
+      "Walk on. It gets busier.",
+    ],
+  },
+  {
+    at: 18,
+    lines: ["You are climbing because more and more days land here. That is all the hill is."],
+  },
+  {
+    at: EARLY_STATS.mean,
+    lines: [
+      `The top: ${one(EARLY_STATS.mean)} °C, the ordinary summer day of that period.`,
+      "Nothing is happening here. That is what ordinary means.",
+    ],
+  },
+  {
+    at: EARLY_STATS.mean + EARLY_STATS.sd,
+    lines: [
+      `The fence behind you holds about two days in three — ${one(EARLY_STATS.sd)} °C either side of the top.`,
+      "That band is what people mean by normal weather.",
+    ],
+  },
+  {
+    at: 25,
+    lines: [
+      `${25} °C: a properly warm English day. Check the corner — that is how often it happened,`,
+      "then and now.",
+    ],
+  },
+  {
+    at: THRESHOLD,
+    lines: [
+      `${THRESHOLD} °C. This episode calls that a hot day; it is our line, not an official one.`,
+      `Back then: ${one(EARLY_STATS.perSummer(THRESHOLD))} days a summer. The ground here is already thin.`,
+    ],
+  },
+  {
+    at: THRESHOLD + 1,
+    lines: [
+      "Now the thing worth doing. Every day in this landscape gets warmer by the same amount,",
+      "and nothing else changes. Hold ↑ and push the land underneath you.",
+    ],
+  },
+  {
+    at: FAR_THRESHOLD,
+    lines: [
+      `${FAR_THRESHOLD} °C: ${EARLY_STATS.count(FAR_THRESHOLD)} days in thirty summers, back then.`,
+      "Small numbers out here, so the multiples are rough. The direction is not.",
+    ],
+  },
+  {
+    at: 33.2,
+    lines: [
+      `About here is where ${SAMPLE_YEAR} peaked — the summer people cite to argue nothing changed.`,
+      "It was exceptional. It is also inside the earlier landscape, not the later one.",
+    ],
+  },
+  {
+    at: 35.5,
+    lines: [
+      `And here is ${HOTTEST.year}: ${one(HOTTEST.value)} °C, the hottest day in the whole record.`,
+      "There was no ground here at all when these thirty summers were measured.",
+    ],
+  },
+  {
+    at: EDGE - 0.6,
+    lines: [
+      "The middle moved about a degree. The edge you have just walked moved far more.",
+      "Walk on for where the numbers came from.",
+    ],
+  },
 ];
 
-/** Phase: drag the threshold out into the tail. */
-export const TAIL = [
-  [
-    "Last thing. Drag the red line with ← →.",
-    "It counts how often each period reached that temperature.",
-  ],
-  [
-    "Push it further out, into the thin part.",
-    "Watch what the multiple does as you go.",
-  ],
-];
-
-export function tailReadout(threshold: number): string {
-  const then = EARLY_STATS.perSummer(threshold);
-  const now = LATE_STATS.perSummer(threshold);
-  const ratio = ratioAt(threshold);
-  return `${one(then)} → ${one(now)} days a summer   ${Number.isFinite(ratio) ? `${ratio.toFixed(1)}×` : "—"}`;
+/** The corner readout: how often the temperature underfoot is reached, then and now. */
+export function walkReadout(celsius: number): { label: string; value: string; notable: boolean } {
+  const then = EARLY_STATS.perSummer(celsius);
+  const now = LATE_STATS.perSummer(celsius);
+  const ratio = ratioAt(celsius);
+  const small = EARLY_STATS.count(celsius) <= 20;
+  return {
+    label: `days at or above this, a summer`,
+    value: small
+      ? `${EARLY_STATS.count(celsius)} → ${LATE_STATS.count(celsius)} in thirty summers`
+      : `${one(then)} → ${one(now)}   ${Number.isFinite(ratio) ? `${ratio.toFixed(1)}×` : "—"}`,
+    notable: Number.isFinite(ratio) && ratio >= 1.4,
+  };
 }
 
-export function smallCounts(threshold: number): string | null {
-  const then = EARLY_STATS.count(threshold);
-  if (then > 20) return null;
-  return `only ${then} days then and ${LATE_STATS.count(threshold)} now, in thirty summers each — small numbers`;
+/** How often this temperature is reached once the land has been pushed. */
+export function pushedReadout(celsius: number, degrees: number): string {
+  const n = countAbove(shiftedDays(degrees), celsius) / EARLY_STATS.years;
+  return `${one(n)} a summer once pushed`;
 }
-
-export const CLOSING = [
-  [
-    `At ${THRESHOLD} °C: ${one(EARLY_STATS.perSummer(THRESHOLD))} days a summer then,`,
-    `${one(LATE_STATS.perSummer(THRESHOLD))} now. About ${ratioAt(THRESHOLD).toFixed(1)} times as many.`,
-  ],
-  [
-    `At ${FAR_THRESHOLD} °C it is ${EARLY_STATS.count(FAR_THRESHOLD)} days against ${LATE_STATS.count(FAR_THRESHOLD)}.`,
-    "Small counts — but the further out you look, the bigger the multiple.",
-  ],
-  [
-    "The middle moved a little. The edge moved a lot.",
-    "That is what one degree does to a summer.",
-  ],
-  [
-    `${SAMPLE_YEAR} is the summer people cite to argue nothing has changed.`,
-    `It averaged ${one(sampleMean)} °C and peaked at ${one(sampleHottest)} °C — and it is inside the earlier pile.`,
-  ],
-  [
-    `The hottest day in the whole ${RECORD_FROM}–${RECORD_TO} record is ${HOTTEST.year}: ${one(HOTTEST.value)} °C.`,
-    `It beat ${SAMPLE_YEAR} by ${one(HOTTEST.value - sampleHottest)} °C.`,
-  ],
-];
 
 export const CREDITS: string[] = [
   "LOADED DICE",
@@ -162,12 +149,18 @@ export const CREDITS: string[] = [
   `June to August only. ${EARLY.label} against ${LATE.label}:`,
   "two thirty-year normals, so the comparison is like-for-like.",
   "",
-  "SIMPLIFICATIONS",
-  `${THRESHOLD} °C is this game's threshold, not an official one.`,
-  "Counts are counted from the record, never fitted to a normal curve.",
-  "Pushing the pile moves every day by the same amount: a real operation on",
-  `real days, and it accounts for about ${PUSH_EXPLAINS}% of the measured change.`,
-  "One place, not the globe: central England is unusually well measured,",
-  "which is why its daily record goes back furthest.",
-  "Changed odds are not attribution: this says how often, not why any one day.",
+  "HOW TO READ THE GROUND",
+  "Where you stand is a temperature; the height of the land is how",
+  "many days reached it, counted from the record and not fitted to",
+  "a curve. Pushing moves every day by the same amount, which is a",
+  `real operation on real days. The push that best reproduces the`,
+  `measured later landscape is +${two(BEST_SHIFT.degrees)} °C, and the average`,
+  `really moved ${one(LATE_STATS.mean - EARLY_STATS.mean)} °C.`,
+  "",
+  "WHAT IT DOES NOT SAY",
+  `${THRESHOLD} °C is this episode's line, not an official one.`,
+  `A sideways push accounts for about ${PUSH_EXPLAINS}% of the change, not all:`,
+  "the shape altered a little as well.",
+  "One well-measured place, not the globe. And changed odds are not",
+  "attribution: this says how often, never why any single day.",
 ];

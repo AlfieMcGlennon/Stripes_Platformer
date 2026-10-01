@@ -1,6 +1,7 @@
 import { ditheredSky, drawRidge, drawStars, HERO, drawSprite, lookPalette, lookShirt, type Theme } from "@stripes/engine";
 import { bestSkill, SITES } from "./data";
-import { GROUND_Y, screenX, type Walk } from "./trail";
+import { screenX, type Walk } from "@stripes/engine";
+import { GROUND_Y } from "./view";
 import { COLORS, VIEW_H, VIEW_W, type Renderer } from "./view";
 
 /**
@@ -56,7 +57,7 @@ export function drawGround(r: Renderer, w: Walk): void {
 
 /** A station: a mast, a louvred screen, and its reading once you have reached it. */
 export function drawStation(r: Renderer, w: Walk, index: number, reached: boolean, anomaly: number): void {
-  const x = Math.round(screenX(w, PLACES.stations[index]));
+  const x = Math.round(screenX(w, PLACES.stations[index], VIEW_W));
   if (x < -40 || x > VIEW_W + 40) return;
   const site = SITES[index];
   r.rect(x - 1, GROUND_Y - 30, 2, 30, "#565d75");
@@ -75,7 +76,7 @@ export function drawStation(r: Renderer, w: Walk, index: number, reached: boolea
 
 /** The bench where the fitted equation is written out, once all four are collected. */
 export function drawBench(r: Renderer, w: Walk, weights: number[], ready: boolean): void {
-  const x = Math.round(screenX(w, PLACES.bench));
+  const x = Math.round(screenX(w, PLACES.bench, VIEW_W));
   if (x < -140 || x > VIEW_W + 140) return;
   r.rect(x - 52, GROUND_Y - 10, 104, 4, "#6a4826");
   r.rect(x - 48, GROUND_Y - 6, 4, 6, "#4a3320");
@@ -107,7 +108,7 @@ export function drawCorridor(r: Renderer, w: Walk, horizonLead: number): void {
 
   // Day markers along the corridor, every five days.
   for (let d = 1; d <= MAX_LEAD; d += 1) {
-    const x = Math.round(screenX(w, xForLead(d)));
+    const x = Math.round(screenX(w, xForLead(d), VIEW_W));
     if (x < -10 || x > VIEW_W + 10) continue;
     const major = d === 1 || d % 5 === 0;
     r.rect(x, GROUND_Y - (major ? 12 : 5), 1, major ? 12 : 5, major ? COLORS.dim : COLORS.plateEdge);
@@ -115,7 +116,7 @@ export function drawCorridor(r: Renderer, w: Walk, horizonLead: number): void {
   }
 
   // The horizon post: beyond it nothing in these thermometers knows anything.
-  const hx = Math.round(screenX(w, xForLead(horizonLead)));
+  const hx = Math.round(screenX(w, xForLead(horizonLead), VIEW_W));
   if (hx > -20 && hx < VIEW_W + 20) {
     r.rect(hx - 1, GROUND_Y - 54, 3, 54, COLORS.hot);
     r.rect(hx - 14, GROUND_Y - 58, 30, 8, COLORS.hot);
@@ -138,7 +139,7 @@ export function drawCorridor(r: Renderer, w: Walk, horizonLead: number): void {
 export function drawClimate(
   r: Renderer, w: Walk, streaks: { span: number; hits: number; total: number; since: number }[], shown: number,
 ): void {
-  const base = Math.round(screenX(w, PLACES.climate));
+  const base = Math.round(screenX(w, PLACES.climate, VIEW_W));
   if (base < -260 || base > VIEW_W + 260) return;
   r.text("a different question", base, GROUND_Y - 112, { size: 10, color: COLORS.gold, align: "center", title: true });
   streaks.slice(0, shown).forEach((c, i) => {
@@ -158,7 +159,7 @@ export function drawClimate(
 
 export function drawWalker(r: Renderer, w: Walk): void {
   const frame = !w.moving ? HERO.stand : Math.floor(w.stride) % 2 === 0 ? HERO.runA : HERO.runB;
-  drawSprite(r.px, frame, Math.round(screenX(w, w.x)) - 5, GROUND_Y - HERO.stand.length, {
+  drawSprite(r.px, frame, Math.round(screenX(w, w.x, VIEW_W)) - 5, GROUND_Y - HERO.stand.length, {
     flip: w.facing === -1,
     palette: lookPalette(),
     shirt: lookShirt(),

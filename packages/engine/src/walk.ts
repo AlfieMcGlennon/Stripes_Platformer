@@ -1,17 +1,22 @@
-import { follow, type CameraState } from "@stripes/engine";
-import { VIEW_H, VIEW_W } from "./view";
+import { follow, type CameraState } from "./camera";
 
 /**
- * The walk. You hold a direction and move; nothing happens on its own, and you can
- * always go back and re-read. This is episode 1's shape rather than a new one: a
- * reader who has walked one of these knows how to walk this.
+ * The walk: the series' spine.
  *
- * Captions are hung on world positions rather than on a script, so arriving
- * somewhere is what produces them. They carry a minimum dwell for the same reason
- * episode 1's do: a caption that can be walked past before it is read may as well
- * not exist.
+ * You hold a direction and move. Nothing happens on its own, you can always go back
+ * and re-read, and arriving somewhere is what produces a caption — so the reader
+ * sets the pace and a pure panel of controls never has to exist. A reader who has
+ * walked one episode knows how to walk any of them.
+ *
+ * Captions carry a minimum dwell, and anything that arrives during one queues
+ * behind it, because a caption that can be walked past before it is read may as
+ * well not be there. That was measured in episode 1, where twelve of seventeen
+ * were being lost.
+ *
+ * Lifted out of episode 4 once episodes 2 and 3 wanted it too. It stays
+ * deliberately small: it knows about position, captions and a camera, and nothing
+ * about terrain, sprites or what any episode is explaining.
  */
-export const GROUND_Y = 150;
 export const WALK_SPEED = 62;
 
 export interface Marker {
@@ -22,6 +27,17 @@ export interface Marker {
   /** Fired when first reached, for whatever the arrival should change. */
   onReach?: () => void;
   fired?: boolean;
+}
+
+export interface WalkOptions {
+  /** Where the walk begins, in world pixels. */
+  x: number;
+  /** Camera height, which is an episode's business rather than the walk's. */
+  cy: number;
+  /** Pixels per second; the default suits a 320x180 view. */
+  speed?: number;
+  /** How far ahead the view leads in the direction of travel. */
+  lookAhead?: number;
 }
 
 export interface Walk {
@@ -37,14 +53,19 @@ export interface Walk {
   furthest: number;
   /** True while a direction is held, for the walk cycle. */
   moving: boolean;
+  speed: number;
+  lookAhead: number;
 }
 
-export function newWalk(x: number): Walk {
+export function newWalk(options: WalkOptions): Walk {
+  const { x, cy } = options;
   return {
     x,
+    speed: options.speed ?? WALK_SPEED,
+    lookAhead: options.lookAhead ?? 48,
     facing: 1,
     stride: 0,
-    cam: { cx: x, cy: GROUND_Y - VIEW_H / 2 + 40, zoomX: 1, zoomY: 1 },
+    cam: { cx: x, cy, zoomX: 1, zoomY: 1 },
     caption: [],
     captionAge: 0,
     captionHold: 0,
@@ -87,7 +108,7 @@ export function stepWalk(
   w.moving = dir !== 0;
   if (dir !== 0) {
     w.facing = dir > 0 ? 1 : -1;
-    w.x = Math.max(bounds.min, Math.min(bounds.max, w.x + dir * WALK_SPEED * dt));
+    w.x = Math.max(bounds.min, Math.min(bounds.max, w.x + dir * w.speed * dt));
     w.stride += dt * 6;
   }
   w.furthest = Math.max(w.furthest, w.x);
@@ -109,11 +130,10 @@ export function stepWalk(
   }
 
   // The view leads slightly in the direction of travel, so there is somewhere to go.
-  const target = w.x + w.facing * 48;
-  w.cam = follow(w.cam, Math.max(bounds.min + VIEW_W / 2 - 60, target), w.cam.cy, dt, 4);
+  w.cam = follow(w.cam, w.x + w.facing * w.lookAhead, w.cam.cy, dt, 4);
 }
 
-/** World x to screen x for this walk's camera. */
-export function screenX(w: Walk, worldX: number): number {
-  return worldX - w.cam.cx + VIEW_W / 2;
+/** World x to screen x for this walk's camera, given the view width. */
+export function screenX(w: Walk, worldX: number, viewW: number): number {
+  return worldX - w.cam.cx + viewW / 2;
 }

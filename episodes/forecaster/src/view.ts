@@ -16,6 +16,9 @@ export function createRenderer(canvas: HTMLCanvasElement): PixelRenderer {
   return new PixelRenderer(canvas, { viewW: VIEW_W, viewH: VIEW_H });
 }
 
+/** Where the road is. */
+export const GROUND_Y = 150;
+
 /** The little map of the four places, on the left. */
 export const MAP = { x: 10, y: 32, w: 124, h: 118 };
 /** One slider per predictor, on the right. */

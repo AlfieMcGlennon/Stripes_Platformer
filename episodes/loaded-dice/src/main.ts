@@ -1,63 +1,51 @@
 import "@fontsource/pixelify-sans/400.css";
 import "@fontsource/silkscreen/400.css";
-import { reduceMotion } from "@stripes/engine";
 import {
-  drawAnatomy, drawAxis, drawBars, drawBigDay, drawOutline, drawPushGauge, drawShifted,
-  drawThresholdHandle, shadeTail,
-} from "./curve";
+  mountPanel, newWalk, reduceMotion, screenX, showBootFailure, stepWalk, type Marker, type Walk,
+} from "@stripes/engine";
+import { BEST_SHIFT, EARLY_DAYS, EARLY_STATS, HOTTEST } from "./data";
 import {
-  BEST_SHIFT, BIN_HI, BIN_LO, EARLY, EARLY_DAYS, EARLY_STATS, histogram, LATE, LATE_DAYS,
-  SAMPLE_SUMMER,
-} from "./data";
+  BASE_Y, drawGround, drawPost, drawSky, drawSpread, drawWalker, groundFor, MAX_H, pushedGround,
+  tempAtX, WORLD, xForTemp,
+} from "./land";
 import {
-  AFTER_BUILD, ANATOMY, BUILD, CLOSING, CREDITS, MATCH, MATCHED_HINT, PUSH, pushReadout,
-  smallCounts, TAIL, tailReadout, TITLE,
+  CREDITS, EDGE, FAR_THRESHOLD, MARKS, pushedReadout, THRESHOLD, TITLE, walkReadout,
 } from "./script";
-import { celsiusAt, COLORS, createRenderer, FLOOR, PLOT, VIEW_H, VIEW_W } from "./view";
+import { SECTIONS, STANDFIRST } from "./story";
+import { COLORS, createRenderer, VIEW_H, VIEW_W } from "./view";
 
 const STEP = 1 / 60;
-/** Days per second while pouring: the player holds the key, so they set the pace. */
-const POUR_RATE = 320;
-/** How close to the real shift counts as finding it. */
-const MATCH_TOLERANCE = 0.2;
-
-type Phase = "title" | "build" | "anatomy" | "push" | "match" | "tail" | "credits";
+/** Where along the ground the push happens: out in the hot tail, where it shows. */
+const PUSH_AT = THRESHOLD - 1;
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const renderer = createRenderer(canvas);
 
-const BINS = BIN_HI - BIN_LO;
-const EARLY_BINS = histogram(EARLY_DAYS, BIN_LO, BIN_HI);
-const LATE_BINS = histogram(LATE_DAYS, BIN_LO, BIN_HI);
-const PEAK = Math.max(...EARLY_BINS, ...LATE_BINS);
+const EARLY_GROUND = groundFor(EARLY_DAYS);
 
 const s = {
-  phase: "title" as Phase,
+  walk: newWalk({ x: xForTemp(11), cy: BASE_Y - VIEW_H / 2 + 46, speed: 54, lookAhead: 40 }) as Walk,
   time: 0,
-  poured: 0,
-  landed: new Array(BINS).fill(0) as number[],
-  peak: 4,
-  /** How far the player has pushed the early pile, in degrees. */
+  /** How far the land has been pushed, in degrees. */
   push: 0,
-  threshold: 24,
-  steering: false,
-  talk: null as string[][] | null,
-  talkLine: 0,
-  afterTalk: "title" as Phase,
+  /** True once the player has reached the place where pushing is possible. */
+  canPush: false,
+  measured: false,
+  atEnd: false,
 };
 
 /* ---------- input ---------- */
 const held = new Set<string>();
-let advance = false;
-let pointerAt: number | null = null;
+let nextPressed = false;
+let touchDir = 0;
 
 const LEFT = ["ArrowLeft", "KeyA"];
 const RIGHT = ["ArrowRight", "KeyD"];
-const pressing = (keys: string[]): boolean => keys.some((k) => held.has(k));
+const PUSH = ["ArrowUp", "KeyW", "Space"];
 
 addEventListener("keydown", (e) => {
-  if ([...LEFT, ...RIGHT, "Space", "Enter"].includes(e.code)) e.preventDefault();
-  if (!held.has(e.code) && (e.code === "Space" || e.code === "Enter")) advance = true;
+  if ([...LEFT, ...RIGHT, ...PUSH, "Enter"].includes(e.code)) e.preventDefault();
+  if (!held.has(e.code) && (e.code === "Enter" || (e.code === "Space" && !s.canPush))) nextPressed = true;
   held.add(e.code);
 });
 addEventListener("keyup", (e) => held.delete(e.code));
@@ -65,127 +53,86 @@ addEventListener("keyup", (e) => held.delete(e.code));
 canvas.addEventListener("pointerdown", (e) => {
   e.preventDefault();
   const p = renderer.clientToView(e.clientX, e.clientY);
-  const steerable = s.phase === "push" || s.phase === "tail";
-  if (steerable && !s.talk && p.y > PLOT.y - 20 && p.y < FLOOR + 12) {
-    pointerAt = p.x;
-    s.steering = true;
-  } else advance = true;
+  if (p.y > VIEW_H - 62) nextPressed = true;
+  else touchDir = p.x < VIEW_W / 2 ? -1 : 1;
 });
 canvas.addEventListener("pointermove", (e) => {
-  if (pointerAt !== null) pointerAt = renderer.clientToView(e.clientX, e.clientY).x;
+  if (touchDir === 0) return;
+  touchDir = renderer.clientToView(e.clientX, e.clientY).x < VIEW_W / 2 ? -1 : 1;
 });
-addEventListener("pointerup", () => {
-  pointerAt = null;
-  s.steering = false;
-});
+addEventListener("pointerup", () => (touchDir = 0));
 
-const pouring = (): boolean => held.has("Space") || held.has("Enter") || pointerAt !== null;
+const pressing = (keys: string[]): boolean => keys.some((k) => held.has(k));
 
-/* ---------- helpers ---------- */
-function land(celsius: number): void {
-  const bin = Math.floor(celsius) - BIN_LO;
-  if (bin < 0 || bin >= BINS) return;
-  s.landed[bin]++;
-  s.peak = Math.max(s.peak, s.landed[bin]);
-}
+/* ---------- the ground, as places ---------- */
+const ground = (): ReturnType<typeof groundFor> =>
+  s.push > 0.01 ? pushedGround(s.push) : EARLY_GROUND;
 
-function beginTalk(block: string[][], after: Phase): void {
-  s.talk = block;
-  s.talkLine = 0;
-  s.afterTalk = after;
-}
-
-function reset(): void {
-  s.poured = 0;
-  s.landed = new Array(BINS).fill(0);
-  s.peak = 4;
-  s.push = 0;
-  s.threshold = 24;
-}
-
-const matched = (): boolean => Math.abs(s.push - BEST_SHIFT.degrees) <= MATCH_TOLERANCE;
+const markers: Marker[] = MARKS.map((m) => ({
+  x: xForTemp(m.at),
+  lines: m.lines,
+  onReach: m.at >= PUSH_AT ? () => (s.canPush = true) : undefined,
+}));
+markers.push({ x: xForTemp(EDGE), lines: [], onReach: () => (s.atEnd = true) });
+markers.sort((a, b) => a.x - b.x);
 
 /* ---------- update ---------- */
 function update(dt: number): void {
   s.time += dt;
-  const go = advance;
-  advance = false;
+  const next = nextPressed;
+  nextPressed = false;
 
-  // A caption block suspends the phase beneath it: nothing to do but read.
-  if (s.talk) {
-    if (!go) return;
-    s.talkLine++;
-    if (s.talkLine < s.talk.length) return;
-    s.talk = null;
-    s.phase = s.afterTalk;
+  if (s.atEnd) {
+    if (next) {
+      s.atEnd = false;
+      s.push = 0;
+      s.canPush = false;
+      s.measured = false;
+      s.walk = newWalk({ x: xForTemp(11), cy: BASE_Y - VIEW_H / 2 + 46, speed: 54, lookAhead: 40 });
+      for (const m of markers) m.fired = false;
+    }
     return;
   }
 
-  switch (s.phase) {
-    case "title":
-      if (go) {
-        reset();
-        s.phase = "build";
-      }
-      return;
-
-    case "build":
-      if (pouring() && s.poured < EARLY_DAYS.length) {
-        const n = Math.min(EARLY_DAYS.length - s.poured, Math.max(1, Math.round(POUR_RATE * dt)));
-        for (let i = 0; i < n; i++) land(EARLY_DAYS[s.poured + i] / 10);
-        s.poured += n;
-        if (s.poured >= EARLY_DAYS.length) beginTalk(AFTER_BUILD, "anatomy");
-      }
-      return;
-
-    case "anatomy":
-      if (go) beginTalk(ANATOMY, "push");
-      return;
-
-    case "push": {
-      const step = 0.55 * dt;
-      if (pressing(RIGHT)) s.push += step;
-      if (pressing(LEFT)) s.push -= step;
-      if (pointerAt !== null) {
-        // Dragging right of where the pile started pushes it that far.
-        s.push = Math.max(0, celsiusAt(pointerAt) - EARLY_STATS.mean);
-      }
-      s.push = Math.max(0, Math.min(2.5, s.push));
-      if (go && s.push > 0.05) beginTalk(MATCH, "tail");
-      return;
-    }
-
-    case "match":
-      if (go) beginTalk(TAIL, "tail");
-      return;
-
-    case "tail": {
-      const step = 7 * dt;
-      if (pressing(LEFT)) s.threshold -= step;
-      if (pressing(RIGHT)) s.threshold += step;
-      if (pointerAt !== null) s.threshold = celsiusAt(pointerAt);
-      s.threshold = Math.max(BIN_LO + 2, Math.min(BIN_HI - 2, s.threshold));
-      if (go) beginTalk(CLOSING, "credits");
-      return;
-    }
-
-    case "credits":
-      if (go) {
-        reset();
-        s.phase = "title";
-      }
-      return;
+  // Pushing is only possible once you have walked out to where it matters.
+  if (s.canPush && pressing(PUSH)) {
+    s.push = Math.min(2.5, s.push + 0.5 * dt);
+    if (Math.abs(s.push - BEST_SHIFT.degrees) < 0.12) s.measured = true;
   }
+
+  stepWalk(
+    s.walk,
+    { left: pressing(LEFT) || touchDir < 0, right: pressing(RIGHT) || touchDir > 0, next },
+    dt,
+    markers,
+    WORLD,
+  );
 }
 
 /* ---------- draw ---------- */
-function hud(left: string, right?: string, rightColour: string = COLORS.dim): void {
-  renderer.rect(0, 0, VIEW_W, 22, "rgba(5,6,13,0.78)");
-  renderer.text(left, 8, 5, { size: 9, color: COLORS.gold, title: true });
-  if (right) renderer.text(right, VIEW_W - 8, 6, { size: 8, color: rightColour, align: "right" });
+function hud(): void {
+  const here = tempAtX(s.walk.x);
+  renderer.rect(0, 0, VIEW_W, 24, "rgba(5,6,13,0.78)");
+  renderer.text(`${here.toFixed(1)} °C`, 8, 4, { size: 11, color: COLORS.gold, title: true });
+  renderer.text("where you are standing", 8, 16, { size: 7, color: COLORS.dim });
+  const read = walkReadout(here);
+  renderer.text(read.label, VIEW_W - 8, 3, { size: 7, color: COLORS.dim, align: "right" });
+  renderer.text(read.value, VIEW_W - 8, 11, {
+    size: 8, color: read.notable ? COLORS.gold : COLORS.ink, align: "right",
+  });
+  if (s.push > 0.01) {
+    renderer.text(`pushed +${s.push.toFixed(2)} °C`, VIEW_W / 2, 3, {
+      size: 8, color: s.measured ? COLORS.gold : COLORS.hot, align: "center",
+    });
+    renderer.text(
+      s.measured ? "as far as it really moved" : pushedReadout(here, s.push),
+      VIEW_W / 2, 13, { size: 7, color: s.measured ? COLORS.gold : COLORS.dim, align: "center" },
+    );
+  }
 }
 
 function drawCredits(): void {
+  renderer.clear(COLORS.ground);
   let y = 8;
   for (const line of CREDITS) {
     if (!line) {
@@ -202,91 +149,51 @@ function drawCredits(): void {
     y += heading ? 11 : 9;
   }
   if (reduceMotion() || Math.floor(s.time * 2) % 2 === 0) {
-    renderer.text("SPACE to run it again", VIEW_W / 2, VIEW_H - 12, { size: 8, color: COLORS.gold, align: "center" });
+    renderer.text("SPACE to walk it again", VIEW_W / 2, VIEW_H - 12, {
+      size: 8, color: COLORS.gold, align: "center",
+    });
   }
 }
 
 function draw(): void {
-  renderer.clear(COLORS.ground);
-
-  if (s.phase === "credits") {
+  if (s.atEnd) {
     drawCredits();
     renderer.present();
     return;
   }
 
-  drawAxis(renderer);
-  const steering = s.steering || pressing(LEFT) || pressing(RIGHT);
+  const g = ground();
+  drawSky(renderer, s.walk, s.time);
+  drawGround(renderer, s.walk, g, s.push > 0.01 ? EARLY_GROUND : undefined);
+  drawSpread(renderer, s.walk, EARLY_STATS.mean, EARLY_STATS.sd, "most summer days");
+  drawPost(renderer, s.walk, g, EARLY_STATS.mean, `${EARLY_STATS.mean.toFixed(1)} °C`, COLORS.gold, 36);
+  drawPost(renderer, s.walk, g, THRESHOLD, `${THRESHOLD} °C`, COLORS.hot, 26);
+  drawPost(renderer, s.walk, g, FAR_THRESHOLD, `${FAR_THRESHOLD} °C`, COLORS.hot, 20);
+  drawPost(renderer, s.walk, g, HOTTEST.value, `${HOTTEST.year}`, COLORS.ink, 16);
+  drawWalker(renderer, s.walk, g);
+  hud();
 
-  switch (s.phase) {
-    case "title":
-      drawBars(renderer, EARLY_BINS, PEAK, 0.3);
-      renderer.rect(0, 48, VIEW_W, 34, "rgba(5,6,13,0.84)");
-      renderer.text(TITLE.name, VIEW_W / 2, 54, { size: 16, color: COLORS.gold, align: "center", title: true });
-      renderer.text(TITLE.tagline, VIEW_W / 2, 72, { size: 8, color: COLORS.ink, align: "center" });
-      drawBigDay(renderer, SAMPLE_SUMMER[0].v / 10, SAMPLE_SUMMER[0].l, PLOT.x + 22, PLOT.y + 4);
-      break;
-
-    case "build":
-      hud(EARLY.label, `${s.poured} of ${EARLY_DAYS.length} days`);
-      drawBars(renderer, s.landed, s.peak);
-      break;
-
-    case "anatomy": {
-      hud("what this shape is");
-      drawBars(renderer, EARLY_BINS, PEAK);
-      const step = s.talk ? s.talkLine : 0;
-      drawAnatomy(renderer, EARLY_STATS, {
-        middle: true,
-        spread: step >= 1,
-        tails: step >= 2,
-      });
-      break;
-    }
-
-    case "push":
-    case "match": {
-      const showMeasured = s.phase === "match" || s.talk !== null;
-      hud("push it", pushReadout(s.push), matched() ? COLORS.gold : COLORS.ink);
-      drawOutline(renderer, EARLY_BINS, PEAK, COLORS.cold, true);
-      drawShifted(renderer, s.push, PEAK);
-      if (showMeasured) drawOutline(renderer, LATE_BINS, PEAK, COLORS.hot, false);
-      drawPushGauge(renderer, s.push, BEST_SHIFT.degrees, matched());
-      renderer.text(EARLY.label, PLOT.x + 2, PLOT.y - 11, { size: 7, color: COLORS.cold });
-      if (showMeasured) renderer.text(`${LATE.label} measured`, PLOT.x + 60, PLOT.y - 11, { size: 7, color: COLORS.hot });
-      if (!s.talk && matched()) {
-        renderer.text(MATCHED_HINT, VIEW_W / 2, FLOOR + 14, { size: 7, color: COLORS.gold, align: "center" });
-      }
-      break;
-    }
-
-    case "tail": {
-      hud("how often?", tailReadout(s.threshold), COLORS.ink);
-      drawBars(renderer, EARLY_BINS, PEAK, 0.45);
-      drawOutline(renderer, EARLY_BINS, PEAK, COLORS.cold, true);
-      shadeTail(renderer, LATE_BINS, PEAK, s.threshold, "rgba(209,73,91,0.5)");
-      drawOutline(renderer, LATE_BINS, PEAK, COLORS.hot, false);
-      drawThresholdHandle(renderer, s.threshold, steering);
-      renderer.text(EARLY.label, PLOT.x + 2, PLOT.y - 11, { size: 7, color: COLORS.cold });
-      renderer.text(LATE.label, PLOT.x + 60, PLOT.y - 11, { size: 7, color: COLORS.hot });
-      const note = smallCounts(s.threshold);
-      if (note) renderer.text(note, VIEW_W / 2, FLOOR + 14, { size: 7, color: COLORS.dim, align: "center" });
-      break;
-    }
+  // The title stands on the cold end, so nothing has to be dismissed to begin.
+  const titleX = Math.round(screenX(s.walk, xForTemp(9), VIEW_W));
+  if (titleX > -200 && titleX < VIEW_W + 40) {
+    renderer.text(TITLE.name, titleX, BASE_Y - MAX_H - 34, { size: 16, color: COLORS.gold, title: true });
+    renderer.text(TITLE.tagline, titleX, BASE_Y - MAX_H - 16, { size: 8, color: COLORS.ink });
   }
 
-  if (s.talk) renderer.caption(s.talk[s.talkLine], "SPACE", s.time);
-  else {
-    const prompts: Partial<Record<Phase, string[]>> = {
-      title: TITLE.caption,
-      build: BUILD,
-      anatomy: ["Three things worth naming before we move it. SPACE."],
-      push: PUSH[s.push > 0.4 ? 1 : 0],
-      tail: TAIL[0],
-    };
-    const lines = prompts[s.phase];
-    if (lines) renderer.caption(lines, s.phase === "push" || s.phase === "tail" ? false : "SPACE", s.time);
+  if (s.canPush && s.push < 0.02) {
+    renderer.text("hold ↑ to push the land", VIEW_W / 2, BASE_Y - MAX_H - 26, {
+      size: 8, color: Math.floor(s.time * 2) % 2 ? COLORS.gold : COLORS.dim, align: "center",
+    });
   }
+
+  const idle = !pressing(RIGHT) && !pressing(LEFT) && touchDir === 0;
+  if (idle && !s.walk.pending.length && s.walk.captionAge > 1.6 && !s.canPush) {
+    renderer.text("→", VIEW_W - 16, BASE_Y - 30, {
+      size: 12, color: Math.floor(s.time * 2) % 2 ? COLORS.gold : COLORS.dim, align: "center",
+    });
+  }
+
+  renderer.caption(s.walk.caption, s.walk.pending.length ? "SPACE" : false, s.time);
   renderer.present();
 }
 
@@ -313,4 +220,11 @@ async function fontsReady(timeoutMs = 1500): Promise<void> {
   await Promise.race([load, new Promise((resolve) => setTimeout(resolve, timeoutMs))]).catch(() => undefined);
 }
 
-void fontsReady().then(() => requestAnimationFrame(frame));
+try {
+  mountPanel({ title: "Loaded Dice", standfirst: STANDFIRST, sections: SECTIONS, renderer });
+  void fontsReady()
+    .then(() => requestAnimationFrame(frame))
+    .catch(showBootFailure);
+} catch (err) {
+  showBootFailure(err);
+}

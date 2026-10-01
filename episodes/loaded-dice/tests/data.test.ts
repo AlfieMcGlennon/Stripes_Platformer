@@ -3,7 +3,7 @@ import {
   BIN_HI, BIN_LO, EARLY, EARLY_DAYS, EARLY_STATS, histogram, HOTTEST, LATE, LATE_DAYS, LATE_STATS,
   BEST_SHIFT, countAbove, matchError, ratioAt, SAMPLE_SUMMER, SAMPLE_YEAR, shiftedDays, SHIFT,
 } from "../src/data";
-import { FAR_THRESHOLD, PUSH_EXPLAINS, smallCounts, tailReadout, THRESHOLD } from "../src/script";
+import { FAR_THRESHOLD, PUSH_EXPLAINS, THRESHOLD, walkReadout } from "../src/script";
 
 describe("the two normals", () => {
   it("are equal-length thirty-year periods, so the comparison is like-for-like", () => {
@@ -91,15 +91,15 @@ describe("the threshold readout the player drags", () => {
     }
   });
 
-  it("warns about small counts only once the counts really are small", () => {
-    expect(smallCounts(22)).toBeNull();
-    expect(smallCounts(33)).toContain("small numbers");
+  it("switches to raw counts once the per-summer figures get small", () => {
+    // Out in the tail a rate like "0.1 a summer" is worse than saying "3 days in thirty".
+    expect(walkReadout(22).value).toMatch(/\d\.\d×/);
+    expect(walkReadout(33).value).toContain("in thirty summers");
   });
 
-  it("formats a readout with both periods and a multiple", () => {
-    const line = tailReadout(28);
-    expect(line).toContain("→");
-    expect(line).toMatch(/\d\.\d×/);
+  it("flags the temperatures where the multiple is worth noticing", () => {
+    expect(walkReadout(18).notable).toBe(false);
+    expect(walkReadout(28).notable).toBe(true);
   });
 });
 

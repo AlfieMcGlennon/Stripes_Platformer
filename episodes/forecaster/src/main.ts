@@ -1,13 +1,14 @@
 import "@fontsource/pixelify-sans/400.css";
 import "@fontsource/silkscreen/400.css";
-import { mountPanel, reduceMotion, showBootFailure } from "@stripes/engine";
+import {
+  mountPanel, newWalk, reduceMotion, screenX, showBootFailure, stepWalk, type Marker,
+} from "@stripes/engine";
 import { bestSkill, bestWeights, CLIMATE, SAMPLE, SITES } from "./data";
 import {
   BENCH, climateLines, CORRIDOR, CREDITS, HORIZON, OPENING, STATION_LINES, TITLE,
 } from "./script";
 import { SECTIONS, STANDFIRST } from "./story";
-import { GROUND_Y, newWalk, screenX, stepWalk, type Marker } from "./trail";
-import { COLORS, createRenderer, VIEW_H, VIEW_W } from "./view";
+import { COLORS, createRenderer, GROUND_Y, VIEW_H, VIEW_W } from "./view";
 import {
   drawBench, drawClimate, drawCorridor, drawGround, drawSky, drawStation, drawWalker, leadAt,
   PLACES, xForLead,
@@ -19,7 +20,7 @@ const canvas = document.getElementById("game") as HTMLCanvasElement;
 const renderer = createRenderer(canvas);
 
 const s = {
-  walk: newWalk(PLACES.start),
+  walk: newWalk({ x: PLACES.start, cy: GROUND_Y - VIEW_H / 2 + 40 }),
   time: 0,
   /** How many stations have been reached; the HUD grows as they do. */
   collected: 0,
@@ -116,7 +117,7 @@ function update(dt: number): void {
   if (s.atEnd) {
     if (next) {
       s.atEnd = false;
-      s.walk = newWalk(PLACES.start);
+      s.walk = newWalk({ x: PLACES.start, cy: GROUND_Y - VIEW_H / 2 + 40 });
       s.collected = 0;
       s.fitted = false;
       s.climateShown = 0;
@@ -200,7 +201,7 @@ function draw(): void {
   hud();
 
   // The title stands in the world at the start, so there is no screen to get past.
-  const titleX = Math.round(screenX(s.walk, PLACES.start - 6));
+  const titleX = Math.round(screenX(s.walk, PLACES.start - 6, VIEW_W));
   if (titleX > -200 && titleX < VIEW_W + 40) {
     renderer.text(TITLE.name, titleX, GROUND_Y - 98, { size: 16, color: COLORS.gold, title: true });
     renderer.text(TITLE.tagline, titleX, GROUND_Y - 78, { size: 8, color: COLORS.ink });
