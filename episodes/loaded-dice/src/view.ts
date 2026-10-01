@@ -12,17 +12,19 @@ export function createRenderer(canvas: HTMLCanvasElement): PixelRenderer {
   return new PixelRenderer(canvas, { viewW: VIEW_W, viewH: VIEW_H });
 }
 
-/* ---------------- the temperature axis ---------------- */
-
-/** The plot area. Days fall through it and land in the histogram along its floor. */
-export const PLOT = { x: 26, y: 34, w: VIEW_W - 44, h: 96 };
-/** Where a landed day's bar grows from. */
+/**
+ * The plot area. The floor sits at 128 so the axis labels clear it and a two-line
+ * caption still fits beneath — the caption is where the teaching happens, so it
+ * gets the room it needs rather than whatever is left over.
+ */
+export const PLOT = { x: 26, y: 42, w: VIEW_W - 44, h: 86 };
 export const FLOOR = PLOT.y + PLOT.h;
 
 /**
  * Temperature to screen x. The whole episode hangs off this one mapping: a day's
- * horizontal position *is* its temperature, so the falling stream draws the
- * distribution without anyone having to plot it.
+ * horizontal position *is* its temperature, so a pile of days draws the
+ * distribution without anyone having to plot it. Phase one exists purely to teach
+ * this, by making the player place a day themselves.
  */
 export function xFor(celsius: number): number {
   const t = (celsius - BIN_LO) / (BIN_HI - BIN_LO);
@@ -30,7 +32,8 @@ export function xFor(celsius: number): number {
 }
 
 export function celsiusAt(x: number): number {
-  return BIN_LO + ((x - PLOT.x) / PLOT.w) * (BIN_HI - BIN_LO);
+  const t = (x - PLOT.x) / PLOT.w;
+  return BIN_LO + Math.max(0, Math.min(1, t)) * (BIN_HI - BIN_LO);
 }
 
 /** Width on screen of one 1 °C bin. */

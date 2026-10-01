@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   BIN_HI, BIN_LO, EARLY, EARLY_DAYS, EARLY_STATS, histogram, HOTTEST, LATE, LATE_DAYS, LATE_STATS,
-  ratioAt, SHIFT,
+  ratioAt, SAMPLE_SUMMER, SAMPLE_YEAR, SHIFT,
 } from "../src/data";
-import { FAR_THRESHOLD, THRESHOLD } from "../src/script";
+import { FAR_THRESHOLD, readout, smallCounts, THRESHOLD } from "../src/script";
 
 describe("the two normals", () => {
   it("are equal-length thirty-year periods, so the comparison is like-for-like", () => {
@@ -59,5 +59,46 @@ describe("drawing helpers", () => {
 
   it("knows the hottest day in the whole daily record", () => {
     expect(HOTTEST.value).toBeGreaterThan(Math.max(...LATE_DAYS) / 10 - 0.01);
+  });
+});
+
+describe("the dated sample summer", () => {
+  it("is a whole June-to-August summer with real dates", () => {
+    expect(SAMPLE_SUMMER.length).toBe(92);
+    expect(SAMPLE_SUMMER[0].l).toContain(String(SAMPLE_YEAR));
+    for (const d of SAMPLE_SUMMER) {
+      expect(d.v / 10).toBeGreaterThan(2);
+      expect(d.v / 10).toBeLessThan(45);
+      expect(d.l).toMatch(/^\d{1,2} (June|July|Aug) \d{4}$/);
+    }
+  });
+
+  it("sits inside the earlier period, so using it is honest rather than convenient", () => {
+    expect(SAMPLE_YEAR).toBeGreaterThanOrEqual(EARLY.from);
+    expect(SAMPLE_YEAR).toBeLessThanOrEqual(EARLY.to);
+  });
+
+  it("was a hot summer even by today's standards, which is why people cite it", () => {
+    const mean = SAMPLE_SUMMER.reduce((a, d) => a + d.v, 0) / SAMPLE_SUMMER.length / 10;
+    expect(mean).toBeGreaterThan(LATE_STATS.mean);
+  });
+});
+
+describe("the threshold readout the player drags", () => {
+  it("reports more days now than then, wherever the line sits in the tail", () => {
+    for (const t of [24, 26, 28, 30]) {
+      expect(LATE_STATS.perSummer(t)).toBeGreaterThanOrEqual(EARLY_STATS.perSummer(t));
+    }
+  });
+
+  it("warns about small counts only once the counts really are small", () => {
+    expect(smallCounts(22)).toBeNull();
+    expect(smallCounts(33)).toContain("small numbers");
+  });
+
+  it("formats a readout with both periods and a multiple", () => {
+    const line = readout(28);
+    expect(line).toContain("→");
+    expect(line).toMatch(/\d\.\d×/);
   });
 });
