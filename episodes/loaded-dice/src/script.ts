@@ -33,45 +33,54 @@ export interface Mark {
   lines: string[];
 }
 
+/*
+ * Spacing is deliberate. The walk now holds still for as long as a caption takes to
+ * read, so two marks a degree apart means stop, walk for one second, stop again.
+ * Nothing here sits closer than about 1.4 °C, which at 46 px a degree and 54 px a
+ * second is a stretch of walking between each stop rather than a stutter.
+ */
 export const MARKS: Mark[] = [
   { at: 11.5, lines: ["Hold → to walk. You can stop, read, and walk back whenever you like."] },
   {
-    at: 13,
+    at: 13.5,
     lines: [
       `This ground is ${EARLY.label}: thirty summers of daily highs in central England.`,
       "Where you stand is a temperature. How high the land is, is how many days landed on it.",
     ],
   },
   {
-    at: 15,
+    at: 15.5,
     lines: [
       "So this thin ground is a cold summer day. They happen, and not often.",
-      "Walk on. It gets busier.",
+      "Walk on. It gets busier, and the climb is the only reason it does.",
     ],
   },
   {
-    at: 18,
-    lines: ["You are climbing because more and more days land here. That is all the hill is."],
+    at: EARLY_STATS.mode,
+    lines: [
+      `The summit, ${one(EARLY_STATS.mode)} °C. No other single degree catches as many summer days.`,
+      "Height is the square root of the count, so the thin edges stay walkable. Counts: corner.",
+    ],
   },
   {
     at: EARLY_STATS.mean,
     lines: [
-      `The top: ${one(EARLY_STATS.mean)} °C, the ordinary summer day of that period.`,
-      "Nothing is happening here. That is what ordinary means.",
+      `The average is warmer than the summit: ${one(EARLY_STATS.mean)} °C, because the warm side`,
+      "has the longer tail and it drags the average up. The average is the number that moves.",
     ],
   },
   {
     at: EARLY_STATS.mean + EARLY_STATS.sd,
     lines: [
-      `The fence behind you holds about two days in three — ${one(EARLY_STATS.sd)} °C either side of the top.`,
+      `The fence behind you holds about two days in three — ${one(EARLY_STATS.sd)} °C either side of the average.`,
       "That band is what people mean by normal weather.",
     ],
   },
   {
-    at: 25,
+    at: 25.5,
     lines: [
-      `${25} °C: a properly warm English day. Check the corner — that is how often it happened,`,
-      "then and now.",
+      "A properly warm English day, and the ground is thinning under you.",
+      "Check the corner: that is how often it happened, then and now.",
     ],
   },
   {
@@ -82,10 +91,10 @@ export const MARKS: Mark[] = [
     ],
   },
   {
-    at: THRESHOLD + 1,
+    at: THRESHOLD + 1.5,
     lines: [
-      "Now the thing worth doing. Every day in this landscape gets warmer by the same amount,",
-      "and nothing else changes. Hold ↑ and push the land underneath you.",
+      "Now the thing worth doing. Every day gets warmer by the same amount and nothing else",
+      "changes. Hold ↑ to push the land: gold is ground gained, blue is where it used to be.",
     ],
   },
   {
@@ -96,21 +105,21 @@ export const MARKS: Mark[] = [
     ],
   },
   {
-    at: 33.2,
+    at: 34,
     lines: [
       `About here is where ${SAMPLE_YEAR} peaked — the summer people cite to argue nothing changed.`,
       "It was exceptional. It is also inside the earlier landscape, not the later one.",
     ],
   },
   {
-    at: 35.5,
+    at: 36,
     lines: [
       `And here is ${HOTTEST.year}: ${one(HOTTEST.value)} °C, the hottest day in the whole record.`,
       "There was no ground here at all when these thirty summers were measured.",
     ],
   },
   {
-    at: EDGE - 0.6,
+    at: EDGE - 0.4,
     lines: [
       "The middle moved about a degree. The edge you have just walked moved far more.",
       "Walk on for where the numbers came from.",
@@ -152,7 +161,10 @@ export const CREDITS: string[] = [
   "HOW TO READ THE GROUND",
   "Where you stand is a temperature; the height of the land is how",
   "many days reached it, counted from the record and not fitted to",
-  "a curve. Pushing moves every day by the same amount, which is a",
+  "a curve. Height is the square root of that count, so the thin",
+  "edges where this episode's argument lives are visible at all;",
+  "the counts in the corner are never scaled.",
+  "Pushing moves every day by the same amount, which is a",
   `real operation on real days. The push that best reproduces the`,
   `measured later landscape is +${two(BEST_SHIFT.degrees)} °C, and the average`,
   `really moved ${one(LATE_STATS.mean - EARLY_STATS.mean)} °C.`,

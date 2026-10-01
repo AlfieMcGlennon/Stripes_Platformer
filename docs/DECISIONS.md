@@ -142,3 +142,45 @@ from consistency; differentiation belongs in the *mechanic*, which is already co
 buys the vehicles enough room to be drawn with real curves instead of a character grid. That is the
 one divergence left, and it is reversible in one constant if parity matters more than definition.
 **Affects:** `episodes/carbon-road/src/backdrop.ts`, `render.ts`, `art.ts`.
+
+### 2026-10-01 — A caption holds the walk still
+**Decision:** `stepWalk` freezes movement while a caption is inside its minimum dwell. SPACE ends the
+dwell early; releasing the key keeps the reader there indefinitely. Beats that belong to one place now
+share that place's x so they queue, and the reader steps through them standing still.
+**Reasoning:** The walk moved the reader regardless of caption state, so markers 1–2 degrees apart
+(1.6s of walking) piled into `pending` behind dwells of up to 7s. Holding an arrow key outran the
+script: the caption on screen described ground the reader had left ten seconds earlier. Forecaster was
+worst — its per-place beats sat 32–46px apart, about half a second, so the whole episode was one rolling
+backlog. That is the mechanism behind "forecaster is messy, no step throughs" and "loaded dice looks
+rushed, fast and not clear at all". Episode 1 already stopped the player for its acknowledge beats and
+said why in a comment; the extracted walk dropped that, and the three new episodes never had it.
+**Consequences:** marker spacing is now a design constraint, guarded by tests in each episode: nothing
+closer than about 0.65s of walking, measured against each episode's own speed. Dropped Forecaster's
+lead-7 stop, which scored 0.06 one day from the horizon post's 0.04.
+**Affects:** `packages/engine/src/walk.ts`, all three walking episodes' `main.ts`, new
+`packages/engine/tests/walk.test.ts` (the walk had no tests at all).
+
+### 2026-10-01 — Loaded Dice draws height as a root, not a count
+**Decision:** `heightAt` returns `sqrt(count / peak) * MAX_H`. Disclosed on screen at the summit mark
+and in the credits, with the exact counts always in the corner readout.
+**Reasoning:** On a linear scale the drawing argued against the episode. 86px of frame went to a peak
+of 384 days, so between the two periods the busy middle rose 10px while 28 degC — where the whole point
+lives — rose 6px, from 5px to 11px. The eye reads that as "the middle changed more than the edge",
+which is the opposite of the claim. At 32 degC the difference was literally zero pixels. The root scale
+makes the same two changes 5px and 10px, the right way round, and it is the standard repair for a
+histogram whose tails carry the argument. It is still a hill: 86px at the peak against 21px at 28 degC.
+**Also fixed here:** the ghost of the pre-push ground only drew where the land *fell*, so it was
+invisible across the whole hot tail, which is the only place the push matters. Ground gained is now a
+gold wash — an area, not a one-pixel line inside a red fill. And the caption at the mean called it
+"the top" while the summit sits at 17.5 degC: the reader was told they were at the peak while standing
+eight pixels down a slope crested two degrees earlier. `Summary.mode` is now computed from the same
+bins the terrain is drawn from, so the two cannot disagree again.
+**Affects:** `episodes/loaded-dice/src/{land,script,data,main}.ts`, new `tests/land.test.ts`.
+
+### 2026-10-01 — Carbon Road's era shares are a partition
+**Decision:** `emittedDuring(from, until)` is half-open, and the three era captions use it.
+**Reasoning:** `emittedBetween` is inclusive at both ends, so the four era spans each counted their
+boundary year twice and the four shares printed as "of everything ever emitted" summed to 101%. They
+now sum to exactly 100%: 3.7%, 6.4%, 18.9% and 70.9% since 1960. Found by the episode's first test.
+**Affects:** `episodes/carbon-road/src/{data,chapters}.ts`, new `tests/road.test.ts` and a `test`
+script, since episode 2 had neither.

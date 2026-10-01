@@ -25,9 +25,20 @@ export const RECORD_TO = 2026;
 
 const SUMMER_DAYS = 92;
 
+/** The drawn range, in whole degrees. Bins are 1 C wide. */
+export const BIN_LO = 8;
+export const BIN_HI = 38;
+
 export interface Summary {
   mean: number;
   sd: number;
+  /**
+   * Centre of the busiest 1 C bin. This is the summit of the drawn ground, and it
+   * is not the mean: summer maxima lean warm, so the average sits above the peak.
+   * Computed from the same bins the terrain is drawn from, so a caption standing
+   * on the summit and the summit itself can never disagree.
+   */
+  mode: number;
   /** Days per summer at or above a threshold, in degrees C. */
   perSummer: (threshold: number) => number;
   /** Total days at or above a threshold across the whole period. */
@@ -40,7 +51,9 @@ function summarise(tenths: number[], years: number): Summary {
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
   const variance = values.reduce((s, v) => s + (v - mean) ** 2, 0) / (values.length - 1);
   const count = (threshold: number): number => values.filter((v) => v >= threshold).length;
-  return { mean, sd: Math.sqrt(variance), count, perSummer: (t) => count(t) / years, years };
+  const bins = histogram(tenths, BIN_LO, BIN_HI);
+  const mode = BIN_LO + bins.indexOf(Math.max(...bins)) + 0.5;
+  return { mean, sd: Math.sqrt(variance), mode, count, perSummer: (t) => count(t) / years, years };
 }
 
 export const EARLY_STATS = summarise(EARLY_DAYS, EARLY.to - EARLY.from + 1);
@@ -67,9 +80,6 @@ export function histogram(tenths: number[], lo: number, hi: number): number[] {
   }
   return bins;
 }
-
-export const BIN_LO = 8;
-export const BIN_HI = 38;
 
 /** A day drawn from a period, by index, so play is reproducible from a seed. */
 export function dayAt(tenths: number[], i: number): number {

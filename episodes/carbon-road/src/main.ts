@@ -258,13 +258,13 @@ function draw(): void {
   }
 
   const idle = !pressing(RIGHT) && !pressing(LEFT) && touchDir === 0;
-  if (idle && !s.walk.pending.length && s.walk.captionAge > 1.6) {
+  if (idle && !s.walk.held && s.walk.captionAge > 1.6) {
     renderer.text("→", VIEW_W - 16, ROAD_Y - 36, {
       size: 12, color: Math.floor(s.time * 2) % 2 ? COLORS.gold : COLORS.dim, align: "center",
     });
   }
 
-  renderer.caption(s.walk.caption, s.walk.pending.length ? "SPACE" : false, s.time);
+  renderer.caption(s.walk.caption, s.walk.held ? "SPACE" : false, s.time);
   renderer.present();
 }
 

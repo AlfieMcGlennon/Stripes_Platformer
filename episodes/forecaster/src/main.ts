@@ -73,10 +73,18 @@ const markers: Marker[] = [
   { x: PLACES.start + 96, lines: OPENING[1] },
 ];
 
+/*
+ * Several beats at one place share that place's position rather than being strung
+ * out behind it. The walk holds still while a caption is being read, so beats
+ * thirty-six pixels apart meant stop, half a second of walking, stop again. Sharing
+ * an x makes them queue instead, and the reader steps through them with SPACE while
+ * standing at the station they are about -- which is the rhythm, rather than a
+ * stutter down the road.
+ */
 PLACES.stations.forEach((x, i) => {
   STATION_LINES[i].forEach((lines, beat) => {
     markers.push({
-      x: x + beat * 36,
+      x,
       lines,
       onReach: beat === 0 ? () => (s.collected = Math.max(s.collected, i + 1)) : undefined,
     });
@@ -85,7 +93,7 @@ PLACES.stations.forEach((x, i) => {
 
 BENCH.forEach((lines, i) => {
   markers.push({
-    x: PLACES.bench - 50 + i * 32,
+    x: PLACES.bench - 50,
     lines,
     onReach: i === 0 ? () => (s.fitted = true) : undefined,
   });
@@ -95,7 +103,7 @@ for (const stop of CORRIDOR) markers.push({ x: xForLead(stop.lead), lines: stop.
 
 climateLines().forEach((lines, i) => {
   markers.push({
-    x: PLACES.climate - 180 + i * 46,
+    x: PLACES.climate - 180,
     lines,
     onReach: () => (s.climateShown = Math.max(s.climateShown, i)),
   });
@@ -209,13 +217,13 @@ function draw(): void {
 
   // A nudge onward, only while standing still with nothing left to read.
   const idle = !pressing(RIGHT) && !pressing(LEFT) && touchDir === 0;
-  if (idle && !s.walk.pending.length && s.walk.captionAge > 1.5) {
+  if (idle && !s.walk.held && s.walk.captionAge > 1.5) {
     renderer.text("→", VIEW_W - 16, GROUND_Y - 28, {
       size: 12, color: Math.floor(s.time * 2) % 2 ? COLORS.gold : COLORS.dim, align: "center",
     });
   }
 
-  renderer.caption(s.walk.caption, s.walk.pending.length ? "SPACE" : false, s.time);
+  renderer.caption(s.walk.caption, s.walk.held ? "SPACE" : false, s.time);
   renderer.present();
 }
 

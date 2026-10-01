@@ -15,8 +15,8 @@ import { SECTIONS, STANDFIRST } from "./story";
 import { COLORS, createRenderer, VIEW_H, VIEW_W } from "./view";
 
 const STEP = 1 / 60;
-/** Where along the ground the push happens: out in the hot tail, where it shows. */
-const PUSH_AT = THRESHOLD - 1;
+/** Where the push unlocks: on the mark whose caption explains it, and not before. */
+const PUSH_AT = THRESHOLD + 1.5;
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const renderer = createRenderer(canvas);
@@ -41,11 +41,13 @@ let touchDir = 0;
 
 const LEFT = ["ArrowLeft", "KeyA"];
 const RIGHT = ["ArrowRight", "KeyD"];
-const PUSH = ["ArrowUp", "KeyW", "Space"];
+// SPACE is never a push key: it always means "I have read that", so the caption
+// prompt tells the truth even after pushing unlocks.
+const PUSH = ["ArrowUp", "KeyW"];
 
 addEventListener("keydown", (e) => {
   if ([...LEFT, ...RIGHT, ...PUSH, "Enter"].includes(e.code)) e.preventDefault();
-  if (!held.has(e.code) && (e.code === "Enter" || (e.code === "Space" && !s.canPush))) nextPressed = true;
+  if (!held.has(e.code) && (e.code === "Enter" || e.code === "Space")) nextPressed = true;
   held.add(e.code);
 });
 addEventListener("keyup", (e) => held.delete(e.code));
@@ -166,7 +168,8 @@ function draw(): void {
   drawSky(renderer, s.walk, s.time);
   drawGround(renderer, s.walk, g, s.push > 0.01 ? EARLY_GROUND : undefined);
   drawSpread(renderer, s.walk, EARLY_STATS.mean, EARLY_STATS.sd, "most summer days");
-  drawPost(renderer, s.walk, g, EARLY_STATS.mean, `${EARLY_STATS.mean.toFixed(1)} °C`, COLORS.gold, 36);
+  // Labelled "avg", because the summit of the ground is a different place.
+  drawPost(renderer, s.walk, g, EARLY_STATS.mean, `avg ${EARLY_STATS.mean.toFixed(1)} °C`, COLORS.gold, 36);
   drawPost(renderer, s.walk, g, THRESHOLD, `${THRESHOLD} °C`, COLORS.hot, 26);
   drawPost(renderer, s.walk, g, FAR_THRESHOLD, `${FAR_THRESHOLD} °C`, COLORS.hot, 20);
   drawPost(renderer, s.walk, g, HOTTEST.value, `${HOTTEST.year}`, COLORS.ink, 16);
@@ -187,13 +190,13 @@ function draw(): void {
   }
 
   const idle = !pressing(RIGHT) && !pressing(LEFT) && touchDir === 0;
-  if (idle && !s.walk.pending.length && s.walk.captionAge > 1.6 && !s.canPush) {
+  if (idle && !s.walk.held && s.walk.captionAge > 1.6 && !s.canPush) {
     renderer.text("→", VIEW_W - 16, BASE_Y - 30, {
       size: 12, color: Math.floor(s.time * 2) % 2 ? COLORS.gold : COLORS.dim, align: "center",
     });
   }
 
-  renderer.caption(s.walk.caption, s.walk.pending.length ? "SPACE" : false, s.time);
+  renderer.caption(s.walk.caption, s.walk.held ? "SPACE" : false, s.time);
   renderer.present();
 }
 

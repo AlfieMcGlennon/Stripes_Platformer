@@ -8,10 +8,10 @@ import { follow, type CameraState } from "./camera";
  * sets the pace and a pure panel of controls never has to exist. A reader who has
  * walked one episode knows how to walk any of them.
  *
- * Captions carry a minimum dwell, and anything that arrives during one queues
- * behind it, because a caption that can be walked past before it is read may as
- * well not be there. That was measured in episode 1, where twelve of seventeen
- * were being lost.
+ * Captions carry a minimum dwell, which both holds the walk still and queues
+ * anything arriving during it, because a caption that can be walked past before it
+ * is read may as well not be there. That was measured in episode 1, where twelve
+ * of seventeen were being lost.
  *
  * Lifted out of episode 4 once episodes 2 and 3 wanted it too. It stays
  * deliberately small: it knows about position, captions and a camera, and nothing
@@ -53,6 +53,8 @@ export interface Walk {
   furthest: number;
   /** True while a direction is held, for the walk cycle. */
   moving: boolean;
+  /** True while a caption is holding the walk still, so the UI can say why. */
+  held: boolean;
   speed: number;
   lookAhead: number;
 }
@@ -72,6 +74,7 @@ export function newWalk(options: WalkOptions): Walk {
     pending: [],
     furthest: x,
     moving: false,
+    held: false,
   };
 }
 
@@ -103,8 +106,23 @@ export function stepWalk(
   w: Walk, input: WalkInput, dt: number, markers: Marker[], bounds: { min: number; max: number },
 ): void {
   w.captionAge += dt;
+  // SPACE means "I have read that": it ends the dwell early and lets the walk go.
+  if (input.next) w.captionAge = Math.max(w.captionAge, w.captionHold);
 
-  const dir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+  /*
+   * A caption holds the walk still for as long as it takes to read.
+   *
+   * Without this, a reader holding a direction walks straight past the next three
+   * markers while the first caption is still on screen, then reads a backlog
+   * describing ground they left ten seconds ago. That breaks the one property the
+   * series rests on — that the caption describes where you are standing — and it
+   * is what made an episode with markers a degree apart feel fast and unclear.
+   *
+   * Letting go of the key keeps you here for as long as you like. The dwell only
+   * decides when *holding* the key starts moving you again, so nobody has to press
+   * anything to continue and nobody gets dragged off a caption they are reading.
+   */
+  const dir = w.captionAge < w.captionHold ? 0 : (input.right ? 1 : 0) - (input.left ? 1 : 0);
   w.moving = dir !== 0;
   if (dir !== 0) {
     w.facing = dir > 0 ? 1 : -1;
@@ -120,14 +138,11 @@ export function stepWalk(
     say(w, m.lines);
   }
 
-  if (input.next && w.pending.length) {
-    w.caption = [];
-    w.captionAge = w.captionHold;
-  }
   if (w.pending.length && w.captionAge >= w.captionHold) {
     const nextLines = w.pending.shift();
     if (nextLines) say(w, nextLines);
   }
+  w.held = w.caption.length > 0 && w.captionAge < w.captionHold;
 
   // The view leads slightly in the direction of travel, so there is somewhere to go.
   w.cam = follow(w.cam, w.x + w.facing * w.lookAhead, w.cam.cy, dt, 4);

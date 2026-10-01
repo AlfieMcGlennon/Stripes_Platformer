@@ -10,7 +10,8 @@ import { COLORS, VIEW_H, VIEW_W, type Renderer } from "./view";
  *
  * This is episode 1's trick applied to a distribution instead of a time series:
  * there the terrain height was the temperature, here the horizontal position is the
- * temperature and the height is how many days landed on it. So the crowded middle
+ * temperature and the height is how many days landed on it, on the root scale
+ * `heightAt` explains and the script discloses. So the crowded middle
  * is a hill that takes a while to cross, and the extremes are the thin ground at
  * either end — which is what "rare" feels like underfoot rather than on an axis.
  */
@@ -25,6 +26,12 @@ export const PER_DEGREE = 46;
 export const BASE_Y = 150;
 /** Tallest the busiest bin is allowed to stand. */
 export const MAX_H = 86;
+/**
+ * The wash over ground the push has added. Gold already means "worth looking at"
+ * in this episode, and it is the one tint that reads over the whole stripe scale,
+ * which runs from near-white at the middle to dark red at the edge.
+ */
+const GAINED = "rgba(255,209,102,0.45)";
 
 export function xForTemp(celsius: number): number {
   return (celsius - BIN_LO) * PER_DEGREE;
@@ -47,14 +54,32 @@ export function groundFor(tenths: number[]): Ground {
   return { bins, peak: Math.max(...bins) };
 }
 
-/** Height of the ground at a temperature, interpolated so the walk is smooth. */
+/**
+ * Height of the ground at a temperature, interpolated so the walk is smooth.
+ *
+ * The height is the square root of the share of days, not the share itself. On a
+ * linear scale this episode argues against itself: between the two periods the
+ * ground at the busy middle rises 10px while the ground at 28 °C rises 6px, so
+ * the eye reads "the middle changed more than the edge" — the exact opposite of
+ * the point, because 86px of frame is spent on a peak of 384 days and the
+ * argument is happening in the 5px where fifty days are.
+ *
+ * A root scale is the standard repair for a histogram whose tails carry the
+ * argument (Tukey's rootogram). The same two changes become 5px and 10px, the
+ * right way round. It is still a hill — 86px at the peak against 21px at 28 °C —
+ * so "the crowded middle is a climb" survives.
+ *
+ * The exact counts are on screen in the readout at all times, so the terrain
+ * carries the shape and the number carries the quantity. Disclosed on screen on
+ * arrival and again in the credits.
+ */
 export function heightAt(g: Ground, celsius: number): number {
   const i = celsius - BIN_LO - 0.5;
   const lo = Math.floor(i);
   const t = i - lo;
   const at = (k: number): number => (k < 0 || k >= g.bins.length ? 0 : g.bins[k]);
   const count = at(lo) * (1 - t) + at(lo + 1) * t;
-  return (count / g.peak) * MAX_H;
+  return Math.sqrt(count / g.peak) * MAX_H;
 }
 
 export function groundY(g: Ground, celsius: number): number {
@@ -82,11 +107,17 @@ export function drawGround(r: Renderer, w: Walk, g: Ground, ghost?: Ground): voi
     const top = Math.round(groundY(g, celsius));
     r.rect(sx, top, 1, VIEW_H - top, binColour(celsius));
     r.rect(sx, top, 1, 1, "rgba(255,255,255,0.5)");
-    // Where the ground used to be, when the land has been pushed.
-    if (ghost) {
-      const was = Math.round(groundY(ghost, celsius));
-      if (was < top - 1) r.rect(sx, was, 1, 1, COLORS.cold);
-    }
+    if (!ghost) continue;
+    /*
+     * Where the ground was before the push. The old surface sits in the sky
+     * wherever the land fell and inside the land wherever it rose, and the rise
+     * is the half of the story this episode exists for — so the gain is drawn as
+     * an area and not as a line. A line of one pixel in a 300-pixel-wide red
+     * fill is not something anyone sees.
+     */
+    const was = Math.round(groundY(ghost, celsius));
+    if (was >= top + 1) r.rect(sx, top + 1, 1, was - top, GAINED);
+    else if (was <= top - 1) r.rect(sx, was, 1, 1, COLORS.cold);
   }
 }
 

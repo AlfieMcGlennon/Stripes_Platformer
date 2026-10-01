@@ -76,7 +76,14 @@ export const BENCH = [
   ["Now keep walking. From here, how far right you are is how many days ahead you are asking about."],
 ];
 
-/** Fired at lead times along the corridor. */
+/*
+ * Fired at lead times along the corridor, where how far right you are is how many
+ * days ahead you are asking about. Stops stay at least two lead days apart: the
+ * walk holds still while a caption is read, and a stop one day from the last is
+ * half a second of walking rather than a stretch of road. There was a stop at a
+ * week, scoring 0.06 against the horizon post's 0.04 one day later -- a tenth of
+ * the same statement, so its one useful line moved back to five days.
+ */
 export const CORRIDOR: { lead: number; lines: string[] }[] = [
   { lead: 2, lines: [`Two days out. Best possible: ${two(bestSkill(2))}.`] },
   {
@@ -86,11 +93,10 @@ export const CORRIDOR: { lead: number; lines: string[] }[] = [
       "Negative. Worse than saying nothing at all.",
     ],
   },
-  { lead: 5, lines: [`Five days: ${two(bestSkill(5))}. The fog is the score, not the weather.`] },
   {
-    lead: 7,
+    lead: 5,
     lines: [
-      `A week: ${two(bestSkill(7))}.`,
+      `Five days: ${two(bestSkill(5))}. The fog is the score, not the weather.`,
       "Every weight the fit chooses has shrunk towards zero. It is not being modest.",
     ],
   },

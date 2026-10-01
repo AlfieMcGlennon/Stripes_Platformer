@@ -56,6 +56,18 @@ export function emittedBetween(from: number, to: number): { gt: number; share: n
   return { gt, share: gt / TOTAL_EMITTED };
 }
 
+/**
+ * Gt emitted across [from, until), and its share of everything ever emitted.
+ *
+ * Half-open on purpose. The era captions are a partition of the whole record, so
+ * the year an era begins belongs to that era and to nothing else. Reaching for the
+ * inclusive `emittedBetween` for all four spans double-counted 1880, 1910 and 1960
+ * and printed four shares that summed to 101% of everything ever emitted.
+ */
+export function emittedDuring(from: number, until: number): { gt: number; share: number } {
+  return emittedBetween(from, until - 1);
+}
+
 /** First year by which `gt` had been emitted in total. */
 export function yearReaching(gt: number): number {
   const i = CUMULATIVE.findIndex((v) => v >= gt);

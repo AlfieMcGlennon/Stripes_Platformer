@@ -1,5 +1,6 @@
 import {
-  cumulativeAt, emissionsAt, emittedBetween, FIT, GLOBAL_META as GLOBAL, LAST_YEAR, signed,
+  cumulativeAt, emissionsAt, emittedBetween, emittedDuring, FIT, GLOBAL_META as GLOBAL,
+  LAST_YEAR, signed,
   START_YEAR, TOTAL_EMITTED, warmingAt, yearReaching,
 } from "./data";
 import { ZERO_FROM } from "./road";
@@ -28,7 +29,8 @@ const FIRST_1000 = yearReaching(1000);
 const LAST_1000 = yearReaching(TOTAL_EMITTED - 1000);
 
 export const MARKS: Mark[] = [
-  { atX: 70, lines: ["Hold → to walk. You can stop, read, and walk back whenever you like."] },
+  // On the spot the reader starts, so how to move is the first thing they are told.
+  { atX: 52, lines: ["Hold → to walk. You can stop, read, and walk back whenever you like."] },
   {
     atYear: 1850,
     lines: [
@@ -37,7 +39,7 @@ export const MARKS: Mark[] = [
     ],
   },
   {
-    atYear: 1856,
+    atYear: 1862,
     lines: [
       "1850. Energy means muscle, firewood and the first coal.",
       `The world is ${signed(warmingAt(1850), 2)} °C against its 1850–1900 average, and nobody could tell.`,
@@ -54,7 +56,7 @@ export const MARKS: Mark[] = [
     atYear: 1880,
     lines: [
       "A depot. From here the work is done by coal, and you are riding it.",
-      `1850 to 1880 added ${gt(emittedBetween(1850, 1880).gt)} — ${pct(emittedBetween(1850, 1880).share)} of everything ever emitted.`,
+      `The thirty years to 1880 added ${gt(emittedDuring(1850, 1880).gt)} — ${pct(emittedDuring(1850, 1880).share)} of everything ever emitted.`,
     ],
   },
   {
@@ -68,7 +70,7 @@ export const MARKS: Mark[] = [
     atYear: 1910,
     lines: [
       "Another depot, and a motor car. Oil, mass production, roads.",
-      `Coal and steam, 1880 to 1910: ${gt(emittedBetween(1880, 1910).gt)}, ${pct(emittedBetween(1880, 1910).share)}.`,
+      `Coal and steam, the thirty years to 1910: ${gt(emittedDuring(1880, 1910).gt)}, ${pct(emittedDuring(1880, 1910).share)}.`,
     ],
   },
   {
@@ -82,7 +84,7 @@ export const MARKS: Mark[] = [
     atYear: 1960,
     lines: [
       "Last depot. From here it is jets, plastics, containers, concrete, fertiliser.",
-      `The motor age, 1910 to 1960: ${gt(emittedBetween(1910, 1960).gt)}, ${pct(emittedBetween(1910, 1960).share)}, through two wars and a slump.`,
+      `The motor age, the fifty years to 1960: ${gt(emittedDuring(1910, 1960).gt)}, ${pct(emittedDuring(1910, 1960).share)}, through two wars and a slump.`,
     ],
   },
   {
