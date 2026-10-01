@@ -23,7 +23,8 @@ export const HOTTEST = { year: 2022, month: 7, day: 19, value: 37.3 };
 export const RECORD_FROM = 1878;
 export const RECORD_TO = 2026;
 
-const SUMMER_DAYS = 92;
+/** June, July and August. Both periods are exactly thirty of these. */
+export const SUMMER_DAYS = 92;
 
 /** The drawn range, in whole degrees. Bins are 1 C wide. */
 export const BIN_LO = 8;
@@ -80,13 +81,6 @@ export function histogram(tenths: number[], lo: number, hi: number): number[] {
   }
   return bins;
 }
-
-/** A day drawn from a period, by index, so play is reproducible from a seed. */
-export function dayAt(tenths: number[], i: number): number {
-  return tenths[i % tenths.length] / 10;
-}
-
-export { SUMMER_DAYS };
 
 /**
  * One named summer, with dates, for the phases where a single day has to be legible

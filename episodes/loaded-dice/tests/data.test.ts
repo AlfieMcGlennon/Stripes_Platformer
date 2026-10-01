@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   BIN_HI, BIN_LO, EARLY, EARLY_DAYS, EARLY_STATS, histogram, HOTTEST, LATE, LATE_DAYS, LATE_STATS,
   BEST_SHIFT, countAbove, matchError, ratioAt, SAMPLE_SUMMER, SAMPLE_YEAR, shiftedDays, SHIFT,
+  SUMMER_DAYS,
 } from "../src/data";
 import { FAR_THRESHOLD, PUSH_EXPLAINS, THRESHOLD, walkReadout } from "../src/script";
 
@@ -10,7 +11,7 @@ describe("the two normals", () => {
     expect(EARLY.to - EARLY.from).toBe(29);
     expect(LATE.to - LATE.from).toBe(29);
     expect(EARLY_DAYS.length).toBe(LATE_DAYS.length);
-    expect(EARLY_DAYS.length).toBe(30 * 92); // June, July and August
+    expect(EARLY_DAYS.length).toBe(30 * SUMMER_DAYS);
   });
 
   it("hold plausible summer maxima, with no sentinel values", () => {
