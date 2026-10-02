@@ -178,9 +178,14 @@ export function renderShareCard(birthYear: number): HTMLCanvasElement {
     const bx = Math.round(i * w);
     ctx.fillRect(bx, 0, Math.round((i + 1) * w) - bx, 470);
   });
-  // The card is the one artefact that leaves the browser and the one most likely
-  // to be printed, so it must not rely on hue alone.
-  drawValueLine(ctx, values, 0, 0, 1200, 470, 4);
+  /*
+   * No value line on the card: colour only. It carried a stepped white bar per year
+   * so the card would not rely on hue alone, but at 4px over 1200 it read as a chart
+   * drawn on top of the picture. The quantitative claim is not lost -- the card
+   * states the warming and the span in words underneath, which is what a reader who
+   * cannot separate the hues actually needs. The in-game view keeps the line, where
+   * it helps while picking a year.
+   */
   const life = lifetimeWarming(birthYear);
   ctx.fillStyle = "#f2efe6";
   ctx.textAlign = "center";
