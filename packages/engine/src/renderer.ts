@@ -18,6 +18,12 @@ export const BODY_FONT = '"Pixelify Sans", "Courier New", monospace';
 export const TITLE_FONT = '"Jersey 10", "Courier New", monospace';
 /** Jersey 10 is designed on a ten-pixel grid, as its name says. */
 const TITLE_MODULE = 10;
+/*
+ * The title face is for display capitals and nothing else. Numbers go in the body
+ * face: its digits are the ones readers can actually tell apart, and a 5 that reads
+ * as an S has now been reported against two different pixel display faces. So
+ * `title: true` belongs on words like HEIGHT CHECK, never on a year or a reading.
+ */
 
 export type Align = "left" | "center" | "right";
 

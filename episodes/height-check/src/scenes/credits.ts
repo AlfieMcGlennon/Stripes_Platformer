@@ -41,6 +41,8 @@ export class CreditsScene implements Scene {
       ["every climate number comes from the data pipeline.", COLORS.text, 7],
       ["Ice-age exit: a straight line at its average pace over an assumed 7,000–10,000 years.", COLORS.text, 7],
       ["Holocene drawn flat. Before 1850 the zero is the late Holocene, after it 1850–1900.", COLORS.text, 7],
+      ["Level 1 names El Niño, La Niña and Pinatubo as causes of the wobble. That is a", COLORS.text, 7],
+      ["plain-language account of year-to-year variability, not a formal attribution.", COLORS.text, 7],
       [`Stripe colours are centred on ${GLOBAL.stripes.reference}; quoted figures are vs ${GLOBAL.meta.baseline}.`, COLORS.text, 7],
       ["Ice-age colours add darker blues below the stripes scale; stripes saturate at +1.15 °C.", COLORS.text, 7],
       [`The rate race compares equal ${DERIVED.lastYear - GLOBAL.annual.start}-year spans; the ice-age side is still an average.`, COLORS.text, 7],

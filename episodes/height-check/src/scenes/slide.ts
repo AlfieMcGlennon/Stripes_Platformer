@@ -214,7 +214,7 @@ export class SlideScene extends WalkScene {
     else {
       drawThermometer(r, v);
       const year = yearAt(this.player.x);
-      r.text(formatYear(year), 22, 4, { color: COLORS.accent, size: 10, title: true });
+      r.text(formatYear(year), 22, 4, { color: COLORS.accent, size: 11 });
       // Two different zeros: HadCRUT5 anomalies are vs 1850-1900, but the paleo
       // curve is Tierney 2020's LGM-minus-late-Holocene difference. Saying
       // "vs pre-industrial" for both would assert that the late Holocene sat

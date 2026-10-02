@@ -31,6 +31,8 @@ const YEAR = 365;
  * round was permanently behind the player.
  */
 const RULER_X = 136;
+/** Post edge to a little past the player's centre: 150 - 136 - 6 + 3, fixed. */
+const ARM_REACH = 11;
 /**
  * A stadiometer reads as one by being the height of the person it measures: the post
  * stands from the ground to a little over their head, and the arm rests on the head
@@ -199,12 +201,20 @@ export class HeightScene extends WalkScene {
      * post is visibly measuring them. It is drawn before the player, so the player
      * covers its far end -- which is what an arm resting on someone's head does.
      */
+    if (this.walkPhase) return;
+
     const h = this.heights[this.shownDays - 1];
     const markerY = Math.round(base.sy - SPRITE_H - (h - START_CM) * PX_PER_CM);
-    const headX = Math.round(worldToScreen(this.cam, this.player.x, 0, VIEW_W, VIEW_H).sx);
+    /*
+     * A fixed reach, not the player's live position. Drawing to wherever the player
+     * happened to be made the arm stretch across the screen and follow them the
+     * moment the walk began. ARM_REACH spans the gap from the post to a little past
+     * the spot the reader is measured on, and the measurement stops being drawn once
+     * they walk off it.
+     */
     const from = x + 6;
     px.fillStyle = COLORS.accent;
-    px.fillRect(from, markerY, Math.max(4, headX + 3 - from), 1);
+    px.fillRect(from, markerY, ARM_REACH, 1);
     // Left of the post: to the right it would sit on top of the player.
     r.text(`${h.toFixed(1)} cm`, x - 3, markerY - 5, {
       color: COLORS.accent, size: 8, align: "right",

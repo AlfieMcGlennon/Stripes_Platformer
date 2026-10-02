@@ -119,7 +119,7 @@ export class StripesScene extends WalkScene {
 
   private drawHud(r: Renderer): void {
     const i = cellIndexAt(this.terrain, this.player.x);
-    r.text(`${GLOBAL.annual.start + i}`, 6, 4, { color: COLORS.accent, size: 10, title: true });
+    r.text(`${GLOBAL.annual.start + i}`, 6, 4, { color: COLORS.accent, size: 11 });
     r.text(signed(GLOBAL.annual.values[i]), 6, 17, { size: 9 });
     /*
      * Thirty years, not ten. Level 2 has just shown the reader that a fifth of

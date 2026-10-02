@@ -36,9 +36,24 @@ export class MonthsScene extends WalkScene {
     this.triggers = [
       { x: at(1), dir: 1, lines: ["Each step is one month of global temperature.", "Higher = warmer, for the whole planet."] },
       { x: at(14), dir: 1, lines: ["Warmer than last month? Colder?", "It flips all the time."] },
-      { x: at(28), dir: 1, lines: ["Much of this wobble is El Niño and La Niña:", "the Pacific sloshing heat in and out of the air."] },
+      /*
+       * The wobble is not structureless, and saying so is the honest version of this
+       * level: it has named causes, none of which is the trend. Mostly ENSO, with
+       * volcanoes, the solar cycle and internal variability doing much of the rest.
+       *
+       * Seasonality is deliberately NOT in that list. These are anomalies against a
+       * monthly climatology, so the seasonal cycle is removed by construction: the
+       * residual swing across calendar months is 0.09 °C, which is smaller than the
+       * mean month-to-month step of 0.10 °C. A reader looking at monthly global
+       * temperature will reasonably wonder about summer and winter, so the level
+       * answers that rather than claiming a cycle it does not draw.
+       */
+      { x: at(28), dir: 1, lines: ["Much of this wobble has names. Mostly El Niño and La Niña:", "the Pacific sloshing heat in and out of the air."] },
+      { x: at(48), dir: 1, lines: ["Not the seasons: these are anomalies, so the seasonal cycle is", "already taken out. January and July sit on the same line."] },
+      { x: at(64), dir: 1, lines: ["Volcanoes, the solar cycle and plain chaos do much of the rest.", "None of it is a mystery — and none of it is the trend."] },
       { x: at((1991 - FIRST_YEAR) * 12 + 5), dir: 1, lines: ["June 1991: Mount Pinatubo erupts.", "Its sulphur haze reflects sunlight and cools 1992."] },
-      { x: at(100), dir: 1, lines: ["Ten years of months. Is it warming?", "Hard to tell up close."] },
+      // Not "ten years": month 100 of 120 is eight years and four months in.
+      { x: at(100), dir: 1, lines: ["Years of this, month after month. Is it warming?", "Hard to tell up close."] },
     ];
   }
 
@@ -90,7 +105,7 @@ export class MonthsScene extends WalkScene {
     }
     const i = cellIndexAt(this.terrain, this.player.x);
     const year = FIRST_YEAR + Math.floor(i / 12);
-    r.text(`${MONTHS[i % 12]} ${year}`, 6, 4, { color: COLORS.accent, size: 10, title: true });
+    r.text(`${MONTHS[i % 12]} ${year}`, 6, 4, { color: COLORS.accent, size: 11 });
     r.text(signed(this.monthly[i]), 6, 17, { color: COLORS.text, size: 9 });
     if (i > 0) {
       const diff = this.monthly[i] - this.monthly[i - 1];

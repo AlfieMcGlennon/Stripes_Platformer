@@ -90,7 +90,11 @@ export class CherryScene extends WalkScene {
       { say: [`${C.start}–${C.end + 1}: ${signed(C.trendPlusOneYear)} per decade. One year flipped it.`, "2016 was a huge El Niño year; 2020–22 were La Niña years."] },
       { zoom: { prompt: ["HOLD Z to zoom out and see the rest."], target: () => (this.farCam ??= revealCamera(this.terrain, 30, 30)) } },
       { pause: 0.6 },
-      { run: () => this.lines.push({ first: 0, last: this.values.length - 1, color: COLORS.accent }) },
+      // No trend line on the zoomed-out view. By this point two short windows were
+      // already drawn, and adding a third across the whole series left three lines
+      // over the one picture that is meant to speak for itself. The caption has the
+      // number; the shape of the ground is the argument.
+      { run: () => (this.lines.length = 0) },
       { say: [`${FROM_YEAR}–${DERIVED.lastYear}: ${signed(C.longTrendPerDecade)} per decade.`, "The 'cooling' is one little wobble on the way up."] },
       {
         say: [
@@ -142,7 +146,7 @@ export class CherryScene extends WalkScene {
   private drawHud(r: Renderer): void {
     if (this.zoomProgress > 0) return;
     const i = cellIndexAt(this.terrain, this.player.x);
-    r.text(`${FROM_YEAR + i}`, 6, 4, { color: COLORS.accent, size: 10, title: true });
+    r.text(`${FROM_YEAR + i}`, 6, 4, { color: COLORS.accent, size: 11 });
     r.text(signed(this.values[i]), 6, 17, { size: 9 });
     const trend = this.walkedTrend();
     if (trend !== null) {
