@@ -79,7 +79,7 @@ export function storySections(): StorySection[] {
     {
       heading: "Your stripes",
       paragraphs: [
-        `Finally you pick a birth year and see your own lifetime as stripes. If your lifetime is shorter than ${30} years the game refuses to quote a trend for it, and says so — climate is measured over thirty years, and a game about the long view should not make an exception for you.`,
+        `Finally you pick a birth year and see your own lifetime as stripes. Thirty years is the conventional span for a climate normal, so below that the game quotes no trend for your lifetime and says why: a short record swings more with natural variability, and is read against the long one rather than instead of it. Longer lifetimes get a difference of decade means — your last ten years against your first ten — rather than a fitted trend, because a least-squares line across the 1940s–70s plateau is not comparable from one birth year to the next.`,
       ],
     },
     {

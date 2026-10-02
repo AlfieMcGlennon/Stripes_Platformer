@@ -143,15 +143,28 @@ export class YoursScene implements Scene {
      */
     const lines = life.trendWarming === null
       ? [
-          `${life.years} years is a short record, and short records swing more with natural variability.`,
-          `Set yours against the whole of it: ${signed(DERIVED.lastYearAnomaly, 1)} since ${GLOBAL.annual.start}.`,
+          `${life.years} years is a short record, and short records swing more.`,
+          `Set yours against the whole: ${signed(DERIVED.lastYearAnomaly, 1)} since ${GLOBAL.annual.start}.`,
         ]
       : [`Your last 10 years ran ${lifetimeLabel(life)} warmer than your first 10.`];
-    lines.forEach((t, i) => r.text(t, VIEW_W / 2, top + h + 11 + i * 10, { size: 8, align: "center" }));
+    /*
+     * Wrapped, not just centred. These are drawn straight rather than through the
+     * caption box, so a long line ran off both edges of a 320-wide view instead of
+     * breaking. Authored short enough to fit, and wrapped anyway so a future edit
+     * cannot quietly clip itself.
+     */
+    let ly = top + h + 11;
+    for (const t of lines) {
+      for (const line of r.wrap([t], VIEW_W - 24, 8)) {
+        r.text(line, VIEW_W / 2, ly, { size: 8, align: "center" });
+        ly += 10;
+      }
+    }
     const saved = this.time - this.savedAt < 2;
+    const controlsY = Math.min(ly + 4, VIEW_H - 12 - r.bottomReserve);
     r.text(
       saved ? "Saved!" : "« » pick a year · Z saves a picture · SPACE finishes",
-      VIEW_W / 2, top + h + 31, { size: 7, color: saved ? COLORS.accent : COLORS.dim, align: "center" },
+      VIEW_W / 2, controlsY, { size: 7, color: saved ? COLORS.accent : COLORS.dim, align: "center" },
     );
   }
 }
@@ -187,7 +200,7 @@ export function renderShareCard(birthYear: number): HTMLCanvasElement {
   ctx.font = `28px ${BODY_FONT}`;
   ctx.fillText(
     life.trendWarming === null
-      ? `Too short to see a trend — that's the point. Zoom out: ${signed(DERIVED.lastYearAnomaly, 1)} since ${GLOBAL.annual.start}.`
+      ? `A short record swings with natural variability — the whole of it: ${signed(DERIVED.lastYearAnomaly, 1)} since ${GLOBAL.annual.start}.`
       : `My last 10 years ran ${lifetimeLabel(life)} warmer than my first 10 (HadCRUT5)`,
     600, 580,
   );

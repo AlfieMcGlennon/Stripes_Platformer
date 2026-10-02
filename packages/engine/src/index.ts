@@ -16,7 +16,7 @@ export {
   type WalkOptions,
 } from "./walk";
 export {
-  mountPanel, PANEL_ENABLED, showBootFailure, type AudioControl, type PanelOptions,
+  fromPanel, mountPanel, PANEL_ENABLED, showBootFailure, type AudioControl, type PanelOptions,
   type StorySection,
 } from "./panel";
 export { mulberry32 } from "./random";

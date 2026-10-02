@@ -2,7 +2,7 @@ import "@fontsource/pixelify-sans/400.css";
 import "@fontsource/jersey-10/400.css";
 import { Input } from "./core";
 import { isMuted, toggleMute, unlock } from "./core/audio";
-import { mountPanel, reduceMotion, showBootFailure } from "@stripes/engine";
+import { fromPanel, mountPanel, reduceMotion, showBootFailure } from "@stripes/engine";
 import { storySections, STANDFIRST } from "./story";
 import { COLORS } from "./render/palette";
 import { PORTRAIT_VIEW, Renderer, VIEW_H, VIEW_W, wantsPortrait } from "./render/renderer";
@@ -57,6 +57,8 @@ function onGesture(): void {
 const input = new Input(canvas, (x, y) => renderer.clientToView(x, y), onGesture);
 let syncPanel: () => void = () => undefined;
 window.addEventListener("keydown", (e) => {
+  // Keys typed into the reading drawer belong to the drawer, not the game.
+  if (fromPanel(e)) return;
   if (e.code === "KeyM") {
     toggleMute();
     syncPanel();

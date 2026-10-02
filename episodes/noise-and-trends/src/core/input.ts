@@ -1,3 +1,4 @@
+import { fromPanel } from "@stripes/engine";
 import { buttonAt, type ButtonId } from "./layout";
 
 /**
@@ -44,6 +45,8 @@ export class Input {
     onGesture: () => void = () => undefined,
   ) {
     window.addEventListener("keydown", (e) => {
+      // Keys typed into the reading drawer belong to the drawer, not the game.
+      if (fromPanel(e)) return;
       // Leave browser shortcuts (Ctrl/Cmd + arrows etc.) alone.
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (GAME_KEYS.has(e.code)) e.preventDefault();

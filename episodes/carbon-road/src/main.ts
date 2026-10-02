@@ -1,7 +1,7 @@
 import "@fontsource/pixelify-sans/400.css";
 import "@fontsource/jersey-10/400.css";
 import {
-  mountPanel, newWalk, reduceMotion, screenX, showBootFailure, stepWalk, type Marker,
+  fromPanel, mountPanel, newWalk, reduceMotion, screenX, showBootFailure, stepWalk, type Marker,
 } from "@stripes/engine";
 import {
   ART, drawBillboard, drawFence, drawHeroStanding, drawHeroWalking, drawMilepost, drawStreetlight,
@@ -50,6 +50,8 @@ const LEFT = ["ArrowLeft", "KeyA"];
 const RIGHT = ["ArrowRight", "KeyD"];
 
 addEventListener("keydown", (e) => {
+  // Keys typed into the reading drawer belong to the drawer, not the game.
+  if (fromPanel(e)) return;
   if ([...LEFT, ...RIGHT, "Space", "Enter"].includes(e.code)) e.preventDefault();
   if (!held.has(e.code) && (e.code === "Space" || e.code === "Enter")) nextPressed = true;
   held.add(e.code);

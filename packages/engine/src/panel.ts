@@ -92,6 +92,19 @@ function ensureLiveRegion(): void {
  */
 export const PANEL_ENABLED = true;
 
+/**
+ * True when an event came from inside the reading drawer.
+ *
+ * The drawer is real HTML with a focusable summary and buttons, and the game listens
+ * for keys on the window -- so pressing space to open the drawer also pressed space
+ * in the game underneath, advancing it while the reader was trying to read. Game
+ * input handlers skip anything this returns true for.
+ */
+export function fromPanel(e: Event): boolean {
+  const t = e.target as Element | null;
+  return !!t && typeof t.closest === "function" && !!t.closest("#stripes-panel");
+}
+
 /** Returns a function that refreshes the control labels, for keyboard shortcuts. */
 export function mountPanel(options: PanelOptions): () => void {
   if (typeof document === "undefined" || document.getElementById("stripes-panel")) return () => undefined;
