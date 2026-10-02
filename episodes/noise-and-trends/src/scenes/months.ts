@@ -48,7 +48,7 @@ export class MonthsScene extends WalkScene {
        * temperature will reasonably wonder about summer and winter, so the level
        * answers that rather than claiming a cycle it does not draw.
        */
-      { x: at(28), dir: 1, lines: ["Much of this wobble has names. Mostly El Niño and La Niña:", "the Pacific sloshing heat in and out of the air."] },
+      { x: at(28), dir: 1, lines: ["Much of this wobble has names. Mostly El Niño and La Niña:", "the Pacific trading heat with the air above it."] },
       { x: at(48), dir: 1, lines: ["Not the seasons: these are anomalies, so the seasonal cycle is", "already taken out. January and July sit on the same line."] },
       { x: at(64), dir: 1, lines: ["Volcanoes, the solar cycle and plain chaos do much of the rest.", "None of it is a mystery — and none of it is the trend."] },
       { x: at((1991 - FIRST_YEAR) * 12 + 5), dir: 1, lines: ["June 1991: Mount Pinatubo erupts.", "Its sulphur haze reflects sunlight and cools 1992."] },

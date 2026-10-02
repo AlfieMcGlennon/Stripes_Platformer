@@ -93,16 +93,29 @@ function ensureLiveRegion(): void {
 export const PANEL_ENABLED = true;
 
 /**
- * True when an event came from inside the reading drawer.
+ * True when an event came from inside the reading drawer *while it is open*.
  *
  * The drawer is real HTML with a focusable summary and buttons, and the game listens
  * for keys on the window -- so pressing space to open the drawer also pressed space
  * in the game underneath, advancing it while the reader was trying to read. Game
  * input handlers skip anything this returns true for.
+ *
+ * The `open` test is the important half. Clicking the drawer leaves focus on its
+ * summary or on one of its buttons, and that focus survives closing it again, so
+ * without this check every key after a reader's first visit to the drawer went to
+ * the drawer and the game looked frozen. Closed drawer, no claim on the keyboard.
  */
 export function fromPanel(e: Event): boolean {
   const t = e.target as Element | null;
-  return !!t && typeof t.closest === "function" && !!t.closest("#stripes-panel");
+  if (!t || typeof t.closest !== "function") return false;
+  const panel = t.closest("#stripes-panel") as HTMLDetailsElement | null;
+  return !!panel && panel.open;
+}
+
+/** Drop focus if it is sitting inside the drawer, so the keyboard returns to the game. */
+function releaseFocus(panel: HTMLElement): void {
+  const active = document.activeElement as HTMLElement | null;
+  if (active && panel.contains(active)) active.blur();
 }
 
 /** Returns a function that refreshes the control labels, for keyboard shortcuts. */
@@ -163,6 +176,17 @@ export function mountPanel(options: PanelOptions): () => void {
   }
 
   panel.append(body);
+  /*
+   * Hand the keyboard back when the drawer closes, and when the reader taps the game
+   * with the drawer still open. Belt and braces either side of `fromPanel`'s own
+   * `open` test: whichever way someone leaves the drawer, the game answers again.
+   */
+  panel.addEventListener("toggle", () => {
+    if (!panel.open) releaseFocus(panel);
+  });
+  document.addEventListener("pointerdown", (e) => {
+    if (!fromPanel(e)) releaseFocus(panel);
+  });
   document.body.append(panel);
   sync();
   return sync;
