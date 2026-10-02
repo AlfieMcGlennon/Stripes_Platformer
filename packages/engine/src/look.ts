@@ -1,5 +1,7 @@
 import { stripeColor } from "./palette";
-import { SPRITE_PALETTE, SPRITE_W } from "./sprites";
+import {
+  HERO_FRAMES, OUTFIT_IDS, SPRITE_PALETTE, SPRITE_W, type HeroFrames, type OutfitId,
+} from "./sprites";
 
 /**
  * The player's chosen appearance. Purely cosmetic: nothing here reacts to the
@@ -19,8 +21,13 @@ export interface ClothesOption {
   Y: string;
 }
 
+/*
+ * Colours, not garments. The garment is the outfit now, so these are plain colour
+ * names: "raincoat" as a colour label stopped making sense once there was an actual
+ * raincoat to choose.
+ */
 export const CLOTHES: ClothesOption[] = [
-  { name: "raincoat", y: "#ffd166", Y: "#e3a72f" },
+  { name: "yellow", y: "#ffd166", Y: "#e3a72f" },
   { name: "green", y: "#6f9a63", Y: "#4e7347" },
   { name: "blue", y: "#4f7fbf", Y: "#365a8c" },
   { name: "red", y: "#d1495b", Y: "#9e3648" },
@@ -28,8 +35,8 @@ export const CLOTHES: ClothesOption[] = [
   { name: "pale", y: "#ece8dc", Y: "#c6c2b6" },
 ];
 
-export const OUTFITS = ["plain", "stripes"] as const;
-export type Outfit = (typeof OUTFITS)[number];
+export const OUTFITS = OUTFIT_IDS;
+export type Outfit = OutfitId;
 
 export interface Look {
   skin: number;
@@ -40,7 +47,7 @@ export interface Look {
 const KEY = "stripes.look";
 /** Read once so a look saved before the series was named is not lost. */
 const LEGACY_KEY = "heightcheck.look";
-const DEFAULT: Look = { skin: 0, clothes: 0, outfit: "plain" };
+const DEFAULT: Look = { skin: 0, clothes: 0, outfit: "raincoat" };
 
 let current: Look = load();
 
@@ -52,7 +59,8 @@ function load(): Look {
     return {
       skin: clamp(v.skin ?? 0, SKINS.length),
       clothes: clamp(v.clothes ?? 0, CLOTHES.length),
-      outfit: v.outfit === "stripes" ? "stripes" : "plain",
+      // "plain" was the old name for the raincoat, before outfits were garments.
+      outfit: OUTFITS.includes(v.outfit as OutfitId) ? (v.outfit as OutfitId) : "raincoat",
     };
   } catch {
     return { ...DEFAULT };
@@ -109,4 +117,9 @@ export function shirtStripes(col: number): string {
 /** The column shader for a look, or undefined when the garment is plain. */
 export function lookShirt(look: Look = current): ((col: number) => string) | undefined {
   return look.outfit === "stripes" ? shirtStripes : undefined;
+}
+
+/** The frames for the player's chosen garment set. */
+export function lookFrames(look: Look = current): HeroFrames {
+  return HERO_FRAMES[look.outfit];
 }

@@ -147,7 +147,14 @@ export class StripesScene extends WalkScene {
     }
     r.text("cooler", lx - 3, ly - 2, { size: 7, align: "right" });
     r.text("warmer", lx + 53, ly - 2, { size: 7 });
-    r.text(`vs ${GLOBAL.stripes.reference} avg`, lx + 25, ly + 6, { size: 7, color: COLORS.dim, align: "center" });
+    /*
+     * Deliberately no baseline on the key. The quoted anomalies are against
+     * 1850-1900 and that label is already on screen; the colour scale is centred on
+     * 1971-2000, and showing both left two different zeros side by side with nothing
+     * saying they were different things. The key is a direction, not a measurement,
+     * and the centring is disclosed in the credits.
+     */
+    r.text("colder to warmer", lx + 25, ly + 6, { size: 7, color: COLORS.dim, align: "center" });
   }
 
   private drawRevealLabels(r: Renderer): void {

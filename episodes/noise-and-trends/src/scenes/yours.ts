@@ -195,6 +195,6 @@ export function renderShareCard(birthYear: number): HTMLCanvasElement {
   );
   ctx.font = `20px ${BODY_FONT}`;
   ctx.fillStyle = "#8a90a6";
-  ctx.fillText("Height Check · stripes concept: Ed Hawkins, showyourstripes.info", 600, 615);
+  ctx.fillText("Noise and Trends · stripes concept: Ed Hawkins, showyourstripes.info", 600, 615);
   return canvas;
 }

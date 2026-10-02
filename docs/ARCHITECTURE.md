@@ -8,7 +8,7 @@ Three blocks, and one rule that decides what goes in which.
 
 ```
 packages/engine/        @stripes/engine — shared, subject-agnostic
-episodes/height-check/  episode 1 — a platformer on the temperature record
+episodes/noise-and-trends/  episode 1 — a platformer on the temperature record
 episodes/carbon-road/   episode 2 — a road trip through cumulative emissions
 scripts/                Python data pipeline, writes into episode 1
 data/source/            committed official CSVs with provenance sidecars
@@ -51,7 +51,7 @@ Text and caption metrics are authored against a 180px-tall view. An episode at a
 different resolution gets them scaled by the ratio, so narrative text ends up the
 same physical size rather than shrinking with the grid.
 
-## episodes/height-check
+## episodes/noise-and-trends
 
 ```
 src/core/      input, touch layout, audio          (camera comes from the engine)
@@ -104,7 +104,7 @@ committed arrays rather than pipeline output. `web/index.html` says so on its ca
 `scripts/raw/`, and only then the network — so the instrumental record rebuilds
 offline, which matters because some networks block metoffice.gov.uk and the GitHub
 mirror carries no confidence limits. It writes
-`episodes/height-check/src/data/*.json`, and `scripts/test_data.py` checks the
+`episodes/noise-and-trends/src/data/*.json`, and `scripts/test_data.py` checks the
 output. Provenance for each committed input lives beside it in a `.source.json`
 sidecar: URL, retrieval date, SHA-256, CSV header, licence, citation.
 

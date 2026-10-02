@@ -10,7 +10,7 @@ Read `docs/MEMORY.md` first, then `docs/ARCHITECTURE.md`.
 
 ```
 packages/engine/        @stripes/engine — shared renderer, colour scale, sky, sprites, look
-episodes/height-check/  episode 1 (the deployed one)
+episodes/noise-and-trends/  episode 1 (the deployed one)
 episodes/carbon-road/   episode 2 (walkthrough prototype)
 scripts/                Python data pipeline + pytest
 data/source/            committed official CSVs with provenance sidecars

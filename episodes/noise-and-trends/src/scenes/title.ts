@@ -1,11 +1,12 @@
 import type { InputFrame } from "../core";
-import { reduceMotion } from "@stripes/engine";
+import {
+  CLOTHES, cycleLook, drawSprite, getLook, lookFrames, lookPalette, lookShirt, reduceMotion,
+  SKINS, type Look,
+} from "@stripes/engine";
 import { GLOBAL } from "../data";
 import { drawBackdrop, THEMES } from "../render/backdrop";
-import { CLOTHES, cycleLook, getLook, lookPalette, lookShirt, SKINS, type Look } from "@stripes/engine";
 import { COLORS, stripeColor } from "../render/palette";
 import { VIEW_H, VIEW_W, type Renderer } from "../render/renderer";
-import { drawSprite, HERO } from "@stripes/engine";
 import type { Scene } from "./scene";
 
 /**
@@ -75,10 +76,11 @@ export class TitleScene implements Scene {
       r.px.fillRect(x0, VIEW_H - h, Math.round((i + 1) * w) - x0, h);
     });
     const bob = reduceMotion() ? 0 : Math.round(Math.sin(this.time * 3) * 1.5);
-    const frame = this.looking ? HERO.stand : Math.floor(this.time * 3) % 2 ? HERO.runA : HERO.runB;
+    const kit = lookFrames();
+    const frame = this.looking ? kit.stand : Math.floor(this.time * 3) % 2 ? kit.runA : kit.runB;
     drawSprite(r.px, frame, VIEW_W / 2 - 5, 96 + bob, { palette: lookPalette(), shirt: lookShirt() });
-    r.text("HEIGHT CHECK", VIEW_W / 2, 30, { size: 30, color: COLORS.accent, align: "center", title: true });
-    r.text("a tiny game about noise, trends and the warming stripes", VIEW_W / 2, 60, { size: 8, color: COLORS.text, align: "center" });
+    r.text("NOISE AND TRENDS", VIEW_W / 2, 30, { size: 20, color: COLORS.accent, align: "center", title: true });
+    r.text("a walk through a warming climate", VIEW_W / 2, 60, { size: 8, color: COLORS.text, align: "center" });
     if (this.looking) this.drawPicker(r);
     else {
       if (Math.floor(this.time * 2) % 2 === 0) {

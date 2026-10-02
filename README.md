@@ -16,7 +16,7 @@ reaches people a graph does not.
 
 | | Episode | The one idea | The misconception it corrects |
 |---|---|---|---|
-| 1 | **Height Check** | A trend is a property of the long view, not of any one day or year. | "It was cold last winter, so warming isn't happening." |
+| 1 | **Noise and Trends** | A trend is a property of the long view, not of any one day or year. | "It was cold last winter, so warming isn't happening." |
 | 2 | **Carbon Road** | Warming tracks the *total ever emitted*. Stopping is not undoing. | "If we cut emissions, temperatures go back down." |
 | 3 | **Loaded Dice** | A small shift in the average makes extremes much more common. | "1.5 °C warmer is barely noticeable." |
 | 4 | **Forecaster** | Weather is predictable for about a week; climate for decades. | "They can't forecast next week, so how can they predict 2050?" |
@@ -84,7 +84,7 @@ compares equal spans and quotes a range.
 
 ```
 packages/engine/        Renderer, dithered skies, colour scale, sprites, saved look
-episodes/height-check/  Episode 1: platformer on the temperature record
+episodes/noise-and-trends/  Episode 1: platformer on the temperature record
 episodes/carbon-road/   Episode 2: walkthrough of cumulative emissions
 scripts/                Python data pipeline and its tests
 data/source/            Committed official CSVs, with provenance
@@ -120,7 +120,7 @@ Add `?level=slide` (or `cherry`, `stripes`, `yours`) to episode 1's URL to jump 
 
 ```bash
 pip install -r scripts/requirements.txt
-npm run data                     # rebuild episodes/height-check/src/data/*.json
+npm run data                     # rebuild episodes/noise-and-trends/src/data/*.json
 python -m pytest scripts/        # sanity checks on the output
 ```
 

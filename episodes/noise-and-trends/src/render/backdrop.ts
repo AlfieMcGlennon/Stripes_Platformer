@@ -19,7 +19,7 @@ export { lerpColor as lerpHex } from "@stripes/engine";
 
 /**
  * Sky, ridge and star drawing all live in `@stripes/engine`; only the themes and
- * the snowfall are Height Check's own. `prewarmTheme` is re-exported so callers
+ * the snowfall are Noise and Trends's own. `prewarmTheme` is re-exported so callers
  * that pre-build a theme during a fade do not need to know where it comes from.
  */
 export { prewarmTheme } from "@stripes/engine";

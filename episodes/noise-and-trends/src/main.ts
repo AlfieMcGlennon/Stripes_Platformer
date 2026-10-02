@@ -171,7 +171,7 @@ function frame(now: number): void {
 
 try {
   syncPanel = mountPanel({
-    title: "Height Check",
+    title: "Noise and Trends",
     standfirst: STANDFIRST,
     sections: storySections(),
     renderer,

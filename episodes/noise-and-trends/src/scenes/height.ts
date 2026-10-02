@@ -169,8 +169,8 @@ export class HeightScene extends WalkScene {
     if (this.shownDays > 0) this.drawLog(r);
     if (this.showChart) this.drawChart(r);
     if (this.shownDays === 0) {
-      r.text("HEIGHT CHECK", VIEW_W / 2, 20, { size: 30, color: COLORS.accent, align: "center", title: true });
-      r.text("a tiny game about noise and trends", VIEW_W / 2, 44, { size: 8, color: COLORS.dim, align: "center" });
+      r.text("NOISE AND TRENDS", VIEW_W / 2, 20, { size: 20, color: COLORS.accent, align: "center", title: true });
+      r.text("a walk through a warming climate", VIEW_W / 2, 44, { size: 8, color: COLORS.dim, align: "center" });
     }
     this.drawCaption(r);
   }

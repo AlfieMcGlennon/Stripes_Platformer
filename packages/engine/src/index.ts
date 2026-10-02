@@ -22,12 +22,12 @@ export {
 export { mulberry32 } from "./random";
 export { reduceMotion, setReduceMotion } from "./motion";
 export {
-  BUST_ROWS, drawSprite, heroFrame, HERO, SLED, SPRITE_H, SPRITE_PALETTE, SPRITE_W,
-  type Frame, type SpriteOptions,
+  BUST_ROWS, drawSprite, heroFrame, HERO, HERO_FRAMES, OUTFIT_IDS, SLED, SPRITE_H,
+  SPRITE_PALETTE, SPRITE_W, type Frame, type HeroFrames, type OutfitId, type SpriteOptions,
 } from "./sprites";
 export {
-  CLOTHES, cycleLook, getLook, lookPalette, lookShirt, OUTFITS, setLook, shirtStripes, SKINS,
-  type ClothesOption, type Look, type Outfit,
+  CLOTHES, cycleLook, getLook, lookFrames, lookPalette, lookShirt, OUTFITS, setLook,
+  shirtStripes, SKINS, type ClothesOption, type Look, type Outfit,
 } from "./look";
 export {
   BODY_FONT, PixelRenderer, TITLE_FONT, type Align, type RendererOptions, type TextOptions,

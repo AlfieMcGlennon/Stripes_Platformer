@@ -1,6 +1,6 @@
 /**
  * This episode's palette: the shared warming-stripes scale re-exported from the
- * engine, plus the UI colour tokens that belong to Height Check alone.
+ * engine, plus the UI colour tokens that belong to Noise and Trends alone.
  */
 export { RDBU, stripeColor, stripePosition } from "@stripes/engine";
 

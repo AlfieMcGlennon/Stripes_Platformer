@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { InputFrame } from "../src/core";
 import { buttonAt } from "../src/core/layout";
-import { CLOTHES, cycleLook, getLook, lookPalette, lookShirt, setLook, shirtStripes, SKINS } from "@stripes/engine";
+import {
+  CLOTHES, cycleLook, getLook, HERO_FRAMES, lookFrames, lookPalette, lookShirt, OUTFITS, setLook,
+  shirtStripes, SKINS, SPRITE_H, SPRITE_W,
+} from "@stripes/engine";
 import { DERIVED, PALEO } from "../src/data";
 import type { Renderer } from "../src/render/renderer";
 import { WalkScene } from "../src/scenes/scene";
@@ -89,17 +92,50 @@ describe("beat sequencer", () => {
 
 describe("look", () => {
   it("cycles each field and wraps, and never reacts to climate data", () => {
-    setLook({ skin: 0, clothes: 0, outfit: "plain" });
+    setLook({ skin: 0, clothes: 0, outfit: OUTFITS[0] });
     expect(cycleLook("skin", 1).skin).toBe(1);
     expect(cycleLook("skin", -1).skin).toBe(0);
     expect(cycleLook("skin", -1).skin).toBe(SKINS.length - 1); // wraps backwards
     expect(cycleLook("clothes", 1).clothes).toBe(1);
-    expect(cycleLook("outfit", 1).outfit).toBe("stripes");
-    expect(cycleLook("outfit", 1).outfit).toBe("plain"); // wraps
+    expect(cycleLook("outfit", 1).outfit).toBe(OUTFITS[1]);
+    for (let i = 2; i < OUTFITS.length; i++) cycleLook("outfit", 1);
+    expect(cycleLook("outfit", 1).outfit).toBe(OUTFITS[0]); // wraps
+  });
+
+  /*
+   * An outfit is a set of garments, not a recolour, so each one is its own frames.
+   * They have to stay interchangeable: the same width, the same height, and a bust
+   * crop that still lands on a torso.
+   */
+  it("gives every outfit its own garments at one interchangeable size", () => {
+    const ids = [...OUTFITS];
+    expect(ids.length).toBeGreaterThan(2);
+    for (const id of ids) {
+      for (const frame of Object.values(HERO_FRAMES[id])) {
+        expect(frame.length).toBe(SPRITE_H);
+        for (const row of frame) expect(row.length).toBe(SPRITE_W);
+      }
+    }
+    // The raincoat has a hood and wellingtons; the summer kit has neither.
+    expect(HERO_FRAMES.raincoat.stand.join("")).toContain("b");
+    expect(HERO_FRAMES.summer.stand.join("")).not.toContain("b");
+    expect(HERO_FRAMES.suit.stand.join("")).toContain("t");
+    // Hair shows on everything but the hooded coat.
+    expect(HERO_FRAMES.raincoat.stand.join("")).not.toContain("h");
+    for (const id of ["suit", "summer", "stripes"] as const) {
+      expect(HERO_FRAMES[id].stand.join("")).toContain("h");
+    }
+  });
+
+  it("follows the chosen outfit when asked for frames", () => {
+    setLook({ skin: 0, clothes: 0, outfit: "suit" });
+    expect(lookFrames()).toBe(HERO_FRAMES.suit);
+    setLook({ skin: 0, clothes: 0, outfit: "summer" });
+    expect(lookFrames()).toBe(HERO_FRAMES.summer);
   });
 
   it("recolours the sprite palette and only patterns the garment when asked", () => {
-    setLook({ skin: 2, clothes: 3, outfit: "plain" });
+    setLook({ skin: 2, clothes: 3, outfit: "raincoat" });
     const palette = lookPalette();
     expect(palette.s).toBe(SKINS[2]);
     expect(palette.y).toBe(CLOTHES[3].y);

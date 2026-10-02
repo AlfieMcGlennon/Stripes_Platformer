@@ -1,6 +1,6 @@
 import {
-  ditheredSky, drawRidge, drawSprite, drawStars, HERO, lookPalette, lookShirt, screenX,
-  stripeColor, type Theme, type Walk,
+  ditheredSky, drawRidge, drawSprite, drawStars, lookFrames, lookPalette, lookShirt, screenX,
+  SPRITE_H, stripeColor, type Theme, type Walk,
 } from "@stripes/engine";
 import { BIN_HI, BIN_LO, histogram, shiftedDays } from "./data";
 import { COLORS, VIEW_H, VIEW_W, type Renderer } from "./view";
@@ -163,8 +163,9 @@ export function drawSpread(r: Renderer, w: Walk, mean: number, sd: number, label
 export function drawWalker(r: Renderer, w: Walk, g: Ground): void {
   const celsius = tempAtX(w.x);
   const y = groundY(g, celsius);
-  const frame = !w.moving ? HERO.stand : Math.floor(w.stride) % 2 === 0 ? HERO.runA : HERO.runB;
-  drawSprite(r.px, frame, Math.round(screenX(w, w.x, VIEW_W)) - 5, Math.round(y) - HERO.stand.length, {
+  const kit = lookFrames();
+  const frame = !w.moving ? kit.stand : Math.floor(w.stride) % 2 === 0 ? kit.runA : kit.runB;
+  drawSprite(r.px, frame, Math.round(screenX(w, w.x, VIEW_W)) - 5, Math.round(y) - SPRITE_H, {
     flip: w.facing === -1,
     palette: lookPalette(),
     shirt: lookShirt(),

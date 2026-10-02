@@ -1,6 +1,8 @@
-import { ditheredSky, drawRidge, drawStars, HERO, drawSprite, lookPalette, lookShirt, type Theme } from "@stripes/engine";
+import {
+  ditheredSky, drawRidge, drawSprite, drawStars, lookFrames, lookPalette, lookShirt, screenX,
+  SPRITE_H, type Theme, type Walk,
+} from "@stripes/engine";
 import { bestSkill, SITES } from "./data";
-import { screenX, type Walk } from "@stripes/engine";
 import { GROUND_Y } from "./view";
 import { COLORS, VIEW_H, VIEW_W, type Renderer } from "./view";
 
@@ -166,8 +168,9 @@ export function drawClimate(
 }
 
 export function drawWalker(r: Renderer, w: Walk): void {
-  const frame = !w.moving ? HERO.stand : Math.floor(w.stride) % 2 === 0 ? HERO.runA : HERO.runB;
-  drawSprite(r.px, frame, Math.round(screenX(w, w.x, VIEW_W)) - 5, GROUND_Y - HERO.stand.length, {
+  const kit = lookFrames();
+  const frame = !w.moving ? kit.stand : Math.floor(w.stride) % 2 === 0 ? kit.runA : kit.runB;
+  drawSprite(r.px, frame, Math.round(screenX(w, w.x, VIEW_W)) - 5, GROUND_Y - SPRITE_H, {
     flip: w.facing === -1,
     palette: lookPalette(),
     shirt: lookShirt(),

@@ -9,7 +9,7 @@ export const VIEW_H = 180;
 export { BODY_FONT, TITLE_FONT, type TextOptions } from "@stripes/engine";
 
 /**
- * Height Check's renderer: the engine's pixel renderer plus the draw calls that
+ * Noise and Trends's renderer: the engine's pixel renderer plus the draw calls that
  * only make sense in a platformer built on a temperature series.
  *
  * Everything generic — canvas sizing, integer scaling, outlined text, the caption

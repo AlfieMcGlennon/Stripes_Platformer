@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Noise and Trends</title>
+    <meta name="description" content="An interactive walk through weather noise, climate trends and the warming stripes, built on the HadCRUT5 temperature record." />
+    <meta name="theme-color" content="#0b1020" />
+    <meta property="og:title" content="Noise and Trends" />
+    <meta property="og:description" content="Day to day it's noise. Zoom out and it's a trend. An interactive walk through the real temperature record." />
+    <meta property="og:type" content="website" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <style>
+      html, body {
+        margin: 0; height: 100%; background: #000; overflow: hidden;
+        touch-action: none; overscroll-behavior: none;
+        -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+      }
+      canvas { display: block; }
+
+      /* Visible to screen readers only. Captions are mirrored here as they appear. */
+      .sr {
+        position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+        overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+      }
+
+      .fallback {
+        position: fixed; inset: 0; display: grid; place-items: center; z-index: 3;
+        margin: 0; padding: 24px; background: #0b1020;
+        font: 15px/1.6 system-ui, sans-serif; color: #f2efe6; text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      Fallback content inside the canvas is what a text browser, a very old browser,
+      or a policy that disables canvas will show instead of a black rectangle. It
+      has to stand alone: the reading panel is switched off at the moment, so there
+      is no other non-canvas route to the argument.
+    -->
+    <canvas id="game" aria-label="Noise and Trends: an interactive walk through weather noise and climate trends. Captions are announced as they appear.">
+      Noise and Trends is a short interactive walk about the difference between
+      day-to-day weather noise and a long-term climate trend. This browser cannot draw
+      it. The argument is this: any single day, month or year tells you almost nothing,
+      because the wobble between them is larger than the trend underneath. Average
+      enough of them together and the wobble cancels while the trend does not. The
+      global temperature record since 1850 rises by about 1.4 degrees Celsius against
+      its 1850-1900 average, and the ten warmest years in it are all since 2015.
+    </canvas>
+
+    <div id="live" class="sr" role="status" aria-live="polite"></div>
+
+    <noscript>
+      <p class="fallback">
+        Noise and Trends needs JavaScript to run. It is a short interactive walk about why
+        a single day or year tells you almost nothing about a climate trend, built on the
+        HadCRUT5 global temperature record from the Met Office Hadley Centre and CRU.
+        The record rises about 1.4 degrees Celsius against its 1850-1900 average, and the
+        wobble between neighbouring years is larger than the trend between them.
+      </p>
+    </noscript>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

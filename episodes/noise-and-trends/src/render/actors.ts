@@ -1,8 +1,9 @@
-import { worldToScreen, type CameraState } from "@stripes/engine";
+import {
+  drawSprite, heroFrame, lookFrames, lookPalette, lookShirt, SLED, SPRITE_H, SPRITE_W,
+  worldToScreen, type CameraState,
+} from "@stripes/engine";
 import type { Particle, PlayerState } from "../world";
 import { COLORS } from "./palette";
-import { lookPalette, lookShirt } from "@stripes/engine";
-import { drawSprite, heroFrame, SLED, SPRITE_H, SPRITE_W } from "@stripes/engine";
 
 const VIEW_W = 320;
 const VIEW_H = 180;
@@ -36,7 +37,7 @@ export function drawPlayer(
     return;
   }
   const moving = Math.abs(p.vx) > 1;
-  const frame = heroFrame(p.grounded || !!opts.sled, moving && !opts.sled, p.stride);
+  const frame = heroFrame(p.grounded || !!opts.sled, moving && !opts.sled, p.stride, lookFrames());
   const x = Math.round(s.sx - SPRITE_W / 2);
   const lift = opts.sled ? 3 : 0;
   drawSprite(ctx, frame, x, Math.round(s.sy) - SPRITE_H - lift,

@@ -9,7 +9,7 @@
     "episodes/*"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace @stripes/height-check",
+    "dev": "npm run dev --workspace @stripes/noise-and-trends",
     "dev:carbon": "npm run dev --workspace @stripes/carbon-road",
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",

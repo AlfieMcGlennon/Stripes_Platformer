@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { lerpColor, parseColor, shade } from "../src/color";
 import { advanceTween, follow, startTween, tweenDone, worldToScreen } from "../src/camera";
-import { CLOTHES, cycleLook, lookPalette, lookShirt, setLook, shirtStripes, SKINS } from "../src/look";
+import {
+  CLOTHES, cycleLook, lookPalette, lookShirt, OUTFITS, setLook, shirtStripes, SKINS,
+} from "../src/look";
 import { RDBU, stripeColor, stripePosition } from "../src/palette";
 import { mulberry32 } from "../src/random";
 import { BUST_ROWS, HERO, heroFrame, SPRITE_H, SPRITE_W } from "../src/sprites";
@@ -95,15 +97,18 @@ describe("hero sprite", () => {
 
 describe("look", () => {
   it("cycles each field and wraps", () => {
-    setLook({ skin: 0, clothes: 0, outfit: "plain" });
+    setLook({ skin: 0, clothes: 0, outfit: OUTFITS[0] });
     expect(cycleLook("skin", -1).skin).toBe(SKINS.length - 1);
     expect(cycleLook("clothes", 1).clothes).toBe(1);
-    expect(cycleLook("outfit", 1).outfit).toBe("stripes");
-    expect(cycleLook("outfit", 1).outfit).toBe("plain");
+    // Derived from the list, so adding a garment set cannot silently break the wrap.
+    for (let i = 1; i < OUTFITS.length; i++) {
+      expect(cycleLook("outfit", 1).outfit).toBe(OUTFITS[i]);
+    }
+    expect(cycleLook("outfit", 1).outfit).toBe(OUTFITS[0]);
   });
 
   it("recolours only skin and garment, and patterns only when asked", () => {
-    setLook({ skin: 2, clothes: 3, outfit: "plain" });
+    setLook({ skin: 2, clothes: 3, outfit: "raincoat" });
     expect(lookPalette().s).toBe(SKINS[2]);
     expect(lookPalette().y).toBe(CLOTHES[3].y);
     expect(lookPalette().o).toBe("#1a1a2e");

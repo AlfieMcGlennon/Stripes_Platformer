@@ -75,6 +75,6 @@ Files under ~300 lines, barrel exports per folder.
 - Scope creep into "climate education video" → scope guard above.
 
 ## Open questions
-- Working title (Stripes? "Zoom Out"? "Height Check"?).
+- Working title (Stripes? "Zoom Out"? "Noise and Trends"?).
 - ~~Local vs global daily series~~ Decided: global (ERA5 daily anomalies + HadCRUT5). Revisit if level 1 doesn't feel noisy enough (see DATA_PLAN).
 - Do we show the projection/future at the end, or stop at "now"?

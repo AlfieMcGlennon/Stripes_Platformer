@@ -1,4 +1,6 @@
-import { BUST_ROWS, drawSprite, HERO, lookPalette, lookShirt, type Frame } from "@stripes/engine";
+import {
+  BUST_ROWS, drawSprite, lookFrames, lookPalette, lookShirt, SPRITE_H, type Frame,
+} from "@stripes/engine";
 
 /**
  * Vehicles, roadside furniture and the rider, drawn with canvas primitives.
@@ -31,18 +33,19 @@ export function drawHero(
 }
 
 export function drawHeroWalking(ctx: CanvasRenderingContext2D, x: number, groundY: number, phase: number): void {
-  const frame = Math.floor(phase) % 2 === 0 ? HERO.runA : HERO.runB;
-  drawHero(ctx, frame, x, groundY - HERO.stand.length * SPRITE_SCALE);
+  const kit = lookFrames();
+  const frame = Math.floor(phase) % 2 === 0 ? kit.runA : kit.runB;
+  drawHero(ctx, frame, x, groundY - SPRITE_H * SPRITE_SCALE);
 }
 
 export function drawHeroStanding(ctx: CanvasRenderingContext2D, x: number, groundY: number): void {
-  drawHero(ctx, HERO.stand, x, groundY - HERO.stand.length * SPRITE_SCALE);
+  drawHero(ctx, lookFrames().stand, x, groundY - SPRITE_H * SPRITE_SCALE);
 }
 
 export type Rider = (ctx: CanvasRenderingContext2D, x: number, seatY: number, scale: number) => void;
 
 export const seatRider: Rider = (ctx, x, seatY, scale) =>
-  drawHero(ctx, HERO.stand, x, seatY - BUST_ROWS * scale, scale, BUST_ROWS);
+  drawHero(ctx, lookFrames().stand, x, seatY - BUST_ROWS * scale, scale, BUST_ROWS);
 
 /* ---------------- shared bits ---------------- */
 

@@ -114,7 +114,7 @@ it cannot be misread as a measurement of anything.
 **Affects:** `render/look.ts` (new), `sprites.ts`, `actors.ts`, `title.ts`; `scenes/costume.ts` deleted.
 
 ### 2026-09-30 — Monorepo with a shared engine
-**Decision:** npm workspaces: `packages/engine` (`@stripes/engine`) plus `episodes/height-check` and
+**Decision:** npm workspaces: `packages/engine` (`@stripes/engine`) plus `episodes/noise-and-trends` and
 `episodes/carbon-road`, with one TypeScript project graph via project references.
 **Reasoning:** Episode 2 had copied `color.ts`, `palette.ts`, `random.ts`, the hero sprite, the look
 system and the whole dithered-sky/ridge builder out of episode 1 — two of them byte-identical. Any
@@ -130,7 +130,7 @@ JS made vitest run every test twice — once from source, once from the compiled
 **Affects:** everything; no behaviour change. 32 vitest + 5 pytest unchanged, both episodes build.
 
 ### 2026-09-30 — Episodes differ, but not by much
-**Decision:** Carbon Road stays visually a sibling of Height Check: the same dithered Bayer sky, the
+**Decision:** Carbon Road stays visually a sibling of Noise and Trends: the same dithered Bayer sky, the
 same parallax ridge builder, the same starfield, the same terrain grain on its road, era skies mixed
 from episode 1's own dusk/sunset palette, the same hero sprite reading the same saved look, and the
 same caption box and outlined text via the engine.
@@ -273,7 +273,7 @@ cannot show it. That is fine, because the post never carried the demonstration �
 year chart do, and both print to a tenth of a centimetre. The post is the prop that makes the
 measurement concrete. Still labelled "wobble magnified", and the made-up heights are still called out
 in a caption, as CLAUDE.md requires.
-**Affects:** `episodes/height-check/src/scenes/height.ts`.
+**Affects:** `episodes/noise-and-trends/src/scenes/height.ts`.
 
 ### 2026-10-02 — Episode 1's two review findings
 **Decision:** The stripes HUD quotes a thirty-year trend, not a ten-year one, and `rankPhrase()` in
@@ -286,7 +286,7 @@ which is correct: you cannot quote a thirty-year trend before you have thirty ye
 **Also:** the prose said "ranks 3" where the caption said "3rd warmest", and the old helper returned
 "the" for rank 1, so a year topping the record would have read "this one the warmest". `rankPhrase`
 returns "the warmest" for 1 and handles the teens.
-**Affects:** `episodes/height-check/src/scenes/stripes.ts`, `story.ts`, `data/index.ts`.
+**Affects:** `episodes/noise-and-trends/src/scenes/stripes.ts`, `story.ts`, `data/index.ts`.
 
 ### 2026-10-02 — Neither font has arrows, so the series stopped using them
 **Decision:** `«` and `»` for left and right; up and down are spelled out. The comment in
@@ -347,7 +347,7 @@ gives 4.3 cm — day one carries the week's largest positive wobble.
   absent for about 3.45 s of the 4 s reveal, exactly while the sky fills with stripes. Its own
   docstring promises it is shown from the first step.
 - Title sizes are multiples of 10, Jersey 10's module, because the snap silently resizes anything
-  else: "HEIGHT CHECK" at 16 rendered 25% larger at scale 1 than at scale 2. They are also larger
+  else: "NOISE AND TRENDS" at 16 rendered 25% larger at scale 1 than at scale 2. They are also larger
   now (30, from 16 and 20) because Jersey 10's cap ink is 0.536 of its font size against Pixelify's
   0.643, so the swap shrank every title without the numbers changing and the title ended up narrower
   than its own subtitle.

@@ -1,6 +1,6 @@
 # Memory / handoff
 
-**Phase:** v0.4 — monorepo. `packages/engine` (`@stripes/engine`) is shared by `episodes/height-check` (episode 1, was v0.3.2) and `episodes/carbon-road` (episode 2, walkthrough prototype). Episode 1's five-review backlog is in `docs/REVIEW-v0.3.md` §B. Not yet deployed.
+**Phase:** v0.4 — monorepo. `packages/engine` (`@stripes/engine`) is shared by `episodes/noise-and-trends` (episode 1, was v0.3.2) and `episodes/carbon-road` (episode 2, walkthrough prototype). Episode 1's five-review backlog is in `docs/REVIEW-v0.3.md` §B. Not yet deployed.
 
 ## Done
 - v0.1 (2026-09-30): playable prototype, real data pipeline.
@@ -36,7 +36,7 @@
   - Avatar: the trend-keyed costume is **reverted**. Clothes never change on their own; the title screen has a look picker (skin tone, garment colour, plain/stripes outfit) persisted in `localStorage`. See DECISIONS.md.
   - 32 vitest + 5 pytest.
 
-- v0.4 (2026-09-30): extracted `@stripes/engine` and restructured into npm workspaces. Episode 2 had copied six modules out of episode 1; the engine now owns the renderer (episode 1 subclasses it), the warming-stripes scale, the dithered sky / ridge / star / dither-grain primitives, the hero sprite, the look system and the camera. Carbon Road pulled back toward episode 1's look. Data pipeline output moved to `episodes/height-check/src/data/`. Deploy assembles a landing page (`web/index.html`) with both episodes under it. `npm run check` does the lot.
+- v0.4 (2026-09-30): extracted `@stripes/engine` and restructured into npm workspaces. Episode 2 had copied six modules out of episode 1; the engine now owns the renderer (episode 1 subclasses it), the warming-stripes scale, the dithered sky / ridge / star / dither-grain primitives, the hero sprite, the look system and the camera. Carbon Road pulled back toward episode 1's look. Data pipeline output moved to `episodes/noise-and-trends/src/data/`. Deploy assembles a landing page (`web/index.html`) with both episodes under it. `npm run check` does the lot.
 
 ## Next up
 1. Enable Pages (Settings → Pages → GitHub Actions), then run the manual `deploy` workflow. Add an og:image screenshot.
