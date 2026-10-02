@@ -83,17 +83,14 @@ function ensureLiveRegion(): void {
 }
 
 /**
- * Off for now, by the author's call, while episode 1 goes out as a concept piece.
+ * The reading drawer: the whole argument as text, plus the accessibility controls.
  *
- * Flip this back to true to restore the drawer. Nothing else has to change: every
- * episode still builds and passes its sections in, `story.ts` is untouched in all
- * four, and the prose stays under test. This is the one switch.
- *
- * It is worth restoring before launch. CLAUDE.md makes the written version a series
- * rule, on the grounds that a lot of readers want the argument without the
- * interaction, and with the drawer off there is no non-canvas route to it at all.
+ * Set this to false to hide it. It was off for a while and is back on because two
+ * reviews and CLAUDE.md all say the same thing: a lot of readers want the argument
+ * without the interaction, and anyone who cannot work the controls has no other way
+ * in. Verified open and closed, in both view profiles.
  */
-export const PANEL_ENABLED = false;
+export const PANEL_ENABLED = true;
 
 /** Returns a function that refreshes the control labels, for keyboard shortcuts. */
 export function mountPanel(options: PanelOptions): () => void {
@@ -115,7 +112,10 @@ export function mountPanel(options: PanelOptions): () => void {
   const sound = options.audio ? el("button", { type: "button" }) : null;
 
   const sync = (): void => {
-    size.textContent = `Text size: ${options.renderer.textScale}×`;
+    // "Game text", not "Text size": it scales the captions and credits drawn on the
+    // canvas, not this panel (which the browser's own zoom handles) and not the HUD
+    // readouts, which sit in a layout that cannot reflow.
+    size.textContent = `Game text: ${options.renderer.textScale}×`;
     motion.textContent = `Reduce motion: ${reduceMotion() ? "on" : "off"}`;
     motion.setAttribute("aria-pressed", String(reduceMotion()));
     if (sound && options.audio) {
