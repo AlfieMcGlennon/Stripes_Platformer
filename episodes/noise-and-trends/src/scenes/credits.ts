@@ -59,7 +59,10 @@ export class CreditsScene implements Scene {
    */
   private pages(r: Renderer): [string, string, number][][] {
     // Touch buttons reserve the bottom of the view, so they change the page breaks.
-    const avail = VIEW_H - TOP - 26 - r.bottomReserve;
+    // Text size changes the wrapping, so it changes the page breaks too.
+    const room = VIEW_H - TOP - 26 - r.bottomReserve;
+    // A cache key over both, so neither a resize nor a text-size change goes stale.
+    const avail = room * 1000 + r.textScale * 10;
     if (this.paged && this.pagedFor === avail) return this.paged;
     this.pagedFor = avail;
     this.page = Math.min(this.page, 0);
@@ -68,8 +71,8 @@ export class CreditsScene implements Scene {
     let used = 0;
     for (const row of CREDIT_LINES) {
       const [text, , size] = row;
-      const h = text ? r.wrap([text], VIEW_W - 12, size).length * (size + 3) : 4;
-      if (used + h > avail && cur.length) {
+      const h = text ? r.wrap([text], VIEW_W - 12, size, true).length * (size + 3) : 4;
+      if (used + h > room && cur.length) {
         while (cur.length && !cur[cur.length - 1][0]) cur.pop();
         out.push(cur);
         cur = [];
@@ -110,8 +113,8 @@ export class CreditsScene implements Scene {
         y += 4;
         continue;
       }
-      for (const line of r.wrap([text], VIEW_W - 12, size)) {
-        r.text(line, VIEW_W / 2, y, { size, color, align: "center" });
+      for (const line of r.wrap([text], VIEW_W - 12, size, true)) {
+        r.text(line, VIEW_W / 2, y, { size, color, align: "center", grow: true });
         y += size + 3;
       }
     }

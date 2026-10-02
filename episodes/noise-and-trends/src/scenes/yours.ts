@@ -134,10 +134,17 @@ export class YoursScene implements Scene {
     r.text(`${DERIVED.lastYear}`, x0 + w, top + h + 2, { size: 7, color: COLORS.dim, align: "right" });
     // A short life gets the rule and a real number from the long view, rather
       // than a precise-looking figure its own span cannot support.
+    /*
+     * Thirty years is the convention for a climate normal, not a line below which
+     * nothing can be known. The old wording -- "too short to call" -- risked telling
+     * a younger reader their own lifetime holds no evidence of warming, which is not
+     * what a short record means. A short record is noisier, so it is read against
+     * the long one rather than instead of it.
+     */
     const lines = life.trendWarming === null
       ? [
-          `Only ${life.years} years — too short to call. Climate is measured over ${MIN_TREND_YEARS}.`,
-          `Over the whole record since ${GLOBAL.annual.start}: ${signed(DERIVED.lastYearAnomaly, 1)}.`,
+          `${life.years} years is a short record, and short records swing more with natural variability.`,
+          `Set yours against the whole of it: ${signed(DERIVED.lastYearAnomaly, 1)} since ${GLOBAL.annual.start}.`,
         ]
       : [`Your last 10 years ran ${lifetimeLabel(life)} warmer than your first 10.`];
     lines.forEach((t, i) => r.text(t, VIEW_W / 2, top + h + 11 + i * 10, { size: 8, align: "center" }));

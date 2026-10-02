@@ -33,6 +33,13 @@ export interface TextOptions {
   color?: string;
   align?: Align;
   title?: boolean;
+  /**
+   * Follow the reader's text-size setting. Opt-in, and meant for prose: a caption,
+   * a credit line, anything someone sits and reads. HUD readouts stay fixed because
+   * they are positioned against a layout that cannot reflow, and growing them by
+   * two pushes labels off the view.
+   */
+  grow?: boolean;
 }
 
 interface QueuedText {
@@ -43,6 +50,7 @@ interface QueuedText {
   color: string;
   align: Align;
   font: string;
+  grow: boolean;
 }
 
 /** Eight directions: four alone leave the diagonal edges of glyphs unprotected. */
@@ -175,8 +183,8 @@ export class PixelRenderer {
     this.px.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
   }
 
-  private fontPx(size: number): number {
-    return Math.max(1, Math.round(size * this.textScale * this.scale));
+  private fontPx(size: number, grow = false): number {
+    return Math.max(1, Math.round(size * (grow ? this.textScale : 1) * this.scale));
   }
 
   /** Authored text size to this view's size. */
@@ -189,8 +197,8 @@ export class PixelRenderer {
    * evenly at multiples of its module. Pixelify Sans has no pixel grid at all and is
    * left alone.
    */
-  private fontFor(size: number, font: string): string {
-    const px = this.fontPx(size);
+  private fontFor(size: number, font: string, grow = false): string {
+    const px = this.fontPx(size, grow);
     if (font !== TITLE_FONT) return `${px}px ${font}`;
     const snapped = Math.max(TITLE_MODULE, Math.round(px / TITLE_MODULE) * TITLE_MODULE);
     return `${snapped}px ${font}`;
@@ -226,13 +234,14 @@ export class PixelRenderer {
       color: opts.color ?? CHROME.text,
       align: opts.align ?? "left",
       font: opts.title ? TITLE_FONT : BODY_FONT,
+      grow: opts.grow ?? false,
     });
   }
 
   /** Word-wrap to a width in view px, measured in the font it will be drawn in. */
-  wrap(lines: string[], maxWidth: number, size = 8): string[] {
+  wrap(lines: string[], maxWidth: number, size = 8, grow = false): string[] {
     const d = this.display;
-    d.font = this.fontFor(size, BODY_FONT);
+    d.font = this.fontFor(size, BODY_FONT, grow);
     const limit = maxWidth * this.scale;
     const out: string[] = [];
     for (const line of lines) {
@@ -266,26 +275,67 @@ export class PixelRenderer {
    * Caption panel along the bottom, sized to its wrapped content. `prompt` may be
    * `true` for a blinking arrow, or a string to blink instead.
    */
+  /**
+   * Lay the caption out at a given text size, so the caller can try a few.
+   *
+   * Wrapping, line height and plate height all have to agree about the size, which
+   * is why they are computed together rather than read from `textScale` separately.
+   */
+  private captionLayout(
+    lines: string[], prompt: boolean | string, ts: number,
+  ): { wrapped: string[]; lineH: number; h: number; size: number } {
+    const size = this.scaled(8) * ts;
+    const limit = (this.viewW - this.scaled(44)) * this.scale;
+    const d = this.display;
+    d.font = this.fontFor(size, BODY_FONT);
+    /*
+     * Reflow rather than re-break. Authored line breaks are tuned to the landscape
+     * view; in a narrower view, or at a larger text size, each one sheds its tail
+     * onto a line of its own and the caption reads as a sentence plus a half line.
+     * When any authored line no longer fits, the whole caption is broken afresh.
+     */
+    const fits = lines.every((l) => d.measureText(l).width <= limit);
+    const wrapped: string[] = [];
+    for (const line of fits ? lines : [lines.join(" ")]) {
+      let cur = "";
+      for (const word of line.split(" ")) {
+        const test = cur ? `${cur} ${word}` : word;
+        if (d.measureText(test).width > limit && cur) {
+          wrapped.push(cur);
+          cur = word;
+        } else cur = test;
+      }
+      wrapped.push(cur);
+    }
+    const lineH = Math.max(1, Math.round(this.scaled(10) * ts));
+    const tail = Math.round((typeof prompt === "string" ? this.scaled(16) : this.scaled(8)) * ts);
+    return { wrapped, lineH, h: wrapped.length * lineH + tail, size };
+  }
+
   caption(lines: string[], prompt: boolean | string = false, time = 0): number {
     this.announce(lines);
     if (lines.length === 0) return 0;
-    const body = this.scaled(8);
-    const pad = this.scaled(4);
+
     /*
-     * Reflow rather than re-break. Authored line breaks are tuned to the landscape
-     * view; in a narrower view each one sheds its tail onto a line of its own, so a
-     * caption reads as "Imagine measuring your height every / morning," followed by
-     * another half-line. When any authored line no longer fits, the whole caption is
-     * treated as one paragraph and broken afresh, which gives ordinary ragged-right
-     * text instead of the author's breaks plus the wrapper's.
+     * The reader's text size, reduced if the caption would otherwise swallow the
+     * scene it is describing. Doubling the text in a 180-tall view turns a five-line
+     * caption into two thirds of the screen, covering the very thing being explained
+     * -- so the plate is held to 55% of the usable height and the size steps down
+     * until it fits. A taller view keeps the full setting.
      */
-    const limit = this.viewW - this.scaled(44);
-    const d = this.display;
-    d.font = this.fontFor(body, BODY_FONT);
-    const fits = lines.every((l) => d.measureText(l).width <= limit * this.scale);
-    const wrapped = this.wrap(fits ? lines : [lines.join(" ")], limit, body);
-    const lineH = this.scaled(10);
-    const h = wrapped.length * lineH + (typeof prompt === "string" ? this.scaled(16) : this.scaled(8));
+    const maxH = (this.viewH - this.bottomReserve) * 0.55;
+    const steps = [this.textScale, 1.5, 1].filter((t) => t <= this.textScale);
+    let layout = this.captionLayout(lines, prompt, steps[steps.length - 1]);
+    for (const ts of steps) {
+      const candidate = this.captionLayout(lines, prompt, ts);
+      if (candidate.h <= maxH) {
+        layout = candidate;
+        break;
+      }
+    }
+    const { wrapped, lineH, h, size } = layout;
+
+    const pad = this.scaled(4);
     const y = this.viewH - h - this.scaled(6) - this.bottomReserve;
     const inset = this.scaled(9);
     this.rect(inset + 1, y - 1, this.viewW - inset * 2 - 2, h + 2, CHROME.shadow);
@@ -293,11 +343,11 @@ export class PixelRenderer {
     this.rect(inset + 2, y + 1, this.viewW - inset * 2 - 4, h - 2, CHROME.border);
     this.rect(inset + 3, y + 2, this.viewW - inset * 2 - 6, h - 4, CHROME.fill);
     wrapped.forEach((line, i) =>
-      this.text(line, this.viewW / 2, y + pad + i * lineH, { align: "center", size: body }));
+      this.text(line, this.viewW / 2, y + pad + i * lineH, { align: "center", size }));
     const blink = Math.floor(time * 2.5) % 2 === 0;
     if (typeof prompt === "string" && blink) {
-      this.text(prompt, this.viewW - this.scaled(16), y + h - this.scaled(11),
-        { size: this.scaled(7), color: CHROME.prompt, align: "right" });
+      this.text(prompt, this.viewW - this.scaled(16), y + h - Math.round(this.scaled(11) * (size / this.scaled(8))),
+        { size: this.scaled(7) * (size / this.scaled(8)), color: CHROME.prompt, align: "right" });
     } else if (prompt === true && blink) {
       const ctx = this.px;
       ctx.fillStyle = CHROME.prompt;
@@ -320,12 +370,12 @@ export class PixelRenderer {
     d.drawImage(this.layer, this.offsetX, this.offsetY, this.viewW * this.scale, this.viewH * this.scale);
     d.globalAlpha = 1 - Math.min(1, this.fade);
     for (const t of this.texts) {
-      d.font = this.fontFor(t.size, t.font);
+      d.font = this.fontFor(t.size, t.font, t.grow);
       d.textAlign = t.align;
       d.textBaseline = "top";
       const x = this.offsetX + Math.round(t.x * this.scale);
       const y = this.offsetY + Math.round(t.y * this.scale);
-      const off = Math.max(1, Math.round(this.fontPx(t.size) / 16));
+      const off = Math.max(1, Math.round(this.fontPx(t.size, t.grow) / 16));
       d.fillStyle = CHROME.outline;
       for (const [dx, dy] of OUTLINE_OFFSETS) d.fillText(t.text, x + dx * off, y + dy * off);
       d.fillStyle = t.color;
