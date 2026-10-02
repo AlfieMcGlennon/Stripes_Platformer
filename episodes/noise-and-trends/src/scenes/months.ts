@@ -105,7 +105,7 @@ export class MonthsScene extends WalkScene {
     }
     const i = cellIndexAt(this.terrain, this.player.x);
     const year = FIRST_YEAR + Math.floor(i / 12);
-    r.text(`${MONTHS[i % 12]} ${year}`, 6, 4, { color: COLORS.accent, size: 11 });
+    r.text(`${MONTHS[i % 12]} ${year}`, 6, 4, { color: COLORS.accent, size: 10, title: true });
     r.text(signed(this.monthly[i]), 6, 17, { color: COLORS.text, size: 9 });
     if (i > 0) {
       const diff = this.monthly[i] - this.monthly[i - 1];

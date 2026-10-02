@@ -60,20 +60,6 @@ export function lifetimeWarming(birthYear: number): Lifetime {
  * a photocopy, a tired projector -- the coldest and warmest years come out at
  * exactly 1.00:1, i.e. identical.
  */
-function drawValueLine(
-  ctx: CanvasRenderingContext2D, values: number[], x0: number, top: number, w: number, h: number,
-  thickness = 1, color = "#ffffff",
-): void {
-  const lo = Math.min(...values);
-  const span = Math.max(0.001, Math.max(...values) - lo);
-  const step = w / values.length;
-  ctx.fillStyle = color;
-  values.forEach((v, i) => {
-    const y = top + h - thickness - ((v - lo) / span) * (h - thickness * 3);
-    ctx.fillRect(Math.round(x0 + i * step), Math.round(y), Math.max(1, Math.round(step)), thickness);
-  });
-}
-
 /** "+1.1 ± 0.18 °C", or a bare figure if there is no error bar to show. */
 export function lifetimeLabel(life: Lifetime): string {
   const v = life.trendWarming ?? 0;
@@ -91,6 +77,7 @@ export class YoursScene implements Scene {
   done = false;
   readonly zoomAvailable = true; // shows the touch "zoom" button, used here to save
   readonly zoomHint = "save";
+  readonly chipAnchor = "low" as const;
   private time = 0;
   private year = initialYear();
   private repeat = 0;
@@ -140,7 +127,6 @@ export class YoursScene implements Scene {
       const bx = Math.round(x0 + i * step);
       r.px.fillRect(bx, top, Math.round(x0 + (i + 1) * step) - bx, h);
     });
-    drawValueLine(r.px, values, x0, top, w, h);
     const life = lifetimeWarming(this.year);
     r.text("YOUR STRIPES", VIEW_W / 2, 5, { size: 20, color: COLORS.accent, align: "center", title: true });
     r.text(`Born in  ‹ ${this.year} ›`, VIEW_W / 2, 24, { size: 10, align: "center" });

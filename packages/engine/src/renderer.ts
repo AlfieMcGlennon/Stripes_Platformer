@@ -19,10 +19,11 @@ export const TITLE_FONT = '"Jersey 10", "Courier New", monospace';
 /** Jersey 10 is designed on a ten-pixel grid, as its name says. */
 const TITLE_MODULE = 10;
 /*
- * The title face is for display capitals and nothing else. Numbers go in the body
- * face: its digits are the ones readers can actually tell apart, and a 5 that reads
- * as an S has now been reported against two different pixel display faces. So
- * `title: true` belongs on display capitals, never on a year or a reading.
+ * Numbers go in the TITLE face, not the body face. Rendering both at the size the
+ * HUD uses settles it: Pixelify Sans closes the bowl of its 5 so "2025" reads as
+ * "2029" and "1850" as "1830", which is the misread that kept being reported.
+ * Jersey 10's 5 is open and unambiguous. The body face still carries numbers inside
+ * prose, where the surrounding words disambiguate them.
  */
 
 export type Align = "left" | "center" | "right";

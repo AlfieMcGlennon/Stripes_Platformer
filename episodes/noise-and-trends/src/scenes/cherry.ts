@@ -146,7 +146,7 @@ export class CherryScene extends WalkScene {
   private drawHud(r: Renderer): void {
     if (this.zoomProgress > 0) return;
     const i = cellIndexAt(this.terrain, this.player.x);
-    r.text(`${FROM_YEAR + i}`, 6, 4, { color: COLORS.accent, size: 11 });
+    r.text(`${FROM_YEAR + i}`, 6, 4, { color: COLORS.accent, size: 10, title: true });
     r.text(signed(this.values[i]), 6, 17, { size: 9 });
     const trend = this.walkedTrend();
     if (trend !== null) {

@@ -19,6 +19,8 @@ export interface Scene {
   readonly zoomAvailable?: boolean;
   /** Word on the desktop Z chip (default "hold"). */
   readonly zoomHint?: string;
+  /** "low" moves the Z chip clear of a scene that puts a title at the very top. */
+  readonly chipAnchor?: "top" | "low";
   /** Called once when the scene is replaced (stop sounds, release state). */
   onExit?(): void;
 }

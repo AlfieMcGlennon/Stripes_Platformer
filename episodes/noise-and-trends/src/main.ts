@@ -125,8 +125,12 @@ function drawRotateHint(): void {
  * 134 to 186 is clear of the stripes HUD, which ends at 111, and of the key, which
  * starts at 192.
  */
-function drawZoomChip(time: number, hint: string): void {
-  const x = Math.round(VIEW_W / 2) - 26, y = 6;
+function drawZoomChip(time: number, hint: string, low = false): void {
+  const x = Math.round(VIEW_W / 2) - 26;
+  // "low" is for scenes that put a centred title at the very top, where the chip
+  // would land straight on it. Below the caption area, clear of the touch buttons,
+  // which this chip never shares a screen with anyway.
+  const y = low ? VIEW_H - 24 : 6;
   renderer.px.fillStyle = "#05060d";
   renderer.px.fillRect(x, y, 52, 14);
   renderer.px.fillStyle = Math.floor(time * 2) % 2 === 0 ? COLORS.accent : "#b8952f";
@@ -164,7 +168,7 @@ function frame(now: number): void {
   else {
     scene.draw(renderer);
     if (touchUi) renderer.touchButtons(!!scene.zoomAvailable);
-    else if (scene.zoomAvailable) drawZoomChip(now / 1000, scene.zoomHint ?? "hold");
+    else if (scene.zoomAvailable) drawZoomChip(now / 1000, scene.zoomHint ?? "hold", scene.chipAnchor === "low");
   }
   renderer.present();
 }
