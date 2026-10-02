@@ -4,8 +4,7 @@ import { ditherPattern } from "./backdrop";
 import { shade } from "@stripes/engine";
 
 /** Terrain and line drawing on the 320x180 pixel layer. */
-const VIEW_W = 320;
-const VIEW_H = 180;
+import { VIEW_H, VIEW_W } from "./renderer";
 
 /**
  * Stepped terrain: base colour, dithered interior, lit top edge and shaded

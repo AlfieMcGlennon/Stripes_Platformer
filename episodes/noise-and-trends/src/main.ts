@@ -100,20 +100,16 @@ function advance(): void {
 let accumulator = 0;
 let last = performance.now();
 
-/**
- * Landscape is better but it is not essential -- the view is a fixed 320x180 that
- * already letterboxes -- so the hint must be escapable. A mounted tablet, a
- * pupil holding a device one-handed, or anyone with rotation locked would
- * otherwise be shut out entirely.
+/*
+ * There is no "turn your phone sideways" screen any more. It existed because the
+ * view was a fixed 320x180: on a portrait phone that is pinned by width to a scale
+ * of 2, a 640x360 band using about a sixth of the screen with captions at roughly 8
+ * CSS pixels. Rotating was the only way to read it.
+ *
+ * The view now has a portrait profile of its own -- narrower, so a bigger whole
+ * scale fits, and much taller -- so portrait is a shape the game is laid out for
+ * rather than one it tolerates. See `render/renderer.ts`.
  */
-let portraitDismissed = false;
-
-function drawRotateHint(): void {
-  renderer.clear("#05060d");
-  renderer.text("Turn your phone sideways", VIEW_W / 2, VIEW_H / 2 - 14, { size: 10, color: COLORS.accent, align: "center" });
-  renderer.text("(the game is paused)", VIEW_W / 2, VIEW_H / 2 + 2, { size: 8, color: COLORS.dim, align: "center" });
-  renderer.text("or tap to play anyway", VIEW_W / 2, VIEW_H / 2 + 16, { size: 8, color: COLORS.text, align: "center" });
-}
 
 /**
  * Desktop reminder that Z does something right now (touch players get a button).
@@ -143,14 +139,8 @@ function frame(now: number): void {
   requestAnimationFrame(frame); // schedule first, so one thrown error can't freeze the loop
   accumulator += Math.min(0.25, (now - last) / 1000);
   last = now;
-  const showRotateHint = coarsePointer && renderer.portrait && !portraitDismissed;
   while (accumulator >= STEP) {
     const frameInput = input.poll();
-    if (showRotateHint) {
-      if (frameInput.actionPressed || frameInput.anyPressed) portraitDismissed = true;
-      accumulator -= STEP;
-      continue;
-    }
     if (fadeDir === 0) scene.update(frameInput, STEP);
     if (fadeDir === -1) {
       renderer.fade = Math.max(0, renderer.fade - STEP / fadeSeconds());
@@ -164,12 +154,9 @@ function frame(now: number): void {
   const touchUi = input.touchSeen || coarsePointer;
   input.zoomActive = !!scene.zoomAvailable;
   renderer.bottomReserve = touchUi ? 40 : 0;
-  if (showRotateHint) drawRotateHint();
-  else {
-    scene.draw(renderer);
-    if (touchUi) renderer.touchButtons(!!scene.zoomAvailable);
-    else if (scene.zoomAvailable) drawZoomChip(now / 1000, scene.zoomHint ?? "hold", scene.chipAnchor === "low");
-  }
+  scene.draw(renderer);
+  if (touchUi) renderer.touchButtons(!!scene.zoomAvailable);
+  else if (scene.zoomAvailable) drawZoomChip(now / 1000, scene.zoomHint ?? "hold", scene.chipAnchor === "low");
   renderer.present();
 }
 

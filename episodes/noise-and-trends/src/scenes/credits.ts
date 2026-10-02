@@ -47,10 +47,22 @@ export class CreditsScene implements Scene {
       ["Ice-age colours add darker blues below the stripes scale; stripes saturate at +1.15 °C.", COLORS.text, 7],
       [`The rate race compares equal ${DERIVED.lastYear - GLOBAL.annual.start}-year spans; the ice-age side is still an average.`, COLORS.text, 7],
     ];
+    /*
+     * Wrapped, not just centred. These lines were authored against a 320-wide view
+     * and run up to 308px; in the portrait profile the view is 200 across and they
+     * would be clipped at both ends. The engine's own wrapper measures in the font
+     * they are drawn in, so this is the same break the captions get.
+     */
     let y = 18;
     for (const [text, color, size] of lines) {
-      if (text) r.text(text, VIEW_W / 2, y, { size, color, align: "center" });
-      y += size ? size + 3 : 4;
+      if (!text) {
+        y += 4;
+        continue;
+      }
+      for (const line of r.wrap([text], VIEW_W - 12, size)) {
+        r.text(line, VIEW_W / 2, y, { size, color, align: "center" });
+        y += size + 3;
+      }
     }
     if (Math.floor(this.time * 2) % 2 === 0 && this.time > 1.5) {
       r.text("press any key / tap to play again", VIEW_W / 2, VIEW_H - 14, { size: 8, color: COLORS.accent, align: "center" });

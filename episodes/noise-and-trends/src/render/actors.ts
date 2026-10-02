@@ -5,8 +5,7 @@ import {
 import type { Particle, PlayerState } from "../world";
 import { COLORS } from "./palette";
 
-const VIEW_W = 320;
-const VIEW_H = 180;
+import { VIEW_H, VIEW_W } from "./renderer";
 
 /**
  * The hero. Zoomed far out it becomes a bright dot with a bobbing arrow,

@@ -271,7 +271,19 @@ export class PixelRenderer {
     if (lines.length === 0) return 0;
     const body = this.scaled(8);
     const pad = this.scaled(4);
-    const wrapped = this.wrap(lines, this.viewW - this.scaled(44), body);
+    /*
+     * Reflow rather than re-break. Authored line breaks are tuned to the landscape
+     * view; in a narrower view each one sheds its tail onto a line of its own, so a
+     * caption reads as "Imagine measuring your height every / morning," followed by
+     * another half-line. When any authored line no longer fits, the whole caption is
+     * treated as one paragraph and broken afresh, which gives ordinary ragged-right
+     * text instead of the author's breaks plus the wrapper's.
+     */
+    const limit = this.viewW - this.scaled(44);
+    const d = this.display;
+    d.font = this.fontFor(body, BODY_FONT);
+    const fits = lines.every((l) => d.measureText(l).width <= limit * this.scale);
+    const wrapped = this.wrap(fits ? lines : [lines.join(" ")], limit, body);
     const lineH = this.scaled(10);
     const h = wrapped.length * lineH + (typeof prompt === "string" ? this.scaled(16) : this.scaled(8));
     const y = this.viewH - h - this.scaled(6) - this.bottomReserve;

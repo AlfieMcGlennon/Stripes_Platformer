@@ -2,7 +2,7 @@ import { lerp, worldToScreen, type CameraState } from "../core";
 import { DERIVED, GLOBAL, olsSlope, rankPhrase, signed } from "../data";
 import { drawBackdrop, THEMES } from "../render/backdrop";
 import { COLORS, stripeColor } from "../render/palette";
-import { shade, VIEW_H, VIEW_W, type Renderer } from "../render/renderer";
+import { PORTRAIT_VIEW, shade, VIEW_H, VIEW_W, type Renderer } from "../render/renderer";
 import { buildTerrain, cellCentreX, cellIndexAt, terrainWidth } from "../world";
 import { revealCamera, WalkScene } from "./scene";
 
@@ -137,7 +137,12 @@ export class StripesScene extends WalkScene {
 
   /** Colour key, shown from the first step so the stripes are never a mystery. */
   private drawLegend(r: Renderer): void {
-    const lx = VIEW_W - 92, ly = 6;
+    /*
+     * Top right in landscape. In portrait the 128-wide plate and the HUD's own left
+     * column would overlap, so the key drops below the HUD instead, centred.
+     */
+    const lx = PORTRAIT_VIEW ? Math.round((VIEW_W - 128) / 2) + 36 : VIEW_W - 92;
+    const ly = PORTRAIT_VIEW ? 56 : 6;
     r.px.fillStyle = "#05060d";
     r.px.fillRect(lx - 36, ly - 3, 128, 20);
     for (let k = 0; k < 50; k++) {

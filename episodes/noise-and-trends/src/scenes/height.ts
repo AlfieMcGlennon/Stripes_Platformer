@@ -2,7 +2,7 @@ import { worldToScreen } from "../core";
 import { mulberry32, SPRITE_H } from "@stripes/engine";
 import { drawBackdrop, THEMES } from "../render/backdrop";
 import { COLORS } from "../render/palette";
-import { VIEW_H, VIEW_W, type Renderer } from "../render/renderer";
+import { PORTRAIT_VIEW, VIEW_H, VIEW_W, type Renderer } from "../render/renderer";
 import { buildTerrain, terrainWidth } from "../world";
 import { WalkScene } from "./scene";
 
@@ -24,6 +24,15 @@ export function fakeHeights(days: number, seed = 7): number[] {
 
 const WEEK = 7;
 const YEAR = 365;
+
+/*
+ * The log and the chart sit beside the ruler in landscape and under each other in
+ * portrait, where a 200-wide view has no room for a second column.
+ */
+const LOG_AT = PORTRAIT_VIEW ? { x: 10, y: 104 } : { x: 200, y: 2 };
+const CHART_AT = PORTRAIT_VIEW
+  ? { x0: 8, y0: 196, w: VIEW_W - 16, h: 68 }
+  : { x0: 196, y0: 84, w: 116, h: 44 };
 /**
  * Right beside the player, who stands at 150 and cannot move during this phase. 136
  * rather than 140: the post is six wide with its highlight on the right edge, and
@@ -70,7 +79,13 @@ export class HeightScene extends WalkScene {
 
   constructor() {
     super(buildTerrain({ values: new Array(40).fill(0), cellWidth: 12, valueScale: 1, zeroY: 0 }), 150);
-    this.lookAhead = -25;
+    /*
+     * Portrait drops the ground further down the view. The ground sits at
+     * `-lookAhead + VIEW_H / 2`, so at -25 in a 440-tall view it would land at 245
+     * with 130px of bare green beneath it; -100 puts it at 320 and gives the sky
+     * the room the log and the chart need, stacked rather than side by side.
+     */
+    this.lookAhead = PORTRAIT_VIEW ? -100 : -25;
     this.cam = { ...this.cam, cy: this.player.y + this.lookAhead };
     this.controlsEnabled = false;
     this.play([
@@ -235,22 +250,20 @@ export class HeightScene extends WalkScene {
    * any two days" and the chart is 0.3 pixels per day: adjacent days share a column.
    */
   private drawLog(r: Renderer): void {
-    r.text(`a day's growth: +${GROWTH_CM_PER_DAY.toFixed(2)} cm`, 200, 2, { size: 7, color: COLORS.dim });
+    const { x, y } = LOG_AT;
+    r.text(`a day's growth: +${GROWTH_CM_PER_DAY.toFixed(2)} cm`, x, y, { size: 7, color: COLORS.dim });
     for (let d = 0; d < Math.min(this.shownDays, WEEK); d++) {
       const up = d > 0 && this.heights[d] >= this.heights[d - 1];
       const diff = d === 0 ? "" : `  ${up ? "+" : "−"}${Math.abs(this.heights[d] - this.heights[d - 1]).toFixed(1)}`;
       const color = d === 0 ? COLORS.text : up ? "#f4a582" : "#92c5de";
-      r.text(`Day ${d + 1}: ${this.heights[d].toFixed(1)}${diff}`, 200, 10 + d * 10, { size: 8, color });
+      r.text(`Day ${d + 1}: ${this.heights[d].toFixed(1)}${diff}`, x, y + 8 + d * 10, { size: 8, color });
     }
   }
 
   private drawChart(r: Renderer): void {
     const px = r.px;
-    /*
-     * Below the log, which now stays up. The log's seven rows run to y=78, and a
-     * three-line caption plate starts at y=136, so this has to live in between.
-     */
-    const x0 = 196, y0 = 84, w = 116, h = 44;
+    // Below the log, which stays up, and clear of the caption plate below that.
+    const { x0, y0, w, h } = CHART_AT;
     px.fillStyle = "#05060d";
     px.fillRect(x0 - 2, y0 - 2, w + 4, h + 4);
     px.fillStyle = "#141a33";

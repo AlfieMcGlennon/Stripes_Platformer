@@ -4,8 +4,33 @@ import { drawParticles, drawPlayer } from "./actors";
 import { drawLine, drawSlope, drawStepOutline, drawSteps } from "./terrainDraw";
 import { drawTouchButtons } from "./touch";
 
-export const VIEW_W = 320;
-export const VIEW_H = 180;
+/*
+ * Two view profiles, picked once at boot from the viewport's shape.
+ *
+ * The scale is always a whole number, so on a portrait phone a 320-wide view is
+ * pinned by width: 320 into about 780 device pixels gives a scale of 2, a 640x360
+ * band using a sixth of the screen, and captions at roughly 8 CSS pixels. Going
+ * narrower lets a bigger whole number fit, which makes the art and the text bigger
+ * at the same time. The cost is seeing less of the world at once, which a
+ * side-scroller can afford because the camera follows you.
+ *
+ * 200x440 is close to a modern phone's own 0.46 aspect, so there is little
+ * letterboxing left: about 60% of an iPhone 13's screen, 93% of a Pixel 7's.
+ */
+const LANDSCAPE = { w: 320, h: 180 };
+const PORTRAIT = { w: 200, h: 440 };
+
+function pickView(): { w: number; h: number } {
+  if (typeof window === "undefined") return LANDSCAPE;
+  const w = window.visualViewport?.width ?? window.innerWidth;
+  const h = window.visualViewport?.height ?? window.innerHeight;
+  return h > w * 1.1 ? PORTRAIT : LANDSCAPE;
+}
+
+const VIEW = pickView();
+export const VIEW_W = VIEW.w;
+export const VIEW_H = VIEW.h;
+export const PORTRAIT_VIEW = VIEW === PORTRAIT;
 export { BODY_FONT, TITLE_FONT, type TextOptions } from "@stripes/engine";
 
 /**
@@ -18,7 +43,10 @@ export { BODY_FONT, TITLE_FONT, type TextOptions } from "@stripes/engine";
  */
 export class Renderer extends PixelRenderer {
   constructor(canvas: HTMLCanvasElement) {
-    super(canvas, { viewW: VIEW_W, viewH: VIEW_H });
+    // textUnit 1 in both profiles: it exists to keep text the same physical size
+    // across episodes of different view heights, and here the bigger scale is
+    // already doing that job. Deriving it from viewH would double the text twice.
+    super(canvas, { viewW: VIEW_W, viewH: VIEW_H, textUnit: 1 });
   }
 
   steps(

@@ -3,7 +3,7 @@ import { DERIVED, GLOBAL, PALEO } from "../data";
 import { groundAt, type Terrain } from "../world";
 import { lerpHex, type Theme } from "../render/backdrop";
 import { COLORS, stripeColor } from "../render/palette";
-import type { Renderer } from "../render/renderer";
+import { VIEW_H, VIEW_W, type Renderer } from "../render/renderer";
 
 /**
  * Drawing helpers for the slide level: temperature colours, the climate-driven
@@ -172,10 +172,13 @@ export function drawMagnifier(
 ): void {
   const px = r.px;
   const fromYear = 1650, toYear = DERIVED.lastYear;
-  const box = { x: 196, y: 14, w: 116, h: 76 };
+  // Top-right in landscape; across the top in portrait, where 116 would not fit.
+  const box = VIEW_W >= 320
+    ? { x: 196, y: 14, w: 116, h: 76 }
+    : { x: 8, y: 14, w: VIEW_W - 16, h: 76 };
   const lo = -0.6, hi = 1.8;
   // Where the magnified span sits on the main view, for the connector lines.
-  const a = worldToScreen(cam, xForYear(fromYear), groundAt(t, xForYear(fromYear)), 320, 180);
+  const a = worldToScreen(cam, xForYear(fromYear), groundAt(t, xForYear(fromYear)), VIEW_W, VIEW_H);
   const b = worldToScreen(cam, xForYear(toYear), groundAt(t, xForYear(toYear)), 320, 180);
   px.globalAlpha = appear;
   r.line(a.sx, a.sy, box.x, box.y + box.h, "#ffd166", 1, false);

@@ -95,22 +95,27 @@ export class TitleScene implements Scene {
   private drawPicker(r: Renderer): void {
     const look = getLook();
     const px = r.px;
+    // Centred on the view rather than pinned to a 320-wide one, so it still fits
+    // when the portrait profile makes the view 200 across.
     const top = 74;
+    const boxW = Math.min(128, VIEW_W - 24);
+    const boxX = Math.round((VIEW_W - boxW) / 2);
     px.fillStyle = "#05060d";
-    px.fillRect(96, top - 3, 128, 22);
+    px.fillRect(boxX, top - 3, boxW, 22);
     px.fillStyle = "#1b2140";
-    px.fillRect(97, top - 2, 126, 20);
+    px.fillRect(boxX + 1, top - 2, boxW - 2, 20);
 
     FIELDS.forEach((f, i) => {
       const y = top + i * 6;
       const on = i === this.field;
       const label = f.key === "outfit" ? look.outfit : f.key === "clothes" ? CLOTHES[look.clothes].name : "";
-      r.text(on ? `> ${f.label}` : `  ${f.label}`, 102, y - 2, { size: 7, color: on ? COLORS.accent : COLORS.dim });
+      r.text(on ? `> ${f.label}` : `  ${f.label}`, boxX + 6, y - 2, { size: 7, color: on ? COLORS.accent : COLORS.dim });
       if (f.key === "outfit" || f.key === "clothes") {
-        r.text(label, 216, y - 2, { size: 7, color: on ? COLORS.text : COLORS.dim, align: "right" });
+        r.text(label, boxX + boxW - 8, y - 2, { size: 7, color: on ? COLORS.text : COLORS.dim, align: "right" });
       }
-      if (f.key === "skin") this.swatches(px, SKINS, look.skin, 150, y - 1, on);
-      if (f.key === "clothes") this.swatches(px, CLOTHES.map((c) => c.y), look.clothes, 150, y - 1, on);
+      const sw = boxX + Math.round(boxW * 0.42);
+      if (f.key === "skin") this.swatches(px, SKINS, look.skin, sw, y - 1, on);
+      if (f.key === "clothes") this.swatches(px, CLOTHES.map((c) => c.y), look.clothes, sw, y - 1, on);
     });
 
     r.text("« » change · SPACE next · Z done", VIEW_W / 2, 122, { size: 7, color: COLORS.dim, align: "center" });
