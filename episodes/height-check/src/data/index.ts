@@ -129,6 +129,29 @@ export function monthlyWindow(fromYear: number, toYear: number, data: GlobalData
 }
 
 /** "+1.23 °C" style label; always signed so a drop reads as a drop. */
+/**
+ * "the warmest", "2nd warmest", "11th warmest".
+ *
+ * Rank one takes the definite article rather than "1st", which is how anyone would
+ * say it, and the teens are special-cased because 11th, 12th and 13th do not follow
+ * the pattern the single digits set.
+ */
+export function rankPhrase(n: number): string {
+  if (n === 1) return "the warmest";
+  const tens = n % 100;
+  const suffix =
+    tens >= 11 && tens <= 13
+      ? "th"
+      : n % 10 === 1
+        ? "st"
+        : n % 10 === 2
+          ? "nd"
+          : n % 10 === 3
+            ? "rd"
+            : "th";
+  return `${n}${suffix} warmest`;
+}
+
 export function signed(value: number, digits = 2): string {
   if (Math.abs(value) < 0.5 * Math.pow(10, -digits)) return `±${(0).toFixed(digits)} °C`;
   return `${value >= 0 ? "+" : "−"}${Math.abs(value).toFixed(digits)} °C`;

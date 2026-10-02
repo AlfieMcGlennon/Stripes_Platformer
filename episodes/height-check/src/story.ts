@@ -1,4 +1,4 @@
-import { allRisingFromYears, DERIVED, GLOBAL, PALEO, signed } from "./data";
+import { allRisingFromYears, DERIVED, GLOBAL, PALEO, rankPhrase, signed } from "./data";
 
 /**
  * A parallel text version of the game.
@@ -64,7 +64,7 @@ export function storySections(): StorySection[] {
       heading: "Level 3 — the stripes",
       paragraphs: [
         `One step per year, ${first} to ${last}: ${years + 1} steps, climbed one at a time. No single step looks like anything much. From the 1940s to the 1970s the climb stalls, partly because sulphur pollution shaded the surface; from the 1970s onwards it is steady.`,
-        `At the top you step back and the staircase becomes the warming stripes. ${last} was about ${signed(DERIVED.lastYearAnomaly, 1)} against the ${GLOBAL.meta.baseline} average. The ten warmest years on record are all since ${DERIVED.warmestTen[0]}; ${last} itself ranks ${DERIVED.lastYearRank}.`,
+        `At the top you step back and the staircase becomes the warming stripes. ${last} was about ${signed(DERIVED.lastYearAnomaly, 1)} against the ${GLOBAL.meta.baseline} average. The ten warmest years on record are all since ${DERIVED.warmestTen[0]}; ${last} itself is ${rankPhrase(DERIVED.lastYearRank)}.`,
       ],
     },
     {

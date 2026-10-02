@@ -1,5 +1,17 @@
 export const BODY_FONT = '"Pixelify Sans", "Courier New", monospace';
-export const TITLE_FONT = '"Silkscreen", "Courier New", monospace';
+/*
+ * Jersey 10, not Silkscreen. Silkscreen's digits were the one recurring legibility
+ * complaint across every round of feedback -- its 5 and its Z read as each other's
+ * neighbours at small sizes, and the numbers are the whole point of a series about
+ * measurements. Jersey 10 keeps the pixel look with open, distinguishable digits.
+ *
+ * It does not carry U+2192, so no title-font string may use a right arrow; the
+ * captions that use one are body text, which is Pixelify Sans. It does have the
+ * degree sign, the up and down arrows, the proper minus and the dashes.
+ */
+export const TITLE_FONT = '"Jersey 10", "Courier New", monospace';
+/** Jersey 10 is designed on a ten-pixel grid, as its name says. */
+const TITLE_MODULE = 10;
 
 export type Align = "left" | "center" | "right";
 
@@ -160,12 +172,15 @@ export class PixelRenderer {
   }
 
   /**
-   * Silkscreen is a strict 8-module-per-em bitmap face, so it only renders evenly
-   * at multiples of 8. Pixelify Sans has no pixel grid at all and is left alone.
+   * The title face is a bitmap design on a fixed pixel grid, so it only renders
+   * evenly at multiples of its module. Pixelify Sans has no pixel grid at all and is
+   * left alone.
    */
   private fontFor(size: number, font: string): string {
     const px = this.fontPx(size);
-    return font === TITLE_FONT ? `${Math.max(8, Math.round(px / 8) * 8)}px ${font}` : `${px}px ${font}`;
+    if (font !== TITLE_FONT) return `${px}px ${font}`;
+    const snapped = Math.max(TITLE_MODULE, Math.round(px / TITLE_MODULE) * TITLE_MODULE);
+    return `${snapped}px ${font}`;
   }
 
   /** Step the text size through 1x / 1.5x / 2x and remember the choice. */

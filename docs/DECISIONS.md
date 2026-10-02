@@ -238,3 +238,52 @@ so "checking it rather than asserting it" is something you can see land rather t
 corner; the sample-summer mark moved from 34 °C to the 33.1 °C where that summer actually peaked, with
 a post; and the corner readout names both periods instead of only the credits naming them.
 **Affects:** `episodes/carbon-road/src/story.ts`, `episodes/loaded-dice/src/{story,script,land,main}.ts`.
+
+### 2026-10-02 — Jersey 10 replaces Silkscreen
+**Decision:** `TITLE_FONT` is Jersey 10. The grid snap stays but is parameterised: `TITLE_MODULE`
+is 10, Jersey 10's own pixel grid, where Silkscreen's was 8.
+**Reasoning:** Author's call, and the same complaint three times across three rounds of feedback —
+"the numbers in the pixel are hard to read", then "5s and Zs look off". Silkscreen's digits are
+genuinely ambiguous at HUD sizes, and this is a series about reading measurements.
+**Constraint to remember:** Jersey 10 does not carry U+2192. No title-font string may use a right
+arrow. It does have the degree sign, up and down arrows, the proper minus and the dashes, which is
+everything the 15 `title: true` call sites use.
+**Affects:** `packages/engine/src/renderer.ts`, all four episodes' `main.ts` and `package.json`.
+
+### 2026-10-02 — The reading drawer is off, behind one flag
+**Decision:** `PANEL_ENABLED = false` in `packages/engine/src/panel.ts`. Author's call, for episode
+1 going out as a concept piece.
+**Reasoning and what was deliberately kept:** nothing was deleted. Every episode still calls
+`mountPanel` with its sections, every `story.ts` is intact and still under test, and flipping the one
+constant brings the drawer back. `ensureLiveRegion()` still runs with the drawer off, because the
+caption mirror is screen-reader support rather than a visible panel — switching off a reading panel
+should not take spoken captions with it.
+**Open:** this is temporary. CLAUDE.md makes the written version a series rule, and with the drawer
+off there is no non-canvas route to the argument at all. Restore before launch.
+
+### 2026-10-02 — The ruler measures the character
+**Decision:** The height post is 24px against the character's 14, stands beside them, and its arm
+sits at the reading and reaches across to their head. Magnification drops from 8 px/cm to 1.1.
+**Reasoning:** Author's call: the differences were too big and the post did not read as measuring
+anyone. It was 80px — nearly six times the character — with a marker swinging 64px over the year at
+an offset unrelated to the player's head, so it read as scenery. The year's spread now travels 8.8px
+up a 24px post and the arm stays inside it on the tallest day.
+**The trade, taken deliberately:** at 1.1 px/cm the day-to-day wobble is half a pixel, so the post
+cannot show it. That is fine, because the post never carried the demonstration — the day log and the
+year chart do, and both print to a tenth of a centimetre. The post is the prop that makes the
+measurement concrete. Still labelled "wobble magnified", and the made-up heights are still called out
+in a caption, as CLAUDE.md requires.
+**Affects:** `episodes/height-check/src/scenes/height.ts`.
+
+### 2026-10-02 — Episode 1's two review findings
+**Decision:** The stripes HUD quotes a thirty-year trend, not a ten-year one, and `rankPhrase()` in
+`data/index.ts` is shared by the caption and the prose.
+**Reasoning:** Level 2 establishes that a fifth of seven-year windows since 1970 slope down and that
+eleven years is the shortest all-rising stretch — then level 3 quoted a ten-year trend to two
+decimals, continuously. It was the one number in the game that could be used against the game. Thirty
+is also the WMO normal the last level ends on. The readout now appears from 1879 rather than 1859,
+which is correct: you cannot quote a thirty-year trend before you have thirty years.
+**Also:** the prose said "ranks 3" where the caption said "3rd warmest", and the old helper returned
+"the" for rank 1, so a year topping the record would have read "this one the warmest". `rankPhrase`
+returns "the warmest" for 1 and handles the teens.
+**Affects:** `episodes/height-check/src/scenes/stripes.ts`, `story.ts`, `data/index.ts`.

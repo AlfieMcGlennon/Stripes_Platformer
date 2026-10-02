@@ -1,5 +1,5 @@
 import { worldToScreen } from "../core";
-import { mulberry32 } from "@stripes/engine";
+import { mulberry32, SPRITE_H } from "@stripes/engine";
 import { drawBackdrop, THEMES } from "../render/backdrop";
 import { COLORS } from "../render/palette";
 import { VIEW_H, VIEW_W, type Renderer } from "../render/renderer";
@@ -24,8 +24,27 @@ export function fakeHeights(days: number, seed = 7): number[] {
 
 const WEEK = 7;
 const YEAR = 365;
-const RULER_X = 128;
-const PX_PER_CM = 8;
+/** Right beside the player, who stands at 150 and cannot move during this phase. */
+const RULER_X = 140;
+/**
+ * A stadiometer reads as one by being the height of the person it measures: the post
+ * stands from the ground to a little over their head, and the arm rests on the head
+ * rather than floating at an offset of its own.
+ *
+ * SPRITE_H is 14, so 24 puts the top ten pixels clear -- about the proportion a real
+ * height post has to a real person. The old ruler was 80, nearly six times the
+ * character, which read as scenery rather than as a measurement.
+ */
+const RULER_H = 24;
+/**
+ * Still magnified, and still labelled so, but by thirteen times rather than a
+ * hundred: the year's spread now travels nine pixels up a twenty-four pixel post
+ * instead of sixty-four up an eighty, and the arm stays inside the post on the
+ * tallest day of the year. A day's growth is a fiftieth of a pixel and the wobble is
+ * half of one, which is the honest relationship between them -- it is the log and
+ * the chart that carry the wobble, and they print it to a tenth of a centimetre.
+ */
+const PX_PER_CM = 1.1;
 
 export class HeightScene extends WalkScene {
   private heights = fakeHeights(YEAR);
@@ -41,12 +60,28 @@ export class HeightScene extends WalkScene {
     this.cam = { ...this.cam, cy: this.player.y + this.lookAhead };
     this.controlsEnabled = false;
     this.play([
-      { say: ["Imagine measuring your height every morning."] },
+      {
+        say: [
+          "Imagine measuring your height every morning, against the same post,",
+          "and writing down what it says.",
+        ],
+      },
       { run: () => (this.ticking = true) },
-      { say: ["Taller than yesterday? Shorter? It jumps around."], wait: false },
+      {
+        say: [
+          "Taller than yesterday? Shorter? It jumps around, and not by a little:",
+          "look at the differences down the side.",
+        ],
+        wait: false,
+      },
       { until: () => this.shownDays >= WEEK },
       { pause: 0.6 },
-      { say: ["How you stand, the time of day... the wobble is bigger than a day's growth."] },
+      {
+        say: [
+          "How you stand, whether you have slept, the time of day. None of it is growing",
+          "or shrinking you — and all of it is bigger than a day's worth of growth.",
+        ],
+      },
       { run: () => (this.showChart = true) },
       {
         zoom: {
@@ -56,8 +91,25 @@ export class HeightScene extends WalkScene {
           onProgress: (t) => (this.shownDays = Math.max(WEEK, Math.round(WEEK + t * (YEAR - WEEK)))),
         },
       },
-      { say: ["Any two days: noise. A whole year: you clearly grew.", "(Made-up numbers. Everything after this is real data.)"] },
-      { say: ["The weather works the same way. Let's look.", "← → move · SPACE jump · Z zoom out"], wait: false },
+      {
+        say: [
+          "Pick any two days and you learn nothing. Take the whole year and it is obvious:",
+          "you grew. Same measurements, same wobble — the only thing that changed is the span.",
+        ],
+      },
+      {
+        say: [
+          "That is the one idea this game is about, and you now have it.",
+          "(These heights are made up. Every number after this is measured data.)",
+        ],
+      },
+      {
+        say: [
+          "Temperature works the same way, for the same reason. Let's go and look.",
+          "← → move · SPACE jump · Z zoom out",
+        ],
+        wait: false,
+      },
       { run: () => { this.controlsEnabled = true; this.walkPhase = true; } },
     ]);
   }
@@ -92,25 +144,34 @@ export class HeightScene extends WalkScene {
   private drawRuler(r: Renderer): void {
     const px = r.px;
     const base = worldToScreen(this.cam, RULER_X, 0, VIEW_W, VIEW_H);
-    const rulerH = 80;
     const x = Math.round(base.sx);
-    const top = Math.round(base.sy - rulerH);
+    const top = Math.round(base.sy - RULER_H);
     px.fillStyle = "#1a1a2e";
-    px.fillRect(x - 1, top - 1, 8, rulerH + 1);
+    px.fillRect(x - 1, top - 1, 8, RULER_H + 1);
     px.fillStyle = COLORS.ruler;
-    px.fillRect(x, top, 6, rulerH);
+    px.fillRect(x, top, 6, RULER_H);
     px.fillStyle = "#b8a27a";
-    px.fillRect(x + 5, top, 1, rulerH);
+    px.fillRect(x + 5, top, 1, RULER_H);
     px.fillStyle = "#6b5e3e";
-    for (let i = 0; i <= rulerH; i += 4) px.fillRect(x, top + i, i % 8 === 0 ? 4 : 2, 1);
-    r.text("(magnified)", x + 3, top - 10, { size: 7, color: COLORS.dim, align: "center" });
-    if (this.shownDays > 0) {
-      const h = this.heights[this.shownDays - 1];
-      const markerY = Math.round(base.sy - 16 - (h - START_CM) * PX_PER_CM);
-      px.fillStyle = COLORS.accent;
-      px.fillRect(x - 4, markerY, 14, 1);
-      r.text(`${h.toFixed(1)} cm`, x + 12, markerY - 5, { color: COLORS.accent, size: 8 });
-    }
+    for (let i = 0; i <= RULER_H; i += 4) px.fillRect(x, top + i, i % 8 === 0 ? 4 : 2, 1);
+    r.text("wobble magnified", x + 3, top - 10, { size: 7, color: COLORS.dim, align: "center" });
+    if (this.shownDays === 0) return;
+
+    /*
+     * The arm sits at the reading and reaches across to the player's head, so the
+     * post is visibly measuring them. It is drawn before the player, so the player
+     * covers its far end -- which is what an arm resting on someone's head does.
+     */
+    const h = this.heights[this.shownDays - 1];
+    const markerY = Math.round(base.sy - SPRITE_H - (h - START_CM) * PX_PER_CM);
+    const headX = Math.round(worldToScreen(this.cam, this.player.x, 0, VIEW_W, VIEW_H).sx);
+    const from = x + 6;
+    px.fillStyle = COLORS.accent;
+    px.fillRect(from, markerY, Math.max(4, headX + 3 - from), 1);
+    // Left of the post: to the right it would sit on top of the player.
+    r.text(`${h.toFixed(1)} cm`, x - 3, markerY - 5, {
+      color: COLORS.accent, size: 8, align: "right",
+    });
   }
 
   private drawLog(r: Renderer): void {

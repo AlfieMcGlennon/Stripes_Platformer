@@ -82,11 +82,28 @@ function ensureLiveRegion(): void {
   document.body.append(live);
 }
 
+/**
+ * Off for now, by the author's call, while episode 1 goes out as a concept piece.
+ *
+ * Flip this back to true to restore the drawer. Nothing else has to change: every
+ * episode still builds and passes its sections in, `story.ts` is untouched in all
+ * four, and the prose stays under test. This is the one switch.
+ *
+ * It is worth restoring before launch. CLAUDE.md makes the written version a series
+ * rule, on the grounds that a lot of readers want the argument without the
+ * interaction, and with the drawer off there is no non-canvas route to it at all.
+ */
+export const PANEL_ENABLED = false;
+
 /** Returns a function that refreshes the control labels, for keyboard shortcuts. */
 export function mountPanel(options: PanelOptions): () => void {
   if (typeof document === "undefined" || document.getElementById("stripes-panel")) return () => undefined;
-  document.head.append(el("style", { textContent: CSS }));
+  // The caption mirror is screen-reader support rather than a visible panel, so it
+  // stays up even with the drawer off: turning off a reading panel should not take
+  // spoken captions with it.
   ensureLiveRegion();
+  if (!PANEL_ENABLED) return () => undefined;
+  document.head.append(el("style", { textContent: CSS }));
 
   const panel = el("details", { id: "stripes-panel" });
   panel.append(el("summary", { textContent: "Read it instead, and accessibility" }));

@@ -1,5 +1,5 @@
 import { lerp, worldToScreen, type CameraState } from "../core";
-import { DERIVED, GLOBAL, olsSlope, signed } from "../data";
+import { DERIVED, GLOBAL, olsSlope, rankPhrase, signed } from "../data";
 import { drawBackdrop, THEMES } from "../render/backdrop";
 import { COLORS, stripeColor } from "../render/palette";
 import { shade, VIEW_H, VIEW_W, type Renderer } from "../render/renderer";
@@ -63,7 +63,7 @@ export class StripesScene extends WalkScene {
       {
         say: [
           `${DERIVED.lastYear}: about ${DERIVED.lastYearAnomaly.toFixed(1)} °C above the ${GLOBAL.meta.baseline} average (HadCRUT5).`,
-          `The ten warmest years on record: all since ${DERIVED.warmestTen[0]} - this one ${ordinal(DERIVED.lastYearRank)} warmest.`,
+          `The ten warmest years on record: all since ${DERIVED.warmestTen[0]} - this one ${rankPhrase(DERIVED.lastYearRank)}.`,
         ],
       },
       { say: ["No single step shows it. Together, they're the warming stripes."] },
@@ -113,9 +113,16 @@ export class StripesScene extends WalkScene {
     const i = cellIndexAt(this.terrain, this.player.x);
     r.text(`${GLOBAL.annual.start + i}`, 6, 4, { color: COLORS.accent, size: 10, title: true });
     r.text(signed(GLOBAL.annual.values[i]), 6, 17, { size: 9 });
-    if (i >= 9) {
-      const recent = olsSlope(GLOBAL.annual.values.slice(i - 9, i + 1)) * 10;
-      r.text(`last 10 years: ${signed(recent)}/decade`, 6, 28, { size: 7, color: recent >= 0 ? "#f4a582" : "#92c5de" });
+    /*
+     * Thirty years, not ten. Level 2 has just shown the reader that a fifth of
+     * seven-year windows since 1970 slope downwards and that eleven years is the
+     * shortest all-rising stretch -- so a ten-year trend quoted to two decimals was
+     * the one number in the game that could be used against the game. Thirty is also
+     * the WMO normal the last level ends on.
+     */
+    if (i >= 29) {
+      const recent = olsSlope(GLOBAL.annual.values.slice(i - 29, i + 1)) * 10;
+      r.text(`last 30 years: ${signed(recent)}/decade`, 6, 28, { size: 7, color: recent >= 0 ? "#f4a582" : "#92c5de" });
     }
     r.text(`vs ${GLOBAL.meta.baseline} average`, 6, 38, { size: 7, color: COLORS.dim });
     this.drawLegend(r);
@@ -146,6 +153,3 @@ export class StripesScene extends WalkScene {
   }
 }
 
-function ordinal(n: number): string {
-  return n === 1 ? "the" : `${n}${n === 2 ? "nd" : n === 3 ? "rd" : "th"}`;
-}

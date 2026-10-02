@@ -1,5 +1,5 @@
 import "@fontsource/pixelify-sans/400.css";
-import "@fontsource/silkscreen/400.css";
+import "@fontsource/jersey-10/400.css";
 import {
   mountPanel, newWalk, reduceMotion, screenX, showBootFailure, stepWalk, type Marker,
 } from "@stripes/engine";
@@ -253,7 +253,7 @@ function frame(now: number): void {
 async function fontsReady(timeoutMs = 1500): Promise<void> {
   const load = Promise.all([
     document.fonts.load('16px "Pixelify Sans"'),
-    document.fonts.load("16px Silkscreen"),
+    document.fonts.load('16px "Jersey 10"'),
   ]);
   await Promise.race([load, new Promise((resolve) => setTimeout(resolve, timeoutMs))]).catch(() => undefined);
 }

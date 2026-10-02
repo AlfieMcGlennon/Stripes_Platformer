@@ -1,5 +1,5 @@
 import "@fontsource/pixelify-sans/400.css";
-import "@fontsource/silkscreen/400.css";
+import "@fontsource/jersey-10/400.css";
 import { Input } from "./core";
 import { isMuted, toggleMute, unlock } from "./core/audio";
 import { mountPanel, reduceMotion, showBootFailure } from "@stripes/engine";
@@ -77,7 +77,7 @@ function startIndex(): number {
 
 /** Wait (briefly) for the pixel fonts so the first captions don't swap fonts mid-read. */
 async function fontsReady(timeoutMs = 1500): Promise<void> {
-  const load = Promise.all([document.fonts.load('16px "Pixelify Sans"'), document.fonts.load("16px Silkscreen")]);
+  const load = Promise.all([document.fonts.load('16px "Pixelify Sans"'), document.fonts.load('16px "Jersey 10"')]);
   await Promise.race([load, new Promise((resolve) => setTimeout(resolve, timeoutMs))]).catch(() => undefined);
 }
 
