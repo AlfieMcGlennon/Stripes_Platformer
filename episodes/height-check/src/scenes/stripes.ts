@@ -30,7 +30,7 @@ export class StripesScene extends WalkScene {
     this.triggers = [
       { x: at(1851), dir: 1, lines: ["Now one step per year, from 1850.", "Colour = how warm that year was (key, top right)."] },
       { x: at(1895), dir: 1, lines: ["Up a little. Down a little. Any single step? Easy to brush off."] },
-      { x: at(1945), dir: 1, lines: ["1940s–70s: warming stalls. Smog (aerosols) shaded", "the sun while greenhouse gases kept rising."] },
+      { x: at(1945), dir: 1, lines: ["1940s–70s: the climb stalls — partly smog (aerosols)", "shading the sun while greenhouse gases kept rising."] },
       { x: at(1976), dir: 1, lines: ["From the 1970s the climb gets steady."] },
       { x: at(1986), dir: 1, lines: ["The ten years you walked month by month", "are just ten of these steps."] },
       { x: at(2016), dir: 1, lines: ["2016: where 'the cooling' started. Remember?"] },
@@ -92,6 +92,14 @@ export class StripesScene extends WalkScene {
     this.drawYouStep(r);
     r.particles(this.particles, this.cam);
     r.player(this.player, this.cam, this.time, { highlight: this.ended });
+    /*
+     * The key is drawn unconditionally. It used to live inside both branches below,
+     * and once `ended` was set neither of them ran until the zoom was 95% done -- so
+     * for about three and a half seconds of the four-second reveal, exactly while the
+     * sky fills with stripes, there was no key at all. Its own docstring says it is
+     * "shown from the first step so the stripes are never a mystery".
+     */
+    this.drawLegend(r);
     if (this.zoomProgress > 0.95) this.drawRevealLabels(r);
     else if (!this.ended) this.drawHud(r);
     this.drawCaption(r);
@@ -125,7 +133,6 @@ export class StripesScene extends WalkScene {
       r.text(`last 30 years: ${signed(recent)}/decade`, 6, 28, { size: 7, color: recent >= 0 ? "#f4a582" : "#92c5de" });
     }
     r.text(`vs ${GLOBAL.meta.baseline} average`, 6, 38, { size: 7, color: COLORS.dim });
-    this.drawLegend(r);
   }
 
   /** Colour key, shown from the first step so the stripes are never a mystery. */
@@ -146,10 +153,9 @@ export class StripesScene extends WalkScene {
   private drawRevealLabels(r: Renderer): void {
     const t = this.terrain;
     const first = worldToScreen(this.cam, cellCentreX(t, 0), t.groundY[0], VIEW_W, VIEW_H);
-    r.text(`${GLOBAL.annual.start} ↓`, first.sx - 2, first.sy - 14, { size: 8 });
+    r.text(`${GLOBAL.annual.start} below`, first.sx - 2, first.sy - 14, { size: 8 });
     const you = worldToScreen(this.cam, this.player.x, this.player.y, VIEW_W, VIEW_H);
     r.text(`${DERIVED.lastYear} · you`, you.sx - 10, you.sy - 12, { size: 8, color: COLORS.accent, align: "right" });
-    this.drawLegend(r);
   }
 }
 

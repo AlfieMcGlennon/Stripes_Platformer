@@ -198,7 +198,7 @@ export function drawMagnifier(
   px.globalAlpha = 1;
   if (appear >= 1) {
     r.text(`last ${toYear - fromYear} years, zoomed in 20×`, box.x + box.w / 2, box.y + box.h + 4, { size: 7, color: COLORS.accent, align: "center" });
-    r.text("1850 →", box.x + ((1850 - fromYear) / (toYear - fromYear)) * box.w - 2, box.y + box.h - 12, { size: 7, align: "right" });
+    r.text("1850 »", box.x + ((1850 - fromYear) / (toYear - fromYear)) * box.w - 2, box.y + box.h - 12, { size: 7, align: "right" });
     r.text(`${toYear}: +${DERIVED.lastYearAnomaly.toFixed(1)} °C`, box.x + box.w - 3, box.y + 3, { size: 7, align: "right" });
   }
 }

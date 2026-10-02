@@ -194,14 +194,14 @@ function draw(): void {
   }
 
   if (s.canPush && s.push < 0.02) {
-    renderer.text("hold ↑ to push the land", VIEW_W / 2, BASE_Y - MAX_H - 26, {
+    renderer.text("hold UP to push the land", VIEW_W / 2, BASE_Y - MAX_H - 26, {
       size: 8, color: Math.floor(s.time * 2) % 2 ? COLORS.gold : COLORS.dim, align: "center",
     });
   }
 
   const idle = !pressing(RIGHT) && !pressing(LEFT) && touchDir === 0;
   if (idle && !s.walk.held && s.walk.captionAge > 1.6 && !s.canPush) {
-    renderer.text("→", VIEW_W - 16, BASE_Y - 30, {
+    renderer.text("»", VIEW_W - 16, BASE_Y - 30, {
       size: 12, color: Math.floor(s.time * 2) % 2 ? COLORS.gold : COLORS.dim, align: "center",
     });
   }

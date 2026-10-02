@@ -115,14 +115,23 @@ function drawRotateHint(): void {
   renderer.text("or tap to play anyway", VIEW_W / 2, VIEW_H / 2 + 16, { size: 8, color: COLORS.text, align: "center" });
 }
 
-/** Desktop reminder that Z does something right now (touch players get a button). */
+/**
+ * Desktop reminder that Z does something right now (touch players get a button).
+ *
+ * Top centre, not top right. The chip is on screen for the whole of a zoom beat, and
+ * the top right belongs to something in every scene that has one: the stripes colour
+ * key, the title screen's mute line, and the year chart in level 0 -- which it
+ * covered for the entire fast-forward, the episode's flagship moment. The band from
+ * 134 to 186 is clear of the stripes HUD, which ends at 111, and of the key, which
+ * starts at 192.
+ */
 function drawZoomChip(time: number, hint: string): void {
-  const x = VIEW_W - 58, y = 6;
+  const x = Math.round(VIEW_W / 2) - 26, y = 6;
   renderer.px.fillStyle = "#05060d";
   renderer.px.fillRect(x, y, 52, 14);
   renderer.px.fillStyle = Math.floor(time * 2) % 2 === 0 ? COLORS.accent : "#b8952f";
   renderer.px.fillRect(x + 3, y + 2, 12, 10);
-  renderer.text("Z", x + 9, y + 3, { size: 8, color: "#05060d", align: "center", title: true });
+  renderer.text("Z", x + 9, y + 2, { size: 10, color: "#05060d", align: "center", title: true });
   renderer.text(hint, x + 20, y + 3, { size: 8 });
 }
 

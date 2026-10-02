@@ -123,7 +123,7 @@ export class SlideScene extends WalkScene {
     this.lookAhead = -30;
     const lgm = Math.abs(PALEO.lgmDelta).toFixed(0);
     const [short, long] = DERIVED.deglaciationYearsRange.map((y) => (y / 1000).toFixed(0));
-    this.play([{ say: ["Let's go back in time. Hold ← to slide."], wait: false }]);
+    this.play([{ say: ["Let's go back in time. Hold « to slide."], wait: false }]);
     this.triggers = [
       { x: xForYear(1850), dir: -1, lines: [`Whoa. That drop was just ${DERIVED.lastYear - 1850} years.`] },
       { x: xForYear(-1000), dir: -1, lines: ["Before 1850: about 10,000 relatively stable years.", "Farming, towns and cities grew up as the climate settled."] },
@@ -266,7 +266,7 @@ export class SlideScene extends WalkScene {
     label(24, "ice age", "#ffffff", -26, "left");
     // Placed low in the dark ground so it never sits under the magnifier box.
     label(xForYear(-5000), "10,000 relatively stable years", "#ffffff", 64);
-    r.text("← 21,000 years →", VIEW_W / 2, VIEW_H - 50, { size: 7, color: COLORS.dim, align: "center" });
+    r.text("« 21,000 years »", VIEW_W / 2, VIEW_H - 50, { size: 7, color: COLORS.dim, align: "center" });
     if (this.revealTime > 1.2) drawMagnifier(r, this.cam, this.terrain, (x) => this.valueAt(x), xForYear, Math.min(1, (this.revealTime - 1.2) / 0.8));
   }
 }

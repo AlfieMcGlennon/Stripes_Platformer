@@ -83,7 +83,7 @@ export class CherryScene extends WalkScene {
     this.controlsEnabled = false;
     this.play([
       { run: () => this.lines.push({ first: FIRST, last: LAST, color: "#92c5de" }) },
-      { say: [`${C.start}–${C.end}: ${signed(C.trendPerDecade)} per decade. Cooling!`, "Case closed? Take just one more step →"] },
+      { say: [`${C.start}–${C.end}: ${signed(C.trendPerDecade)} per decade. Cooling!`, "Case closed? Take just one more step »"] },
       { run: () => { this.oneMore = true; this.bounds = { min: FIRST * CELL, max: (NEXT + 1) * CELL }; this.controlsEnabled = true; } },
       { until: () => this.player.x >= NEXT * CELL + CELL / 2 && this.player.grounded },
       { run: () => { this.controlsEnabled = false; this.lines.push({ first: FIRST, last: NEXT, color: "#f4a582" }); } },

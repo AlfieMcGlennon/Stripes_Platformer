@@ -287,3 +287,72 @@ which is correct: you cannot quote a thirty-year trend before you have thirty ye
 "the" for rank 1, so a year topping the record would have read "this one the warmest". `rankPhrase`
 returns "the warmest" for 1 and handles the teens.
 **Affects:** `episodes/height-check/src/scenes/stripes.ts`, `story.ts`, `data/index.ts`.
+
+### 2026-10-02 — Neither font has arrows, so the series stopped using them
+**Decision:** `«` and `»` for left and right; up and down are spelled out. The comment in
+`renderer.ts` now says so, and says why the fontsource CSS cannot be used to check.
+**Reasoning:** Parsing the cmaps of both woffs directly: U+2190, U+2192, U+2191 and U+2193 are
+absent from Jersey 10 AND from Pixelify Sans. Every arrow in the series — 24 of them — was falling
+back to Courier New, a different weight and baseline spliced into a pixel line, including the first
+sight a reader gets of the controls. This predates the font swap; what was new was my comment
+asserting Pixelify Sans carried them, which came from reading the `unicode-range` in the fontsource
+CSS. That is Google's subset declaration, not a coverage list. Guillemets are in both faces and are
+one character for one character, so no caption changed length.
+**Affects:** 13 files across all four episodes, `packages/engine/src/renderer.ts`.
+
+### 2026-10-02 — Caption lines are authored to fit, measured not guessed
+**Decision:** Level 0's captions are authored at line widths that render as written.
+**Reasoning:** The engine wraps at `viewW - scaled(44)` = 276 view px, about 64 characters of
+Pixelify Sans at size 8. Yesterday's longer captions ran 2–6 px over, so six of seven shed their
+last word onto a line of its own — a lone word under a full-width line, which reads as a layout
+bug. Verified by parsing the woff hmtx and cmap and re-running the engine's own greedy wrapper: all
+five blocks now render at their authored line counts, widest 233.5 px of 276.
+**Open, and NOT fixed:** the same measurement across the other three episodes finds 49 caption lines
+over their limits — 23 in Carbon Road, 14 in Loaded Dice, 12 in Forecaster. None ship yet. Episode
+1's credits are clear (widest 308.5 px in a 320 view) and are drawn unwrapped, so they are measured
+against the view rather than the caption box.
+
+### 2026-10-02 — The arm sits on the head, and the post gives up on showing growth
+**Decision:** `PX_PER_CM` 1.1 → 0.35, `RULER_X` 140 → 136.
+**Reasoning:** The sprite is a fixed 14 px however tall the reading is, so any magnification walks
+the arm off the head as the year accumulates. At 1.1 it rose 6.5 px clear by day 365 — 43% of the
+character — and sat strictly above the head on 338 days of 365, while the comment claimed it rested
+on it. At 0.35 it is never more than 2.6 px off. The post now shows almost nothing of the growth,
+which is the honest outcome: a 14-pixel person cannot carry 6 cm legibly. The reading is the number
+beside the arm, and the evidence is the log and the chart. Moving the post to 136 uncovers the
+highlight column that makes it read as round, which the sprite box was sitting on.
+
+### 2026-10-02 — Level 0 proves its own sentence again
+**Decision:** The day log prints `a day's growth: +0.02 cm` above the rows, and survives the chart
+appearing. The chart moves below it.
+**Reasoning:** The level's central claim is that the wobble is bigger than a day's growth. The
+wobble was printed (−1.4, +0.5 …); a day's growth appeared **nowhere** — 0.0164 cm prints as "0.0"
+at one decimal and is a fiftieth of a pixel on the post. Half the comparison was missing, which made
+the sentence an assertion. Worse, the log was switched off the instant the chart appeared, one beat
+before the caption that says "pick any two days" — and the chart is 0.3 px per day, so adjacent days
+share a column. Both halves are now on screen together.
+**Also:** the invented-numbers disclosure moved from beat 9 to beat 1, where the numbers are
+introduced; the beat that restated the moral a third time and told the reader what they had
+understood is gone; and the caption now states the 6 cm, because subtracting the log's endpoints
+gives 4.3 cm — day one carries the week's largest positive wobble.
+
+### 2026-10-02 — Three fixes the visual review found in older code
+**Decision and reasoning, all pre-dating this week:**
+- The Z chip moves from the top right to the top centre. The top right belongs to something in every
+  scene that has one, and the chip is drawn for the whole of a zoom beat: it covered the year chart
+  for the entire fast-forward, overlapped "M: mute · T: text size" on the title screen, and sat on
+  the stripes colour key during the last half second of the reveal.
+- `drawLegend` is called unconditionally in `stripes.draw()`. It lived inside both branches of a
+  conditional, and once `ended` was set neither ran until the zoom was 95% done — so the key was
+  absent for about 3.45 s of the 4 s reveal, exactly while the sky fills with stripes. Its own
+  docstring promises it is shown from the first step.
+- Title sizes are multiples of 10, Jersey 10's module, because the snap silently resizes anything
+  else: "HEIGHT CHECK" at 16 rendered 25% larger at scale 1 than at scale 2. They are also larger
+  now (30, from 16 and 20) because Jersey 10's cap ink is 0.536 of its font size against Pixelify's
+  0.643, so the swap shrank every title without the numbers changing and the title ended up narrower
+  than its own subtitle.
+- Credits now disclose the post's magnification and the stripe colour scale's 1971-2000 centre. The
+  stripes level shows "vs 1850-1900 average" and "vs 1971-2000 avg" at the same time; only the first
+  was credited. The 175-year rate-race span is interpolated rather than typed.
+- The aerosol caption said "Smog (aerosols) shaded the sun" flat. The prose already said "partly".
+  It was the only unhedged causal claim in the episode.

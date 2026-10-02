@@ -77,7 +77,7 @@ export class TitleScene implements Scene {
     const bob = reduceMotion() ? 0 : Math.round(Math.sin(this.time * 3) * 1.5);
     const frame = this.looking ? HERO.stand : Math.floor(this.time * 3) % 2 ? HERO.runA : HERO.runB;
     drawSprite(r.px, frame, VIEW_W / 2 - 5, 96 + bob, { palette: lookPalette(), shirt: lookShirt() });
-    r.text("HEIGHT CHECK", VIEW_W / 2, 34, { size: 20, color: COLORS.accent, align: "center", title: true });
+    r.text("HEIGHT CHECK", VIEW_W / 2, 30, { size: 30, color: COLORS.accent, align: "center", title: true });
     r.text("a tiny game about noise, trends and the warming stripes", VIEW_W / 2, 60, { size: 8, color: COLORS.text, align: "center" });
     if (this.looking) this.drawPicker(r);
     else {
@@ -111,7 +111,7 @@ export class TitleScene implements Scene {
       if (f.key === "clothes") this.swatches(px, CLOTHES.map((c) => c.y), look.clothes, 150, y - 1, on);
     });
 
-    r.text("← → change · SPACE next · Z done", VIEW_W / 2, 122, { size: 7, color: COLORS.dim, align: "center" });
+    r.text("« » change · SPACE next · Z done", VIEW_W / 2, 122, { size: 7, color: COLORS.dim, align: "center" });
   }
 
   private swatches(

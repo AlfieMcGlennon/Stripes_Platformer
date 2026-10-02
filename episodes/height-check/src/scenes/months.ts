@@ -85,7 +85,7 @@ export class MonthsScene extends WalkScene {
 
   private drawHud(r: Renderer): void {
     if (this.averaging) {
-      r.text(`Averaging months → years  (${GLOBAL.meta.dataset})`, 6, 5, { size: 7, color: COLORS.dim });
+      r.text(`Averaging months » years  (${GLOBAL.meta.dataset})`, 6, 5, { size: 7, color: COLORS.dim });
       return;
     }
     const i = cellIndexAt(this.terrain, this.player.x);

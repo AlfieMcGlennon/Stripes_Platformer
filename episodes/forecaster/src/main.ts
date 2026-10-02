@@ -226,7 +226,7 @@ function draw(): void {
   // A nudge onward, only while standing still with nothing left to read.
   const idle = !pressing(RIGHT) && !pressing(LEFT) && touchDir === 0;
   if (idle && !s.walk.held && s.walk.captionAge > 1.5) {
-    renderer.text("→", VIEW_W - 16, GROUND_Y - 28, {
+    renderer.text("»", VIEW_W - 16, GROUND_Y - 28, {
       size: 12, color: Math.floor(s.time * 2) % 2 ? COLORS.gold : COLORS.dim, align: "center",
     });
   }

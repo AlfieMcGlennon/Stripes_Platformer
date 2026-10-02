@@ -30,7 +30,7 @@ const LAST_1000 = yearReaching(TOTAL_EMITTED - 1000);
 
 export const MARKS: Mark[] = [
   // On the spot the reader starts, so how to move is the first thing they are told.
-  { atX: 52, lines: ["Hold → to walk. You can stop, read, and walk back whenever you like."] },
+  { atX: 52, lines: ["Hold » to walk. You can stop, read, and walk back whenever you like."] },
   {
     atYear: 1850,
     lines: [

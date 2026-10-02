@@ -142,7 +142,7 @@ export class YoursScene implements Scene {
     });
     drawValueLine(r.px, values, x0, top, w, h);
     const life = lifetimeWarming(this.year);
-    r.text("YOUR STRIPES", VIEW_W / 2, 6, { size: 12, color: COLORS.accent, align: "center", title: true });
+    r.text("YOUR STRIPES", VIEW_W / 2, 5, { size: 20, color: COLORS.accent, align: "center", title: true });
     r.text(`Born in  ‹ ${this.year} ›`, VIEW_W / 2, 24, { size: 10, align: "center" });
     r.text(`${this.year}`, x0, top + h + 2, { size: 7, color: COLORS.dim });
     r.text(`${DERIVED.lastYear}`, x0 + w, top + h + 2, { size: 7, color: COLORS.dim, align: "right" });
@@ -157,7 +157,7 @@ export class YoursScene implements Scene {
     lines.forEach((t, i) => r.text(t, VIEW_W / 2, top + h + 11 + i * 10, { size: 8, align: "center" }));
     const saved = this.time - this.savedAt < 2;
     r.text(
-      saved ? "Saved!" : "← → pick a year · Z saves a picture · SPACE finishes",
+      saved ? "Saved!" : "« » pick a year · Z saves a picture · SPACE finishes",
       VIEW_W / 2, top + h + 31, { size: 7, color: saved ? COLORS.accent : COLORS.dim, align: "center" },
     );
   }

@@ -42,7 +42,7 @@ export interface Mark {
  * very nearly a second of walking; `land.test.ts` holds the floor.
  */
 export const MARKS: Mark[] = [
-  { at: 11.5, lines: ["Hold → to walk. You can stop, read, and walk back whenever you like."] },
+  { at: 11.5, lines: ["Hold » to walk. You can stop, read, and walk back whenever you like."] },
   {
     at: 13.5,
     lines: [
@@ -96,7 +96,7 @@ export const MARKS: Mark[] = [
     at: THRESHOLD + 1.5,
     lines: [
       "Now the thing worth doing: every day warms by the same amount, nothing else changes.",
-      "Hold ↑ to push. Gold is ground added; the dotted line is the real later landscape.",
+      "Hold UP to push. Gold is ground added; the dotted line is the real later landscape.",
     ],
   },
   {
@@ -136,10 +136,10 @@ export function walkReadout(celsius: number): { label: string; value: string; no
   const ratio = ratioAt(celsius);
   const small = EARLY_STATS.count(celsius) <= 20;
   return {
-    label: `${EARLY.label} → ${LATE.label}, days a summer`,
+    label: `${EARLY.label} » ${LATE.label}, days a summer`,
     value: small
-      ? `${EARLY_STATS.count(celsius)} → ${LATE_STATS.count(celsius)} in thirty summers`
-      : `${one(then)} → ${one(now)}   ${Number.isFinite(ratio) ? `${ratio.toFixed(1)}×` : "—"}`,
+      ? `${EARLY_STATS.count(celsius)} » ${LATE_STATS.count(celsius)} in thirty summers`
+      : `${one(then)} » ${one(now)}   ${Number.isFinite(ratio) ? `${ratio.toFixed(1)}×` : "—"}`,
     notable: Number.isFinite(ratio) && ratio >= 1.4,
   };
 }

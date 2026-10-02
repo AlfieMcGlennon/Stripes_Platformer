@@ -5,9 +5,15 @@ export const BODY_FONT = '"Pixelify Sans", "Courier New", monospace';
  * neighbours at small sizes, and the numbers are the whole point of a series about
  * measurements. Jersey 10 keeps the pixel look with open, distinguishable digits.
  *
- * It does not carry U+2192, so no title-font string may use a right arrow; the
- * captions that use one are body text, which is Pixelify Sans. It does have the
- * degree sign, the up and down arrows, the proper minus and the dashes.
+ * NO ARROWS, in either face. Parsing the cmaps of both woffs: U+2190, U+2192, U+2191
+ * and U+2193 are absent from Jersey 10 AND from Pixelify Sans, so an arrow in any
+ * string silently falls back to Courier New -- a different weight and baseline
+ * spliced into a pixel line. The episodes use guillemets for left and right, which
+ * both faces carry, and spell out up and down. Both faces do have the degree sign,
+ * the middle dot, the proper minus, the dashes and the multiplication sign.
+ *
+ * The fontsource CSS `unicode-range` is Google's subset declaration, not a coverage
+ * list, so it cannot be used to answer this question. Parse the font.
  */
 export const TITLE_FONT = '"Jersey 10", "Courier New", monospace';
 /** Jersey 10 is designed on a ten-pixel grid, as its name says. */

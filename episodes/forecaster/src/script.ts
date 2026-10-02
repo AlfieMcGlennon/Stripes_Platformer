@@ -28,7 +28,7 @@ export const TITLE = {
 };
 
 export const OPENING = [
-  ["Hold → to walk. You can stop, read, and walk back whenever you like."],
+  ["Hold » to walk. You can stop, read, and walk back whenever you like."],
   [
     "There are four weather stations along this road.",
     "Collect them, and we will build a forecast out of what they measured this morning.",

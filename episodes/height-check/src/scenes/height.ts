@@ -24,8 +24,13 @@ export function fakeHeights(days: number, seed = 7): number[] {
 
 const WEEK = 7;
 const YEAR = 365;
-/** Right beside the player, who stands at 150 and cannot move during this phase. */
-const RULER_X = 140;
+/**
+ * Right beside the player, who stands at 150 and cannot move during this phase. 136
+ * rather than 140: the post is six wide with its highlight on the right edge, and
+ * the sprite box starts at 145, so at 140 the one column that makes the post read as
+ * round was permanently behind the player.
+ */
+const RULER_X = 136;
 /**
  * A stadiometer reads as one by being the height of the person it measures: the post
  * stands from the ground to a little over their head, and the arm rests on the head
@@ -37,14 +42,21 @@ const RULER_X = 140;
  */
 const RULER_H = 24;
 /**
- * Still magnified, and still labelled so, but by thirteen times rather than a
- * hundred: the year's spread now travels nine pixels up a twenty-four pixel post
- * instead of sixty-four up an eighty, and the arm stays inside the post on the
- * tallest day of the year. A day's growth is a fiftieth of a pixel and the wobble is
- * half of one, which is the honest relationship between them -- it is the log and
- * the chart that carry the wobble, and they print it to a tenth of a centimetre.
+ * Low enough that the arm stays on the head.
+ *
+ * The sprite is a fixed 14 pixels however tall the reading is, so any magnification
+ * at all walks the arm off the head as the year's growth accumulates. At 1.1 it rose
+ * six pixels clear by day 365 -- 43% of the character's height -- and sat strictly
+ * above the head on 338 days of the 365, while the comment here claimed it rested on
+ * it. At 0.35 the whole year's spread is 2.8 pixels, so the arm is never more than
+ * three pixels off the head and reads as sitting on it.
+ *
+ * The cost is that the post shows almost nothing, which is the honest outcome: a
+ * 14-pixel person cannot legibly carry 6 cm. The reading is the number beside the
+ * arm, and the evidence is the log and the chart, which print to a tenth of a
+ * centimetre. The post's job is to make it a measurement of this person.
  */
-const PX_PER_CM = 1.1;
+const PX_PER_CM = 0.35;
 
 export class HeightScene extends WalkScene {
   private heights = fakeHeights(YEAR);
@@ -61,25 +73,41 @@ export class HeightScene extends WalkScene {
     this.controlsEnabled = false;
     this.play([
       {
+        /*
+         * The invented numbers are disclosed here, where they are introduced, rather
+         * than in a caption nine beats later. By then the reader has spent the whole
+         * level treating them as a record of something.
+         */
         say: [
-          "Imagine measuring your height every morning, against the same post,",
-          "and writing down what it says.",
+          "Imagine measuring your height every morning,",
+          "against the same post. These numbers are invented;",
+          "everything after this level is measured data.",
         ],
       },
       { run: () => (this.ticking = true) },
+      /*
+       * A beat for the first difference to exist. `ticking` only starts the timer:
+       * day one lands half a second later and the first difference a second later
+       * still, so a caption pointing at "the differences down the side" used to
+       * appear over the title card with no log drawn at all.
+       */
+      { pause: 1.2 },
       {
-        say: [
-          "Taller than yesterday? Shorter? It jumps around, and not by a little:",
-          "look at the differences down the side.",
-        ],
+        say: ["Taller than yesterday? Shorter?", "Look at the differences down the side."],
         wait: false,
       },
       { until: () => this.shownDays >= WEEK },
-      { pause: 0.6 },
+      /*
+       * Long enough to read. This caption cannot be held (`wait: false`) and `say`
+       * beats do not queue, so the next beat overwrites it: at 11 words `holdFor`
+       * wants 3.65s, and it gets 2.3s of ticker plus this.
+       */
+      { pause: 1.6 },
       {
         say: [
-          "How you stand, whether you have slept, the time of day. None of it is growing",
-          "or shrinking you — and all of it is bigger than a day's worth of growth.",
+          "How you stand, whether you have slept, the time of day.",
+          "None of it is growing or shrinking you — and all of it",
+          "is bigger than a day's worth of growth.",
         ],
       },
       { run: () => (this.showChart = true) },
@@ -92,21 +120,25 @@ export class HeightScene extends WalkScene {
         },
       },
       {
+        /*
+         * States the quantity the level never stated. Subtracting the endpoints of
+         * the log gives the wrong answer, because day one carries the week's largest
+         * positive wobble -- so the total has to be said rather than left to be
+         * read off. The beat that followed this one restated the moral a second time
+         * and told the reader what they had understood, which is the one thing an
+         * explainer cannot assert; its only load-bearing line was the disclosure,
+         * which now opens the level.
+         */
         say: [
-          "Pick any two days and you learn nothing. Take the whole year and it is obvious:",
-          "you grew. Same measurements, same wobble — the only thing that changed is the span.",
+          "Pick any two days and you learn nothing. Take the whole",
+          `year and it is obvious: you grew about ${(GROWTH_CM_PER_DAY * YEAR).toFixed(0)} cm.`,
+          "Same measurements, same wobble — only the span changed.",
         ],
       },
       {
         say: [
-          "That is the one idea this game is about, and you now have it.",
-          "(These heights are made up. Every number after this is measured data.)",
-        ],
-      },
-      {
-        say: [
-          "Temperature works the same way, for the same reason. Let's go and look.",
-          "← → move · SPACE jump · Z zoom out",
+          "Temperature works the same way, for the same reason.",
+          "Let's go and look.  « » move · SPACE jump · Z zoom out",
         ],
         wait: false,
       },
@@ -132,13 +164,18 @@ export class HeightScene extends WalkScene {
     this.drawRuler(r);
     r.particles(this.particles, this.cam);
     r.player(this.player, this.cam, this.time);
-    if (this.shownDays > 0 && !this.showChart) this.drawLog(r);
+    if (this.shownDays > 0) this.drawLog(r);
     if (this.showChart) this.drawChart(r);
     if (this.shownDays === 0) {
-      r.text("HEIGHT CHECK", VIEW_W / 2, 22, { size: 16, color: COLORS.accent, align: "center", title: true });
+      r.text("HEIGHT CHECK", VIEW_W / 2, 20, { size: 30, color: COLORS.accent, align: "center", title: true });
       r.text("a tiny game about noise and trends", VIEW_W / 2, 44, { size: 8, color: COLORS.dim, align: "center" });
     }
     this.drawCaption(r);
+  }
+
+  /** How many times the post exaggerates height, against the sprite's own scale. */
+  private magnification(): number {
+    return Math.round(PX_PER_CM / (SPRITE_H / START_CM));
   }
 
   private drawRuler(r: Renderer): void {
@@ -154,7 +191,7 @@ export class HeightScene extends WalkScene {
     px.fillRect(x + 5, top, 1, RULER_H);
     px.fillStyle = "#6b5e3e";
     for (let i = 0; i <= RULER_H; i += 4) px.fillRect(x, top + i, i % 8 === 0 ? 4 : 2, 1);
-    r.text("wobble magnified", x + 3, top - 10, { size: 7, color: COLORS.dim, align: "center" });
+    r.text(`scale ×${this.magnification()}`, x + 3, top - 13, { size: 7, color: COLORS.dim, align: "center" });
     if (this.shownDays === 0) return;
 
     /*
@@ -174,8 +211,22 @@ export class HeightScene extends WalkScene {
     });
   }
 
+  /**
+   * The week's measurements, with the day-to-day differences beside them -- and, at
+   * the top, the growth those differences are supposed to be compared against.
+   *
+   * That second number used to appear nowhere on screen. A day's growth is 0.016 cm,
+   * which `toFixed(1)` prints as "0.0", and on the post it is a fiftieth of a pixel.
+   * So the caption's claim -- that the wobble is bigger than a day's growth -- had
+   * one half printed and the other half missing entirely, which made the level's
+   * central sentence an assertion rather than something the reader could check.
+   *
+   * It survives the chart appearing, because the caption after the chart says "pick
+   * any two days" and the chart is 0.3 pixels per day: adjacent days share a column.
+   */
   private drawLog(r: Renderer): void {
-    for (let d = 0; d < this.shownDays; d++) {
+    r.text(`a day's growth: +${GROWTH_CM_PER_DAY.toFixed(2)} cm`, 200, 2, { size: 7, color: COLORS.dim });
+    for (let d = 0; d < Math.min(this.shownDays, WEEK); d++) {
       const up = d > 0 && this.heights[d] >= this.heights[d - 1];
       const diff = d === 0 ? "" : `  ${up ? "+" : "−"}${Math.abs(this.heights[d] - this.heights[d - 1]).toFixed(1)}`;
       const color = d === 0 ? COLORS.text : up ? "#f4a582" : "#92c5de";
@@ -185,7 +236,11 @@ export class HeightScene extends WalkScene {
 
   private drawChart(r: Renderer): void {
     const px = r.px;
-    const x0 = 196, y0 = 10, w = 116, h = 74;
+    /*
+     * Below the log, which now stays up. The log's seven rows run to y=78, and a
+     * three-line caption plate starts at y=136, so this has to live in between.
+     */
+    const x0 = 196, y0 = 84, w = 116, h = 44;
     px.fillStyle = "#05060d";
     px.fillRect(x0 - 2, y0 - 2, w + 4, h + 4);
     px.fillStyle = "#141a33";
