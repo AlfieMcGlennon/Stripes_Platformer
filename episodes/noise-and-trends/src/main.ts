@@ -5,7 +5,7 @@ import { isMuted, toggleMute, unlock } from "./core/audio";
 import { mountPanel, reduceMotion, showBootFailure } from "@stripes/engine";
 import { storySections, STANDFIRST } from "./story";
 import { COLORS } from "./render/palette";
-import { Renderer, VIEW_H, VIEW_W } from "./render/renderer";
+import { PORTRAIT_VIEW, Renderer, VIEW_H, VIEW_W, wantsPortrait } from "./render/renderer";
 import {
   CherryScene, CreditsScene, HeightScene, MonthsScene, SlideScene, StripesScene, TitleScene, YoursScene, type Scene,
 } from "./scenes";
@@ -34,6 +34,8 @@ declare global {
     /** Current scene, exposed for playtesting scripts and the browser console. */
     __scene?: Scene;
     __sceneId?: string;
+    /** Orientation check, exposed so a harness can drive it without waiting. */
+    __followRotation?: () => void;
   }
 }
 
@@ -97,6 +99,47 @@ function advance(): void {
   fadeDir = -1;
 }
 
+/*
+ * Follow a rotation by reloading into the other profile, keeping the reader's place.
+ *
+ * The profile cannot be swapped in place: the renderer's view size is fixed at
+ * construction, and scenes derive layout constants from it when their module first
+ * loads (level 0's log and chart positions, for instance). Reloading is the honest
+ * way to get every one of those recomputed. The level is carried across in the
+ * query string, so a rotation costs the current level's progress and nothing more.
+ *
+ * Debounced, because a rotation fires several resize events and a desktop window
+ * being dragged across the threshold should not reload on every frame.
+ */
+/*
+ * Checked in the game loop rather than from a resize listener on a timer.
+ *
+ * The loop is the one thing guaranteed to be running, and polling it costs a
+ * comparison of two numbers a few times a second. Two agreeing checks in a row are
+ * required because a rotation passes through intermediate sizes, and we do not want
+ * to reload on a shape the device is only briefly in.
+ */
+let frames = 0;
+let wrongShapeFor = 0;
+function followRotation(): void {
+  if (wantsPortrait() === PORTRAIT_VIEW) {
+    wrongShapeFor = 0;
+    return;
+  }
+  if (++wrongShapeFor < 2) return;
+  /*
+   * Reload rather than swap in place: the renderer's view size is fixed at
+   * construction and scenes derive layout constants from it when their module first
+   * loads, so a reload is the honest way to recompute every one of them. The level
+   * rides across in the query string, so a rotation costs the current level and
+   * nothing more.
+   */
+  const url = new URL(location.href);
+  url.searchParams.set("level", window.__sceneId ?? SCENES[index].id);
+  location.replace(url.toString());
+}
+window.__followRotation = followRotation;
+
 let accumulator = 0;
 let last = performance.now();
 
@@ -137,6 +180,7 @@ function drawZoomChip(time: number, hint: string, low = false): void {
 
 function frame(now: number): void {
   requestAnimationFrame(frame); // schedule first, so one thrown error can't freeze the loop
+  if (++frames % 15 === 0) followRotation(); // about four times a second
   accumulator += Math.min(0.25, (now - last) / 1000);
   last = now;
   while (accumulator >= STEP) {

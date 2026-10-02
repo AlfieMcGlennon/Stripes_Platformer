@@ -20,14 +20,15 @@ import { drawTouchButtons } from "./touch";
 const LANDSCAPE = { w: 320, h: 180 };
 const PORTRAIT = { w: 200, h: 440 };
 
-function pickView(): { w: number; h: number } {
-  if (typeof window === "undefined") return LANDSCAPE;
+/** True when the viewport is clearly taller than it is wide. */
+export function wantsPortrait(): boolean {
+  if (typeof window === "undefined") return false;
   const w = window.visualViewport?.width ?? window.innerWidth;
   const h = window.visualViewport?.height ?? window.innerHeight;
-  return h > w * 1.1 ? PORTRAIT : LANDSCAPE;
+  return h > w * 1.1;
 }
 
-const VIEW = pickView();
+const VIEW = wantsPortrait() ? PORTRAIT : LANDSCAPE;
 export const VIEW_W = VIEW.w;
 export const VIEW_H = VIEW.h;
 export const PORTRAIT_VIEW = VIEW === PORTRAIT;
