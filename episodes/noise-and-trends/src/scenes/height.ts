@@ -30,9 +30,22 @@ const YEAR = 365;
  * portrait, where a 200-wide view has no room for a second column.
  */
 const LOG_AT = PORTRAIT_VIEW ? { x: 10, y: 104 } : { x: 200, y: 2 };
-const CHART_AT = PORTRAIT_VIEW
-  ? { x0: 8, y0: 196, w: VIEW_W - 16, h: 68 }
-  : { x0: 196, y0: 84, w: 116, h: 44 };
+
+/*
+ * Where the year chart goes, which depends on whether there are touch buttons.
+ *
+ * They reserve the bottom 40 pixels and lift the caption plate by the same amount,
+ * so on a phone held sideways a three-line caption starts at y=96 and lands on a
+ * chart that runs to y=130. A laptop has no buttons, no reserve, and no overlap --
+ * which is why this only ever showed up on a phone. With the buttons present the
+ * chart moves to the empty left half of the sky, beside the log rather than under
+ * it, where it clears the raised caption.
+ */
+function chartBox(touch: boolean): { x0: number; y0: number; w: number; h: number } {
+  if (PORTRAIT_VIEW) return { x0: 8, y0: 196, w: VIEW_W - 16, h: 68 };
+  if (touch) return { x0: 8, y0: 20, w: 120, h: 52 };
+  return { x0: 196, y0: 84, w: 116, h: 44 };
+}
 /**
  * Right beside the player, who stands at 150 and cannot move during this phase. 136
  * rather than 140: the post is six wide with its highlight on the right edge, and
@@ -262,8 +275,8 @@ export class HeightScene extends WalkScene {
 
   private drawChart(r: Renderer): void {
     const px = r.px;
-    // Below the log, which stays up, and clear of the caption plate below that.
-    const { x0, y0, w, h } = CHART_AT;
+    // Clear of the caption plate, which sits higher when touch buttons are present.
+    const { x0, y0, w, h } = chartBox(r.bottomReserve > 0);
     px.fillStyle = "#05060d";
     px.fillRect(x0 - 2, y0 - 2, w + 4, h + 4);
     px.fillStyle = "#141a33";
