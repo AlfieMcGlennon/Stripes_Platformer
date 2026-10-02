@@ -19,7 +19,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent.parent
 RAW = ROOT / "scripts" / "raw"
 # The series is a monorepo; episode 1 owns the JSON this pipeline produces.
-OUT = ROOT / "episodes" / "height-check" / "src" / "data"
+OUT = ROOT / "episodes" / "noise-and-trends" / "src" / "data"
 # Committed copies of the official Met Office summary CSVs, checked before the
 # network so any machine -- CI, a sandboxed session, an offline laptop -- can
 # rebuild the data exactly. metoffice.gov.uk is blocked on some networks, and the
